@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Creador de Plantillas para Reels (9:16)</title>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Anton&family=Cinzel:wght@700&family=Caveat:wght@700&family=Inter:wght@400;600;800&family=Montserrat:wght@400;700;900&family=Playfair+Display:ital,wght@0,700;1,700&family=Fredoka:wght@600;700&display=swap" rel="stylesheet">
+    <!-- Evitar error de favicon.ico -->
+    <link rel="icon" href="data:,">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Panel de control lateral -->
+        <aside class="sidebar">
+            <h1 class="sidebar-logo"><i class="fa-solid fa-clapperboard"></i> Reels Editor</h1>
+            
+            <!-- Selector de Proyecto -->
+            <div class="control-group">
+                <label class="control-label">Plantilla Activa <span id="save-status" class="save-status"></span></label>
+                <div class="row-flex">
+                    <select id="project-select" class="form-control" style="flex: 1;">
+                        <option value="default">Diseño por Defecto</option>
+                    </select>
+                    <button id="new-project-btn" class="icon-btn success" title="Nueva plantilla"><i class="fa-solid fa-plus"></i></button>
+                    <button id="save-project-as-btn" class="icon-btn accent" title="Guardar copia"><i class="fa-solid fa-copy"></i></button>
+                </div>
+            </div>
+
+            <hr class="divider">
+
+            <!-- Carga de Multimedia -->
+            <div class="control-group">
+                <label class="control-label"><i class="fa-solid fa-video"></i> Video o Imagen 1:1</label>
+                <div class="file-upload-wrapper">
+                    <label for="media-input" class="upload-btn">
+                        <i class="fa-solid fa-cloud-arrow-up"></i> Cargar Multimedia
+                    </label>
+                    <input type="file" id="media-input" accept="video/*,image/*" style="display: none;">
+                </div>
+                <div class="row-flex" style="margin-top: 8px;">
+                    <button id="play-pause-btn" class="action-btn text-btn" disabled><i class="fa-solid fa-play"></i> Reproducir</button>
+                    <button id="mute-btn" class="action-btn text-btn" disabled><i class="fa-solid fa-volume-xmark"></i> Silenciar</button>
+                </div>
+            </div>
+
+            <!-- Carga de Logo Flotante -->
+            <div class="control-group">
+                <label class="control-label"><i class="fa-solid fa-image"></i> Logo o Sticker Flotante (PNG)</label>
+                <div class="file-upload-wrapper">
+                    <label for="logo-input" class="upload-btn" style="border-color: var(--color-accent); color: var(--color-accent); cursor: pointer;">
+                        <i class="fa-solid fa-image"></i> Cargar Logo PNG
+                    </label>
+                    <input type="file" id="logo-input" accept="image/png,image/jpeg" style="display: none;">
+                </div>
+                <div class="row-flex" style="margin-top: 8px;">
+                    <button id="remove-logo-btn" class="action-btn text-btn danger" style="color: var(--color-danger); border-color: var(--color-danger);" disabled><i class="fa-solid fa-trash"></i> Quitar Logo</button>
+                </div>
+            </div>
+
+            <!-- Estilo y Fondo -->
+            <div class="control-group">
+                <label class="control-label"><i class="fa-solid fa-palette"></i> Fondo del Reel</label>
+                <select id="theme-select" class="form-control">
+                    <option value="dark">Negro Profundo</option>
+                    <option value="light">Blanco Minimalista</option>
+                    <option value="neon">Neón Cyberpunk</option>
+                    <option value="gradient-sunset">Sunset Orange</option>
+                    <option value="gradient-forest">Deep Forest</option>
+                    <option value="custom">Personalizado (Color Liso)</option>
+                </select>
+                
+                <div id="custom-color-wrapper" class="color-picker-wrapper" style="display: none; margin-top: 10px;">
+                    <label for="bg-color-picker" style="font-size: 0.8rem; color: #ccc;">Elegir Color:</label>
+                    <input type="color" id="bg-color-picker" value="#141414">
+                </div>
+            </div>
+
+            <!-- Previsualizar Interfaz IG -->
+            <div class="control-group">
+                <label class="control-label" style="display: flex; align-items: center; gap: 8px; cursor: pointer; text-transform: none; font-size: 0.85rem; color: #ccc;">
+                    <input type="checkbox" id="toggle-ig-overlay" style="width: 16px; height: 16px; margin: 0; cursor: pointer;">
+                    <i class="fa-brands fa-instagram" style="font-size: 1.1rem; color: #e1306c;"></i> Ver Botones de Instagram
+                </label>
+            </div>
+
+            <!-- Tipografía y Textos -->
+            <div class="control-group">
+                <label class="control-label"><i class="fa-solid fa-font"></i> Estilo de Texto</label>
+                <div class="row-flex" style="margin-bottom: 8px;">
+                    <div style="flex: 1;">
+                        <label class="sub-label">Letra Título</label>
+                        <select id="font-title-select" class="form-control">
+                            <option value="'Montserrat', sans-serif">Montserrat Black</option>
+                            <option value="'Anton', sans-serif">Anton Retro</option>
+                            <option value="'Fredoka', sans-serif">Fredoka Kids</option>
+                            <option value="'Playfair Display', serif">Playfair Serif</option>
+                            <option value="'Caveat', cursive">Caveat Script</option>
+                            <option value="'Inter', sans-serif">Inter Modern</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="row-flex" style="margin-bottom: 8px;">
+                    <div style="flex: 1; display: flex; flex-direction: column; gap: 4px;">
+                        <span id="font-size-label" class="sub-label">Tamaño: Selecciona un bloque</span>
+                        <div class="slider-container">
+                            <button id="font-dec-btn" class="adjust-btn" disabled>-</button>
+                            <input type="range" id="font-size-slider" min="30" max="250" value="100" disabled>
+                            <button id="font-inc-btn" class="adjust-btn" disabled>+</button>
+                            <span id="font-size-val">100%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row-flex" style="margin-bottom: 8px;">
+                    <div style="flex: 1; display: flex; flex-direction: column; gap: 4px;">
+                        <span id="box-width-label" class="sub-label">Ancho de Caja: Selecciona un bloque</span>
+                        <div class="slider-container">
+                            <button id="width-dec-btn" class="adjust-btn" disabled>-</button>
+                            <input type="range" id="box-width-slider" min="30" max="100" value="85" disabled>
+                            <button id="width-inc-btn" class="adjust-btn" disabled>+</button>
+                            <span id="box-width-val">85%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row-flex" style="align-items: center; justify-content: space-around; margin-top: 8px;">
+                    <div class="picker-item">
+                        <label for="color-text-picker" class="picker-label">Texto</label>
+                        <input type="color" id="color-text-picker" value="#ffffff">
+                    </div>
+                    <div class="picker-item">
+                        <label for="color-box-picker" class="picker-label">Caja</label>
+                        <input type="color" id="color-box-picker" value="#000000">
+                    </div>
+                    <div class="picker-item">
+                        <label for="box-opacity-slider" class="picker-label">Opacidad</label>
+                        <input type="range" id="box-opacity-slider" min="0" max="100" value="85" style="width: 50px;">
+                    </div>
+                </div>
+            </div>
+
+            <hr class="divider">
+
+            <!-- Acciones Principales -->
+            <button id="center-block-btn" class="action-btn accent-btn" style="margin-bottom: 10px;">
+                <i class="fa-solid fa-align-center"></i> Centrar Bloque
+            </button>
+
+            <button id="save-btn" class="action-btn primary-btn" style="margin-bottom: 10px;">
+                <i class="fa-solid fa-floppy-disk"></i> Guardar Cambios
+            </button>
+
+            <button id="export-btn" class="action-btn success-btn" style="margin-bottom: 10px;">
+                <i class="fa-solid fa-file-pdf"></i> Exportar Imagen/PDF (Print)
+            </button>
+
+            <button id="record-video-btn" class="action-btn danger-btn">
+                <i class="fa-solid fa-circle-dot"></i> Exportar Video (MP4/WebM)
+            </button>
+        </aside>
+
+        <!-- Área del simulador móvil -->
+        <main class="simulator-pane">
+            <div class="phone-mockup">
+                <div class="phone-screen">
+                    <div class="reel-canvas theme-dark" id="reel-canvas">
+                        
+                        <!-- Bloque de texto superior -->
+                        <div class="text-card drag-el" id="header-card" style="top: 80px; width: 85%;">
+                            <div class="text-content" contenteditable="true" id="header-text">
+                                🔥 <strong>TÍTULO DE GANCHO</strong><br>¡Este tip te volará la cabeza!
+                            </div>
+                        </div>
+
+                        <!-- Bloque central de video 1:1 -->
+                        <div class="media-container" id="media-container">
+                            <video id="reel-video" loop muted playsinline></video>
+                            <img id="reel-img" src="" alt="Previsualización" style="display: none;">
+                            <div class="media-placeholder" id="media-placeholder">
+                                <i class="fa-solid fa-video"></i>
+                                <span>Carga un video/imagen 1:1</span>
+                            </div>
+                        </div>
+
+                        <!-- Bloque de texto inferior -->
+                        <div class="text-card drag-el" id="footer-card" style="bottom: 80px; width: 85%;">
+                            <div class="text-content" contenteditable="true" id="footer-text">
+                                💡 <strong>Aprende el secreto hoy</strong><br>Síguenos para más consejos diarios 👇<br><span style="color: #dfb15b;">#cocina #consejos #tutorial</span>
+                            </div>
+                        </div>
+
+                        <!-- Logo flotante arrastrable -->
+                        <div class="logo-card drag-el" id="logo-card" style="top: 150px; left: 140px; width: 80px; height: 80px; display: none;">
+                            <img id="logo-img-preview" src="" alt="Logo" style="width: 100%; height: 100%; object-fit: contain; pointer-events: none;">
+                        </div>
+
+                        <!-- Simulación de interfaz de Instagram Reels (Capa visual guía) -->
+                        <div class="instagram-overlay" id="instagram-overlay" style="display: none;">
+                            <!-- Columna derecha de acciones -->
+                            <div class="ig-actions">
+                                <div class="ig-action"><i class="fa-solid fa-heart"></i><span>12.4K</span></div>
+                                <div class="ig-action"><i class="fa-solid fa-comment"></i><span>382</span></div>
+                                <div class="ig-action"><i class="fa-solid fa-paper-plane"></i><span>95</span></div>
+                                <div class="ig-action"><i class="fa-solid fa-ellipsis-vertical"></i></div>
+                                <div class="ig-audio-disc">🎵</div>
+                            </div>
+                            <!-- Info de cuenta abajo a la izquierda -->
+                            <div class="ig-profile-info">
+                                <div class="ig-user">
+                                    <div class="ig-avatar">🍳</div>
+                                    <span>chef_recetas</span>
+                                    <button class="ig-follow-btn">Seguir</button>
+                                </div>
+                                <div class="ig-caption">¡Aprende esta increíble receta en pocos pasos! ... <span class="ig-more">más</span></div>
+                                <div class="ig-music-name">🎵 Audio original • chef_recetas</div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+                <div class="phone-home-indicator"></div>
+            </div>
+        </main>
+    </div>
+    
+    <script src="app.js"></script>
+</body>
+</html>
