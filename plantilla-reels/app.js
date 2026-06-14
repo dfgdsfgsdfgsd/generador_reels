@@ -617,8 +617,13 @@ document.addEventListener("DOMContentLoaded", () => {
             const wrapper = document.createElement("div");
             wrapper.className = "phone-wrapper";
             wrapper.dataset.index = index;
+            wrapper.draggable = true;
             
             wrapper.innerHTML = `
+                <div class="phone-header">
+                    <span>Pantalla ${index + 1}</span>
+                    <span class="drag-handle" title="Arrastra para reordenar"><i class="fa-solid fa-grip-vertical"></i></span>
+                </div>
                 <div class="phone-mockup ${index === currentProject.activeScreenIndex ? 'selected-phone' : ''}" data-index="${index}">
                     <div class="phone-screen">
                         <div class="reel-canvas theme-${screenData.theme}" id="reel-canvas-${index}" style="${screenData.theme === 'custom' ? 'background: ' + screenData.customColor : ''}">
@@ -697,6 +702,62 @@ document.addEventListener("DOMContentLoaded", () => {
             setupDraggable(mCont, "media", index);
             setupDraggable(lCard, "logo", index);
             
+            // Manejadores de eventos para arrastrar y soltar teléfonos (Mesa de trabajo)
+            wrapper.addEventListener("dragstart", (e) => {
+                if (!e.target.closest(".phone-header") && !e.target.closest(".drag-handle")) {
+                    e.preventDefault();
+                    return;
+                }
+                wrapper.classList.add("dragging");
+                e.dataTransfer.effectAllowed = "move";
+                window.draggedScreenIndex = index;
+            });
+            
+            wrapper.addEventListener("dragover", (e) => {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = "move";
+                if (window.draggedScreenIndex !== undefined && window.draggedScreenIndex !== index) {
+                    wrapper.classList.add("drag-over");
+                }
+            });
+            
+            wrapper.addEventListener("dragleave", () => {
+                wrapper.classList.remove("drag-over");
+            });
+            
+            wrapper.addEventListener("drop", (e) => {
+                e.preventDefault();
+                wrapper.classList.remove("drag-over");
+                
+                const fromIndex = window.draggedScreenIndex;
+                const toIndex = index;
+                
+                if (fromIndex !== undefined && fromIndex !== toIndex) {
+                    const [movedScreen] = currentProject.screens.splice(fromIndex, 1);
+                    currentProject.screens.splice(toIndex, 0, movedScreen);
+                    
+                    // Actualizar el índice de la pantalla activa
+                    if (currentProject.activeScreenIndex === fromIndex) {
+                        currentProject.activeScreenIndex = toIndex;
+                    } else if (currentProject.activeScreenIndex > fromIndex && currentProject.activeScreenIndex <= toIndex) {
+                        currentProject.activeScreenIndex--;
+                    } else if (currentProject.activeScreenIndex < fromIndex && currentProject.activeScreenIndex >= toIndex) {
+                        currentProject.activeScreenIndex++;
+                    }
+                    
+                    renderScreens();
+                    selectScreen(currentProject.activeScreenIndex);
+                    saveTemplateQuietly();
+                }
+                window.draggedScreenIndex = undefined;
+            });
+            
+            wrapper.addEventListener("dragend", () => {
+                wrapper.classList.remove("dragging");
+                document.querySelectorAll(".phone-wrapper").forEach(w => w.classList.remove("drag-over"));
+                window.draggedScreenIndex = undefined;
+            });
+
             mock.addEventListener("mousedown", (e) => {
                 if (currentProject.activeScreenIndex !== index) {
                     selectScreen(index);

@@ -262,10 +262,77 @@ input[type="color"] {
     flex: 1;
     display: flex;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-start;
     background-color: #0b0c0d;
-    padding: 20px;
+    padding: 30px;
     position: relative;
+    overflow-x: auto;
+    gap: 30px;
+}
+
+/* PHONE WRAPPER FOR SCALING LAYOUT */
+.phone-wrapper {
+    width: 290px;
+    height: 550px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    flex-shrink: 0;
+    position: relative;
+    transition: opacity 0.2s, transform 0.2s;
+}
+
+.phone-wrapper.dragging {
+    opacity: 0.4;
+}
+
+.phone-wrapper.drag-over {
+    transform: scale(1.02);
+}
+
+.phone-wrapper.drag-over .phone-header {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 10px rgba(59, 130, 246, 0.3);
+}
+
+.phone-wrapper.drag-over .phone-mockup {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 15px rgba(59, 130, 246, 0.3), 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+}
+
+/* PHONE HEADER BAR ABOVE MOCKUP */
+.phone-header {
+    width: 285px; /* Matches scaled mockup width (380px * 0.75) */
+    background-color: #17191d;
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    padding: 6px 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: #ccc;
+    font-size: 0.75rem;
+    font-weight: 600;
+    user-select: none;
+    margin-bottom: 5px;
+    z-index: 10;
+}
+
+.drag-handle {
+    cursor: grab;
+    padding: 2px 6px;
+    color: #666;
+    font-size: 0.8rem;
+    transition: color 0.2s;
+}
+
+.drag-handle:hover {
+    color: var(--color-primary);
+}
+
+.drag-handle:active {
+    cursor: grabbing;
 }
 
 /* PHONE MOCKUP */
@@ -280,6 +347,16 @@ input[type="color"] {
     flex-direction: column;
     position: relative;
     overflow: hidden;
+    transform: scale(0.75);
+    transform-origin: top center;
+    flex-shrink: 0;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    cursor: pointer;
+}
+
+.phone-mockup.selected-phone {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 25px rgba(59, 130, 246, 0.5), 0 25px 50px -12px rgba(0, 0, 0, 0.7);
 }
 
 .phone-screen {
@@ -588,16 +665,22 @@ input[type="color"] {
     .sidebar {
         display: none !important;
     }
+    .phone-wrapper {
+        width: 1080px !important;
+        height: 1920px !important;
+        page-break-after: always;
+        break-after: page;
+        display: block !important;
+    }
     .phone-mockup {
         width: 1080px !important;
         height: 1920px !important;
+        transform: none !important;
         border: none !important;
         border-radius: 0 !important;
         box-shadow: none !important;
         margin: 0 !important;
         padding: 0 !important;
-        page-break-after: avoid;
-        break-after: avoid;
     }
     .phone-screen {
         border-radius: 0 !important;
