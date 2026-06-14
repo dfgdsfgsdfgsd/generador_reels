@@ -35,6 +35,9 @@ document.addEventListener("DOMContentLoaded", () => {
     const newProjectBtn = document.getElementById("new-project-btn");
     const saveProjectAsBtn = document.getElementById("save-project-as-btn");
     const saveStatus = document.getElementById("save-status");
+    const exportJsonBtn = document.getElementById("export-json-btn");
+    const importJsonBtn = document.getElementById("import-json-btn");
+    const importJsonInput = document.getElementById("import-json-input");
     
     const mediaInput = document.getElementById("media-input");
     const playPauseBtn = document.getElementById("play-pause-btn");
@@ -1172,6 +1175,69 @@ document.addEventListener("DOMContentLoaded", () => {
             currentTemplate.showFooterCard = e.target.checked;
             footerCard.style.display = e.target.checked ? "block" : "none";
             saveTemplateQuietly();
+        });
+    }
+
+    // EXPORTAR PROYECTO A ARCHIVO JSON
+    if (exportJsonBtn) {
+        exportJsonBtn.addEventListener("click", () => {
+            syncDOMToState();
+            const jsonString = JSON.stringify(currentProject, null, 2);
+            const blob = new Blob([jsonString], { type: "application/json" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `${currentTemplateName || 'proyecto'}_backup.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+        });
+    }
+
+    // IMPORTAR PROYECTO DESDE ARCHIVO JSON
+    if (importJsonBtn && importJsonInput) {
+        importJsonBtn.addEventListener("click", () => {
+            importJsonInput.click();
+        });
+
+        importJsonInput.addEventListener("change", (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                try {
+                    const parsed = JSON.parse(event.target.result);
+
+                    // Validar estructura básica
+                    if (!parsed.screens || !Array.isArray(parsed.screens)) {
+                        throw new Error("El archivo no tiene el formato de proyecto válido de Reels.");
+                    }
+
+                    // Forzar nombre y persistencia
+                    const importedName = parsed.name || "importado_" + Date.now();
+                    currentTemplateName = importedName;
+                    currentProject = parsed;
+                    currentProject.name = importedName;
+
+                    // Agregar a la lista si no existe
+                    if (!templatesList.some(p => p.id === importedName)) {
+                        templatesList.push({ id: importedName, name: importedName });
+                        localStorage.setItem("reels_projects", JSON.stringify(templatesList));
+                        initProjects();
+                    }
+
+                    projectSelect.value = importedName;
+                    saveTemplateQuietly();
+                    renderScreens();
+                    selectScreen(currentProject.activeScreenIndex || 0);
+
+                    alert(`¡Proyecto "${importedName}" importado con éxito!`);
+                } catch (err) {
+                    alert("Error al importar el archivo JSON: " + err.message);
+                }
+            };
+            reader.readAsText(file);
+            importJsonInput.value = ""; // Limpiar
         });
     }
 });

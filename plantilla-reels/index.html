@@ -21,12 +21,35 @@
             <!-- Selector de Proyecto -->
             <div class="control-group">
                 <label class="control-label">Plantilla Activa <span id="save-status" class="save-status"></span></label>
-                <div class="row-flex">
+                <div class="row-flex" style="margin-bottom: 8px;">
                     <select id="project-select" class="form-control" style="flex: 1;">
                         <option value="default">Diseño por Defecto</option>
                     </select>
                     <button id="new-project-btn" class="icon-btn success" title="Nueva plantilla"><i class="fa-solid fa-plus"></i></button>
                     <button id="save-project-as-btn" class="icon-btn accent" title="Guardar copia"><i class="fa-solid fa-copy"></i></button>
+                </div>
+                <div class="row-flex">
+                    <button id="export-json-btn" class="action-btn text-btn" style="flex: 1; font-size: 0.72rem; padding: 6px;"><i class="fa-solid fa-file-export"></i> Exportar JSON</button>
+                    <button id="import-json-btn" class="action-btn text-btn" style="flex: 1; font-size: 0.72rem; padding: 6px;"><i class="fa-solid fa-file-import"></i> Importar JSON</button>
+                    <input type="file" id="import-json-input" accept=".json" style="display: none;">
+                </div>
+            </div>
+
+            <!-- Gestión de Teléfonos / Pantallas -->
+            <div class="control-group">
+                <label class="control-label"><i class="fa-solid fa-mobile-screen-button"></i> Pantallas del Reel</label>
+                <div class="row-flex" style="margin-bottom: 8px;">
+                    <button id="add-phone-btn" class="action-btn success-btn" style="flex: 1; padding: 8px 10px; font-size: 0.8rem;">
+                        <i class="fa-solid fa-plus"></i> Añadir Teléfono
+                    </button>
+                </div>
+                <div class="row-flex">
+                    <button id="duplicate-phone-btn" class="action-btn accent-btn" style="flex: 1; padding: 8px 10px; font-size: 0.8rem;">
+                        <i class="fa-solid fa-copy"></i> Duplicar
+                    </button>
+                    <button id="delete-phone-btn" class="action-btn danger-btn" style="flex: 1; padding: 8px 10px; font-size: 0.8rem; background-color: var(--color-danger);">
+                        <i class="fa-solid fa-trash"></i> Eliminar
+                    </button>
                 </div>
             </div>
 
@@ -180,7 +203,7 @@
         </aside>
 
         <!-- Área del simulador móvil -->
-        <main class="simulator-pane">
+        <main class="simulator-pane" id="simulator-pane">
             <div class="phone-mockup">
                 <div class="phone-screen">
                     <div class="reel-canvas theme-dark" id="reel-canvas">
