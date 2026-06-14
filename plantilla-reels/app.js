@@ -540,6 +540,7 @@ document.addEventListener("DOMContentLoaded", () => {
         // Crear diseño de pantalla por defecto
     function createDefaultScreen(index = 0) {
         return {
+            name: `Pantalla ${index + 1}`,
             theme: "dark",
             customColor: "#141414",
             fontTitle: "'Montserrat', sans-serif",
@@ -621,7 +622,7 @@ document.addEventListener("DOMContentLoaded", () => {
             
             wrapper.innerHTML = `
                 <div class="phone-header">
-                    <span>Pantalla ${index + 1}</span>
+                    <span class="phone-title" contenteditable="true" id="phone-title-${index}" style="outline: none; cursor: text;">${screenData.name || 'Pantalla ' + (index + 1)}</span>
                     <span class="drag-handle" title="Arrastra para reordenar"><i class="fa-solid fa-grip-vertical"></i></span>
                 </div>
                 <div class="phone-mockup ${index === currentProject.activeScreenIndex ? 'selected-phone' : ''}" data-index="${index}">
@@ -707,7 +708,11 @@ document.addEventListener("DOMContentLoaded", () => {
             
             wrapper.addEventListener("mousedown", (e) => {
                 if (e.target.closest(".phone-header") || e.target.closest(".drag-handle")) {
-                    dragAllowed = true;
+                    if (e.target.closest("[contenteditable='true']")) {
+                        dragAllowed = false;
+                    } else {
+                        dragAllowed = true;
+                    }
                 } else {
                     dragAllowed = false;
                 }
@@ -806,6 +811,21 @@ document.addEventListener("DOMContentLoaded", () => {
                 currentProject.screens[index].footerText = fText.innerHTML;
                 saveTemplateQuietly();
             });
+
+            // Actualizar nombre de la pantalla
+            const pTitle = document.getElementById(`phone-title-${index}`);
+            if (pTitle) {
+                pTitle.addEventListener("input", () => {
+                    currentProject.screens[index].name = pTitle.textContent.trim();
+                    saveTemplateQuietly();
+                });
+                pTitle.addEventListener("keydown", (e) => {
+                    if (e.key === "Enter") {
+                        e.preventDefault();
+                        pTitle.blur();
+                    }
+                });
+            }
         });
     }
 
@@ -970,7 +990,8 @@ document.addEventListener("DOMContentLoaded", () => {
         const originalScreen = currentProject.screens[activeIdx];
         const clonedScreen = JSON.parse(JSON.stringify(originalScreen));
         
-        // Modificar ligeramente el texto del gancho clonado
+        // Modificar ligeramente el texto y nombre del gancho clonado
+        clonedScreen.name = originalScreen.name ? originalScreen.name + " (Copia)" : `Pantalla ${activeIdx + 2} (Copia)`;
         clonedScreen.headerText = originalScreen.headerText + " (Copia)";
         
         currentProject.screens.splice(activeIdx + 1, 0, clonedScreen);
