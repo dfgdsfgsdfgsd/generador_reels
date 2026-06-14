@@ -75,7 +75,22 @@ def get_text_card_drawing(draw, style: Dict[str, Any], html_text: str, scale: fl
     width = parse_val(style.get("width"), 0) * scale
     height = parse_val(style.get("height"), 0) * scale
 
-    padding = parse_val(style.get("padding"), 14) * scale
+    # Parse horizontal padding properly (e.g. "12px 18px")
+    padding_str = style.get("padding", "14")
+    padding_px = 14
+    if padding_str:
+        parts = [p.replace("px", "").strip() for p in str(padding_str).split()]
+        if len(parts) >= 2:
+            try:
+                padding_px = float(parts[1]) # Horizontal padding
+            except ValueError:
+                pass
+        elif len(parts) == 1:
+            try:
+                padding_px = float(parts[0])
+            except ValueError:
+                pass
+    padding = padding_px * scale
     r = parse_val(style.get("borderRadius"), 12) * scale
 
     bg_color_str = style.get("backgroundColor", "rgba(0,0,0,0.85)")
@@ -136,11 +151,32 @@ def get_text_card_drawing(draw, style: Dict[str, Any], html_text: str, scale: fl
             w_total += w
         return w_total
 
+    def wrap_text_line(text, regular_font, em_font, max_w):
+        words = text.split(" ")
+        wrapped_lines = []
+        current_line = []
+        for word in words:
+            test_line = " ".join(current_line + [word]) if current_line else word
+            test_w = get_line_width_with_emojis(test_line, regular_font, em_font)
+            if test_w <= max_w or not current_line:
+                current_line.append(word)
+            else:
+                wrapped_lines.append(" ".join(current_line))
+                current_line = [word]
+        if current_line:
+            wrapped_lines.append(" ".join(current_line))
+        return wrapped_lines
+
     # Separar líneas por <br>
     import re
+    import html
     raw_lines = re.split(r'<br\s*/?>', html_text, flags=re.IGNORECASE)
     clean_lines = []
     line_colors = []
+
+    # Padding horizontal de seguridad (al menos 32 * scale para evitar que se pegue al borde)
+    padding_x = max(padding, 32 * scale)
+    max_text_width = max(20.0, width - (2 * padding_x))
 
     for line in raw_lines:
         # Extraer color de span style si existe
@@ -151,10 +187,15 @@ def get_text_card_drawing(draw, style: Dict[str, Any], html_text: str, scale: fl
         else:
             line_color = text_rgba
         
-        # Limpiar tags HTML
-        line_clean = re.sub(r'<[^>]*>', '', line).strip()
-        clean_lines.append(line_clean)
-        line_colors.append(line_color)
+        # Limpiar tags HTML, decodificar entidades HTML y reemplazar non-breaking spaces
+        line_clean = re.sub(r'<[^>]*>', '', line)
+        line_clean = html.unescape(line_clean).replace('\xa0', ' ').strip()
+        
+        # Ajustar/envolver línea si supera el ancho útil
+        wrapped = wrap_text_line(line_clean, font, emoji_font, max_text_width)
+        for w_line in wrapped:
+            clean_lines.append(w_line)
+            line_colors.append(line_color)
 
     line_count = len(clean_lines)
     line_height = size * 1.35
