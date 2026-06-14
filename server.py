@@ -257,8 +257,10 @@ def generate_overlay_pil(data: Dict[str, Any], scale: float, width: int, height:
         fill=(0, 0, 0, 30)
     )
 
-    get_text_card_drawing(draw, data.get("headerStyle", {}), data.get("headerHtml", ""), scale, width, height)
-    get_text_card_drawing(draw, data.get("footerStyle", {}), data.get("footerHtml", ""), scale, width, height)
+    if data.get("headerStyle"):
+        get_text_card_drawing(draw, data.get("headerStyle"), data.get("headerHtml", ""), scale, width, height)
+    if data.get("footerStyle"):
+        get_text_card_drawing(draw, data.get("footerStyle"), data.get("footerHtml", ""), scale, width, height)
 
     # Procesar Logo Flotante
     logo_src = data.get("logoSrc")

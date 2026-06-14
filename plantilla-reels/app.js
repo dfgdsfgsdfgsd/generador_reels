@@ -12,6 +12,8 @@ document.addEventListener("DOMContentLoaded", () => {
         fontTitle: "'Montserrat', sans-serif",
         mediaType: null, // 'video' o 'image'
         mediaSrc: null,
+        showHeaderCard: true,
+        showFooterCard: true,
         headerText: "🔥 <strong>TÍTULO DE GANCHO</strong><br>¡Este tip te volará la cabeza!",
         footerText: "💡 <strong>Aprende el secreto hoy</strong><br>Síguenos para más consejos diarios 👇<br><span style='color: #dfb15b;'>#cocina #consejos #tutorial</span>",
         fontSizes: {
@@ -83,9 +85,31 @@ document.addEventListener("DOMContentLoaded", () => {
     const toggleIgOverlay = document.getElementById("toggle-ig-overlay");
     const instagramOverlay = document.getElementById("instagram-overlay");
 
+    const toggleHeaderCard = document.getElementById("toggle-header-card");
+    const toggleFooterCard = document.getElementById("toggle-footer-card");
+
     // CARGA INICIAL
     initProjects();
     loadTemplateData("default");
+    adjustMockupScale();
+
+    // ESCALA DINÁMICA DEL SIMULADOR
+    function adjustMockupScale() {
+        const pane = document.querySelector(".simulator-pane");
+        const mockup = document.querySelector(".phone-mockup");
+        if (!pane || !mockup) return;
+        
+        const mockupWidth = 404; // 380px + 24px de bordes
+        const mockupHeight = 700; // 676px + 24px de bordes
+        
+        const scaleX = (pane.offsetWidth - 40) / mockupWidth;
+        const scaleY = (pane.offsetHeight - 40) / mockupHeight;
+        const scale = Math.min(1, scaleX, scaleY);
+        
+        mockup.style.transform = `scale(${scale})`;
+        mockup.style.transformOrigin = "center center";
+    }
+    window.addEventListener("resize", adjustMockupScale);
     
     // FUNCIONES DE ARRASTRE (DRAG & DROP)
     setupDraggable(headerCard, "header");
@@ -705,6 +729,15 @@ document.addEventListener("DOMContentLoaded", () => {
             logoCard.style.height = logoSize + "px";
         }
 
+        // Aplicar visibilidad de bloques de texto
+        if (currentTemplate.showHeaderCard === undefined) currentTemplate.showHeaderCard = true;
+        if (currentTemplate.showFooterCard === undefined) currentTemplate.showFooterCard = true;
+        
+        toggleHeaderCard.checked = currentTemplate.showHeaderCard;
+        toggleFooterCard.checked = currentTemplate.showFooterCard;
+        headerCard.style.display = currentTemplate.showHeaderCard ? "block" : "none";
+        footerCard.style.display = currentTemplate.showFooterCard ? "block" : "none";
+
         applyMedia();
         applyLogo();
         selectCard(null);
@@ -765,8 +798,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 videoTop: mediaContainer.offsetTop,
                 videoWidth: mediaContainer.offsetWidth,
                 videoHeight: mediaContainer.offsetHeight,
-                headerHtml: headerTextEl.innerHTML,
-                headerStyle: {
+                headerHtml: currentTemplate.showHeaderCard ? headerTextEl.innerHTML : "",
+                headerStyle: currentTemplate.showHeaderCard ? {
                     fontFamily: window.getComputedStyle(headerTextEl).fontFamily,
                     fontSize: window.getComputedStyle(headerTextEl).fontSize,
                     fontWeight: window.getComputedStyle(headerTextEl).fontWeight,
@@ -780,9 +813,9 @@ document.addEventListener("DOMContentLoaded", () => {
                     height: headerCard.offsetHeight,
                     left: headerCard.offsetLeft,
                     top: headerCard.offsetTop
-                },
-                footerHtml: footerTextEl.innerHTML,
-                footerStyle: {
+                } : null,
+                footerHtml: currentTemplate.showFooterCard ? footerTextEl.innerHTML : "",
+                footerStyle: currentTemplate.showFooterCard ? {
                     fontFamily: window.getComputedStyle(footerTextEl).fontFamily,
                     fontSize: window.getComputedStyle(footerTextEl).fontSize,
                     fontWeight: window.getComputedStyle(footerTextEl).fontWeight,
@@ -796,7 +829,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     height: footerCard.offsetHeight,
                     left: footerCard.offsetLeft,
                     top: footerCard.offsetTop
-                },
+                } : null,
                 logoSrc: currentTemplate.logoSrc || null,
                 logoStyle: currentTemplate.logoSrc ? {
                     width: logoCard.offsetWidth,
@@ -844,6 +877,22 @@ document.addEventListener("DOMContentLoaded", () => {
     if (toggleIgOverlay && instagramOverlay) {
         toggleIgOverlay.addEventListener("change", (e) => {
             instagramOverlay.style.display = e.target.checked ? "block" : "none";
+        });
+    }
+
+    if (toggleHeaderCard) {
+        toggleHeaderCard.addEventListener("change", (e) => {
+            currentTemplate.showHeaderCard = e.target.checked;
+            headerCard.style.display = e.target.checked ? "block" : "none";
+            saveTemplateQuietly();
+        });
+    }
+
+    if (toggleFooterCard) {
+        toggleFooterCard.addEventListener("change", (e) => {
+            currentTemplate.showFooterCard = e.target.checked;
+            footerCard.style.display = e.target.checked ? "block" : "none";
+            saveTemplateQuietly();
         });
     }
 });
