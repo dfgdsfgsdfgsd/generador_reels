@@ -703,8 +703,18 @@ document.addEventListener("DOMContentLoaded", () => {
             setupDraggable(lCard, "logo", index);
             
             // Manejadores de eventos para arrastrar y soltar teléfonos (Mesa de trabajo)
+            let dragAllowed = false;
+            
+            wrapper.addEventListener("mousedown", (e) => {
+                if (e.target.closest(".phone-header") || e.target.closest(".drag-handle")) {
+                    dragAllowed = true;
+                } else {
+                    dragAllowed = false;
+                }
+            });
+            
             wrapper.addEventListener("dragstart", (e) => {
-                if (!e.target.closest(".phone-header") && !e.target.closest(".drag-handle")) {
+                if (!dragAllowed) {
                     e.preventDefault();
                     return;
                 }
