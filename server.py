@@ -25,6 +25,14 @@ BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../Libro de 
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
 
 
+import uuid
+
+# Crear carpeta uploads al iniciar
+uploads_dir = os.path.join(CURRENT_DIR, "uploads")
+os.makedirs(uploads_dir, exist_ok=True)
+app.mount("/uploads", StaticFiles(directory=uploads_dir), name="uploads")
+
+
 @app.post("/api/upload-video")
 async def upload_video(request: Request):
     temp_video_path = os.path.join(CURRENT_DIR, "temp_input.mp4")
@@ -37,6 +45,29 @@ async def upload_video(request: Request):
     except Exception as e:
         print("[Generador Reels] Error guardando video:", e)
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/upload-media")
+async def upload_media(request: Request):
+    content_type = request.headers.get("content-type", "")
+    ext = ".mp4"
+    if "image" in content_type:
+        ext = ".png"
+    elif "video" in content_type:
+        ext = ".mp4"
+        
+    filename = f"{uuid.uuid4()}{ext}"
+    filepath = os.path.join(uploads_dir, filename)
+    try:
+        body = await request.body()
+        with open(filepath, "wb") as f:
+            f.write(body)
+        print(f"[Generador Reels] Media guardada persistentemente: {filename}")
+        return {"success": True, "url": f"/uploads/{filename}"}
+    except Exception as e:
+        print("[Generador Reels] Error guardando media:", e)
+        raise HTTPException(status_code=500, detail=str(e))
+
 
 def parse_val(val, default):
     if not val:
@@ -360,7 +391,16 @@ async def export_video(request: Request):
         temp_bg_path = os.path.join(CURRENT_DIR, "temp_bg.png")
         temp_overlay_path = os.path.join(CURRENT_DIR, "temp_overlay.png")
         temp_mask_path = os.path.join(CURRENT_DIR, "temp_mask.png")
-        temp_input_video = os.path.join(CURRENT_DIR, "temp_input.mp4")
+        
+        # Determinar el video de entrada (si viene de persistencia /uploads/ o fallback temporal)
+        media_src = data.get("mediaSrc")
+        if media_src and media_src.startswith("/uploads/"):
+            temp_input_video = os.path.join(CURRENT_DIR, media_src.lstrip("/"))
+            is_persistent = True
+        else:
+            temp_input_video = os.path.join(CURRENT_DIR, "temp_input.mp4")
+            is_persistent = False
+            
         temp_output_video = os.path.join(CURRENT_DIR, "temp_output.mp4")
 
         # Generar fondos y capas usando PIL de forma ultra rápida
@@ -393,7 +433,11 @@ async def export_video(request: Request):
         stdout, stderr = await process.communicate()
 
         # Limpieza de imágenes temporales
-        for temp_file in [temp_bg_path, temp_overlay_path, temp_mask_path, temp_input_video]:
+        files_to_clean = [temp_bg_path, temp_overlay_path, temp_mask_path]
+        if not is_persistent:
+            files_to_clean.append(temp_input_video)
+            
+        for temp_file in files_to_clean:
             if os.path.exists(temp_file):
                 try:
                     os.unlink(temp_file)

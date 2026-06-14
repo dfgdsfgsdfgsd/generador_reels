@@ -234,22 +234,43 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     // CARGA DE MULTIMEDIA (VIDEO / IMAGEN)
-    mediaInput.addEventListener("change", (e) => {
+    mediaInput.addEventListener("change", async (e) => {
         const file = e.target.files[0];
         if (!file) return;
 
-        const fileURL = URL.createObjectURL(file);
-        currentTemplate.mediaType = file.type.startsWith("video/") ? "video" : "image";
-        currentTemplate.mediaSrc = fileURL;
+        try {
+            // Mostrar previsualización temporal inmediata usando blob local
+            const fileURL = URL.createObjectURL(file);
+            currentTemplate.mediaType = file.type.startsWith("video/") ? "video" : "image";
+            currentTemplate.mediaSrc = fileURL;
 
-        if (currentTemplate.mediaType === "video") {
-            rawVideoFile = file;
-        } else {
-            rawVideoFile = null;
+            if (currentTemplate.mediaType === "video") {
+                rawVideoFile = file;
+            } else {
+                rawVideoFile = null;
+            }
+
+            applyScreenMedia(currentProject.activeScreenIndex);
+
+            // Subir de forma persistente en segundo plano
+            const uploadRes = await fetch('/api/upload-media', {
+                method: 'POST',
+                headers: { 'Content-Type': file.type },
+                body: file
+            });
+
+            if (uploadRes.ok) {
+                const resData = await uploadRes.json();
+                currentTemplate.mediaSrc = resData.url; // Guardar URL persistente
+                console.log("[Editor] Video guardado de forma persistente en servidor:", resData.url);
+                saveTemplateQuietly();
+            } else {
+                console.warn("[Editor] Falló subida persistente, se usará sesión temporal.");
+            }
+        } catch (err) {
+            console.error("[Editor] Error subiendo video persistentemente:", err);
         }
 
-        applyScreenMedia(currentProject.activeScreenIndex);
-        
         // Habilitar controles si es video
         if (currentTemplate.mediaType === "video") {
             playPauseBtn.disabled = false;
@@ -1066,9 +1087,15 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     recordVideoBtn.addEventListener("click", async () => {
-        logToServer(`[Grabador] Click en botón de exportación. mediaType=${currentTemplate.mediaType}, tieneFile=${!!rawVideoFile}`);
+        const hasPersistentVideo = currentTemplate.mediaSrc && currentTemplate.mediaSrc.startsWith("/uploads/");
+        logToServer(`[Grabador] Click en botón de exportación. mediaType=${currentTemplate.mediaType}, tieneFile=${!!rawVideoFile}, tienePersistencia=${hasPersistentVideo}`);
 
-        if (currentTemplate.mediaType !== "video" || !rawVideoFile) {
+        if (currentTemplate.mediaType !== "video") {
+            alert("Por favor, selecciona un video (.mp4) en el simulador antes de exportar.");
+            return;
+        }
+
+        if (!rawVideoFile && !hasPersistentVideo) {
             logToServer("[Grabador] Error: Intento de exportar sin un archivo de video seleccionado.");
             alert("Por favor, selecciona de nuevo el video (.mp4) haciendo clic en 'Cargar Multimedia' antes de exportarlo.");
             return;
@@ -1077,21 +1104,25 @@ document.addEventListener("DOMContentLoaded", () => {
         try {
             recordVideoBtn.disabled = true;
             recordVideoBtn.classList.add("recording");
-            recordVideoBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Subiendo video...';
 
-            logToServer("[Grabador] Subiendo video bruto al servidor...");
-            
-            const uploadRes = await fetch('/api/upload-video', {
-                method: 'POST',
-                headers: { 'Content-Type': rawVideoFile.type },
-                body: rawVideoFile
-            });
+            // Solo subir el archivo si es un archivo nuevo seleccionado en esta sesión
+            if (rawVideoFile) {
+                recordVideoBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Subiendo video...';
+                logToServer("[Grabador] Subiendo video bruto al servidor...");
+                
+                const uploadRes = await fetch('/api/upload-video', {
+                    method: 'POST',
+                    headers: { 'Content-Type': rawVideoFile.type },
+                    body: rawVideoFile
+                });
 
-            if (!uploadRes.ok) {
-                throw new Error("No se pudo subir el archivo de video al servidor.");
+                if (!uploadRes.ok) {
+                    throw new Error("No se pudo subir el archivo de video al servidor.");
+                }
+                logToServer("[Grabador] Video subido con éxito.");
             }
 
-            logToServer("[Grabador] Video subido con éxito. Solicitando procesamiento FFmpeg...");
+            logToServer("[Grabador] Solicitando procesamiento FFmpeg...");
             recordVideoBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Procesando en Servidor...';
 
             const exportPayload = {
@@ -1103,6 +1134,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 videoTop: mediaContainer.offsetTop,
                 videoWidth: mediaContainer.offsetWidth,
                 videoHeight: mediaContainer.offsetHeight,
+                mediaSrc: currentTemplate.mediaSrc,
                 headerHtml: currentTemplate.showHeaderCard ? headerTextEl.innerHTML : "",
                 headerStyle: currentTemplate.showHeaderCard ? {
                     fontFamily: window.getComputedStyle(headerTextEl).fontFamily,
