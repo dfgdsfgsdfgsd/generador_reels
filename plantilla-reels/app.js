@@ -2,52 +2,41 @@ document.addEventListener("DOMContentLoaded", () => {
     // ESTADO DE LA APLICACIÓN
     let templatesList = [{ id: "default", name: "Diseño por Defecto" }];
     let currentTemplateName = "default";
-    let activeCardKey = null; // 'header' o 'footer'
+    let activeCardKey = null; // 'header', 'footer', 'media', o 'logo'
     let rawVideoFile = null;
     
-    // Plantilla activa en memoria
-    let currentTemplate = {
-        theme: "dark",
-        customColor: "#141414",
-        fontTitle: "'Montserrat', sans-serif",
-        mediaType: null, // 'video' o 'image'
-        mediaSrc: null,
-        showHeaderCard: true,
-        showFooterCard: true,
-        headerText: "🔥 <strong>TÍTULO DE GANCHO</strong><br>¡Este tip te volará la cabeza!",
-        footerText: "💡 <strong>Aprende el secreto hoy</strong><br>Síguenos para más consejos diarios 👇<br><span style='color: #dfb15b;'>#cocina #consejos #tutorial</span>",
-        fontSizes: {
-            header: 115,
-            footer: 95
-        },
-        positions: {
-            header: { top: "80px", left: "28px" },
-            media: { top: "210px", left: "20px" },
-            footer: { top: "auto", left: "28px" }
-        },
-        styles: {
-            header: { color: "#ffffff", boxColor: "#000000", opacity: 85, width: 85 },
-            footer: { color: "#ffffff", boxColor: "#000000", opacity: 85, width: 85 }
-        }
+    // Proyecto activo en memoria (que contiene múltiples pantallas)
+    let currentProject = {
+        name: "default",
+        activeScreenIndex: 0,
+        screens: []
     };
-
-    // ELEMENTOS DEL DOM
-    const reelCanvas = document.getElementById("reel-canvas");
-    const headerCard = document.getElementById("header-card");
-    const footerCard = document.getElementById("footer-card");
-    const headerTextEl = document.getElementById("header-text");
-    const footerTextEl = document.getElementById("footer-text");
     
+    // Referencia a la pantalla activa (se actualiza al seleccionar)
+    let currentTemplate = null;
+
+    // ELEMENTOS DINÁMICOS DEL DOM (se actualizan al seleccionar pantalla)
+    let reelCanvas = null;
+    let headerCard = null;
+    let footerCard = null;
+    let headerTextEl = null;
+    let footerTextEl = null;
+    let mediaContainer = null;
+    let reelVideo = null;
+    let reelImg = null;
+    let mediaPlaceholder = null;
+    let logoCard = null;
+    let logoImgPreview = null;
+    let instagramOverlay = null;
+
+    // ELEMENTOS ESTÁTICOS DEL DOM DE LA BARRA LATERAL
+    const simulatorPane = document.getElementById("simulator-pane");
     const projectSelect = document.getElementById("project-select");
     const newProjectBtn = document.getElementById("new-project-btn");
     const saveProjectAsBtn = document.getElementById("save-project-as-btn");
     const saveStatus = document.getElementById("save-status");
     
     const mediaInput = document.getElementById("media-input");
-    const mediaContainer = document.getElementById("media-container");
-    const reelVideo = document.getElementById("reel-video");
-    const reelImg = document.getElementById("reel-img");
-    const mediaPlaceholder = document.getElementById("media-placeholder");
     const playPauseBtn = document.getElementById("play-pause-btn");
     const muteBtn = document.getElementById("mute-btn");
     
@@ -79,51 +68,33 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const logoInput = document.getElementById("logo-input");
     const removeLogoBtn = document.getElementById("remove-logo-btn");
-    const logoCard = document.getElementById("logo-card");
-    const logoImgPreview = document.getElementById("logo-img-preview");
 
     const toggleIgOverlay = document.getElementById("toggle-ig-overlay");
-    const instagramOverlay = document.getElementById("instagram-overlay");
-
     const toggleHeaderCard = document.getElementById("toggle-header-card");
     const toggleFooterCard = document.getElementById("toggle-footer-card");
+
+    // Botones de gestión de pantallas
+    const addPhoneBtn = document.getElementById("add-phone-btn");
+    const duplicatePhoneBtn = document.getElementById("duplicate-phone-btn");
+    const deletePhoneBtn = document.getElementById("delete-phone-btn");
 
     // CARGA INICIAL
     initProjects();
     loadTemplateData("default");
-    adjustMockupScale();
 
-    // ESCALA DINÁMICA DEL SIMULADOR
     function adjustMockupScale() {
-        const pane = document.querySelector(".simulator-pane");
-        const mockup = document.querySelector(".phone-mockup");
-        if (!pane || !mockup) return;
-        
-        const mockupWidth = 404; // 380px + 24px de bordes
-        const mockupHeight = 700; // 676px + 24px de bordes
-        
-        const scaleX = (pane.offsetWidth - 40) / mockupWidth;
-        const scaleY = (pane.offsetHeight - 40) / mockupHeight;
-        const scale = Math.min(1, scaleX, scaleY);
-        
-        mockup.style.transform = `scale(${scale})`;
-        mockup.style.transformOrigin = "center center";
+        // Handled directly by CSS scale(0.75) within .phone-wrapper
     }
-    window.addEventListener("resize", adjustMockupScale);
     
     // FUNCIONES DE ARRASTRE (DRAG & DROP)
-    setupDraggable(headerCard, "header");
-    setupDraggable(mediaContainer, "media");
-    setupDraggable(footerCard, "footer");
-    setupDraggable(logoCard, "logo");
-
-    function setupDraggable(el, key) {
+    function setupDraggable(el, key, index) {
         if (!el) return;
         el.addEventListener("mousedown", (e) => {
             // No arrastrar si se hace clic en texto editable
             if (e.target.closest("[contenteditable='true']")) return;
             
             e.preventDefault();
+            selectScreen(index);
             selectCard(key);
             
             const startY = e.clientY;
@@ -131,23 +102,28 @@ document.addEventListener("DOMContentLoaded", () => {
             const startX = e.clientX;
             const startLeft = el.offsetLeft;
             
+            // Escala del simulador para corregir la velocidad del cursor
+            const scale = 0.75;
+            
             function onMouseMove(moveEvent) {
-                const dy = moveEvent.clientY - startY;
-                const dx = moveEvent.clientX - startX;
+                const dy = (moveEvent.clientY - startY) / scale;
+                const dx = (moveEvent.clientX - startX) / scale;
                 
+                const canvas = document.getElementById(`reel-canvas-${index}`);
                 let top = startTop + dy;
                 let left = startLeft + dx;
                 
                 // Límites de la pantalla del teléfono
-                top = Math.max(10, Math.min(reelCanvas.offsetHeight - el.offsetHeight - 10, top));
-                left = Math.max(10, Math.min(reelCanvas.offsetWidth - el.offsetWidth - 10, left));
+                top = Math.max(10, Math.min(canvas.offsetHeight - el.offsetHeight - 10, top));
+                left = Math.max(10, Math.min(canvas.offsetWidth - el.offsetWidth - 10, left));
                 
                 el.style.top = top + "px";
                 el.style.left = left + "px";
                 el.style.bottom = "auto"; // Limpiar posicionamiento relativo de bottom
                 
-                if (!currentTemplate.positions) currentTemplate.positions = {};
-                currentTemplate.positions[key] = {
+                const screenData = currentProject.screens[index];
+                if (!screenData.positions) screenData.positions = {};
+                screenData.positions[key] = {
                     top: top + "px",
                     left: left + "px"
                 };
@@ -164,32 +140,9 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // SELECCIÓN DE BLOQUE
-    headerCard.addEventListener("click", (e) => {
-        e.stopPropagation();
-        selectCard("header");
-    });
-
-    mediaContainer.addEventListener("click", (e) => {
-        e.stopPropagation();
-        selectCard("media");
-    });
-
-    footerCard.addEventListener("click", (e) => {
-        e.stopPropagation();
-        selectCard("footer");
-    });
-
-    if (logoCard) {
-        logoCard.addEventListener("click", (e) => {
-            e.stopPropagation();
-            selectCard("logo");
-        });
-    }
-
     document.addEventListener("click", (e) => {
         // Deseleccionar si hace clic fuera
-        if (!e.target.closest(".text-card") && !e.target.closest(".media-container") && !e.target.closest(".logo-card") && !e.target.closest(".sidebar")) {
+        if (!e.target.closest(".text-card") && !e.target.closest(".media-container") && !e.target.closest(".logo-card") && !e.target.closest(".sidebar") && !e.target.closest(".phone-mockup")) {
             selectCard(null);
         }
     });
@@ -198,10 +151,9 @@ document.addEventListener("DOMContentLoaded", () => {
         activeCardKey = key;
         
         // Limpiar estilos de selección
-        headerCard.classList.remove("card-selected-highlight");
-        footerCard.classList.remove("card-selected-highlight");
-        mediaContainer.classList.remove("card-selected-highlight");
-        if (logoCard) logoCard.classList.remove("card-selected-highlight");
+        document.querySelectorAll(".text-card").forEach(c => c.classList.remove("card-selected-highlight"));
+        document.querySelectorAll(".media-container").forEach(c => c.classList.remove("card-selected-highlight"));
+        document.querySelectorAll(".logo-card").forEach(c => c.classList.remove("card-selected-highlight"));
         
         if (!key) {
             fontSizeSlider.disabled = true;
@@ -217,7 +169,7 @@ document.addEventListener("DOMContentLoaded", () => {
             fontSizeLabel.textContent = "Tamaño: Video/Imagen (Fijo 1:1)";
             boxWidthSlider.disabled = true;
             boxWidthLabel.textContent = "Ancho de Caja: Fijo 1:1";
-            mediaContainer.classList.add("card-selected-highlight");
+            if (mediaContainer) mediaContainer.classList.add("card-selected-highlight");
             syncAdjustButtonsState();
             return;
         }
@@ -237,7 +189,9 @@ document.addEventListener("DOMContentLoaded", () => {
         }
         
         const activeEl = key === "header" ? headerCard : footerCard;
-        activeEl.classList.add("card-selected-highlight");
+        if (activeEl) {
+            activeEl.classList.add("card-selected-highlight");
+        }
         
         // Habilitar controles del slider de fuentes
         fontSizeSlider.disabled = false;
@@ -271,7 +225,9 @@ document.addEventListener("DOMContentLoaded", () => {
         currentTemplate.fontSizes[activeCardKey] = val;
         
         const activeEl = activeCardKey === "header" ? headerCard : footerCard;
-        activeEl.style.setProperty("font-size", (val / 100) + "rem", "important");
+        if (activeEl) {
+            activeEl.style.setProperty("font-size", (val / 100) + "rem", "important");
+        }
     });
 
     // CARGA DE MULTIMEDIA (VIDEO / IMAGEN)
@@ -289,7 +245,17 @@ document.addEventListener("DOMContentLoaded", () => {
             rawVideoFile = null;
         }
 
-        applyMedia();
+        applyScreenMedia(currentProject.activeScreenIndex);
+        
+        // Habilitar controles si es video
+        if (currentTemplate.mediaType === "video") {
+            playPauseBtn.disabled = false;
+            muteBtn.disabled = false;
+        } else {
+            playPauseBtn.disabled = true;
+            muteBtn.disabled = true;
+        }
+        saveTemplateQuietly();
     });
 
     // CARGA DE LOGO FLOTANTE
@@ -305,87 +271,23 @@ document.addEventListener("DOMContentLoaded", () => {
             if (!currentTemplate.positions.logo) {
                 currentTemplate.positions.logo = { top: "150px", left: "140px" };
             }
-            applyLogo();
+            applyScreenLogo(currentProject.activeScreenIndex);
             saveTemplateQuietly();
         };
         reader.readAsDataURL(file);
     });
 
-    if (logoInput) {
-        logoInput.addEventListener("change", (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = (event) => {
-                currentTemplate.logoSrc = event.target.result;
-                // Posición por defecto
-                if (!currentTemplate.positions) currentTemplate.positions = {};
-                if (!currentTemplate.positions.logo) {
-                    currentTemplate.positions.logo = { top: "150px", left: "140px" };
-                }
-                applyLogo();
-                saveTemplateQuietly();
-            };
-            reader.readAsDataURL(file);
-        });
-    }
-
     if (removeLogoBtn) {
         removeLogoBtn.addEventListener("click", () => {
             currentTemplate.logoSrc = null;
-            applyLogo();
+            applyScreenLogo(currentProject.activeScreenIndex);
             saveTemplateQuietly();
         });
     }
 
-    function applyLogo() {
-        if (!logoCard || !logoImgPreview || !removeLogoBtn) return;
-        if (currentTemplate.logoSrc) {
-            logoImgPreview.src = currentTemplate.logoSrc;
-            logoCard.style.display = "block";
-            removeLogoBtn.disabled = false;
-        } else {
-            logoCard.style.display = "none";
-            removeLogoBtn.disabled = true;
-            logoImgPreview.removeAttribute("src");
-        }
-    }
-
-    function applyMedia() {
-        if (currentTemplate.mediaType === "video") {
-            reelImg.style.display = "none";
-            reelVideo.style.display = "block";
-            mediaPlaceholder.style.display = "none";
-            
-            reelVideo.src = currentTemplate.mediaSrc;
-            reelVideo.play().catch(e => console.log("Auto-play blocked, waiting for user interact."));
-            
-            playPauseBtn.disabled = false;
-            muteBtn.disabled = false;
-            playPauseBtn.innerHTML = '<i class="fa-solid fa-pause"></i> Pausar';
-        } else if (currentTemplate.mediaType === "image") {
-            reelVideo.style.display = "none";
-            reelVideo.pause();
-            reelImg.style.display = "block";
-            mediaPlaceholder.style.display = "none";
-            
-            reelImg.src = currentTemplate.mediaSrc;
-            
-            playPauseBtn.disabled = true;
-            muteBtn.disabled = true;
-        } else {
-            reelVideo.style.display = "none";
-            reelImg.style.display = "none";
-            mediaPlaceholder.style.display = "flex";
-            
-            playPauseBtn.disabled = true;
-            muteBtn.disabled = true;
-        }
-    }
-
     // CONTROLES DE REPRODUCCIÓN DE VIDEO
     playPauseBtn.addEventListener("click", () => {
+        if (!reelVideo) return;
         if (reelVideo.paused) {
             reelVideo.play();
             playPauseBtn.innerHTML = '<i class="fa-solid fa-pause"></i> Pausar';
@@ -396,6 +298,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     muteBtn.addEventListener("click", () => {
+        if (!reelVideo) return;
         reelVideo.muted = !reelVideo.muted;
         muteBtn.innerHTML = reelVideo.muted 
             ? '<i class="fa-solid fa-volume-xmark"></i> Silenciar' 
@@ -438,21 +341,21 @@ document.addEventListener("DOMContentLoaded", () => {
     colorTextPicker.addEventListener("input", (e) => {
         if (!activeCardKey || activeCardKey === "media") return;
         currentTemplate.styles[activeCardKey].color = e.target.value;
-        applyTextStyle();
+        applyScreenStyles(currentProject.activeScreenIndex);
         saveTemplateQuietly();
     });
 
     colorBoxPicker.addEventListener("input", (e) => {
         if (!activeCardKey || activeCardKey === "media") return;
         currentTemplate.styles[activeCardKey].boxColor = e.target.value;
-        applyTextStyle();
+        applyScreenStyles(currentProject.activeScreenIndex);
         saveTemplateQuietly();
     });
 
     boxOpacitySlider.addEventListener("input", (e) => {
         if (!activeCardKey || activeCardKey === "media") return;
         currentTemplate.styles[activeCardKey].opacity = parseInt(e.target.value);
-        applyTextStyle();
+        applyScreenStyles(currentProject.activeScreenIndex);
         saveTemplateQuietly();
     });
 
@@ -471,7 +374,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
         boxWidthVal.textContent = val + "%";
         currentTemplate.styles[activeCardKey].width = val;
-        applyTextStyle();
+        applyScreenStyles(currentProject.activeScreenIndex);
         saveTemplateQuietly();
     });
 
@@ -494,25 +397,6 @@ document.addEventListener("DOMContentLoaded", () => {
         if (widthIncBtn) widthIncBtn.disabled = boxWidthSlider.disabled;
     }
 
-    function applyTextStyle() {
-        ["header", "footer"].forEach(key => {
-            const card = key === "header" ? headerCard : footerCard;
-            const style = currentTemplate.styles[key];
-            if (!style) return;
-            
-            card.style.color = style.color;
-            card.style.width = style.width + "%";
-            
-            const hex = style.boxColor;
-            const opacity = style.opacity / 100;
-            
-            const r = parseInt(hex.slice(1, 3), 16);
-            const g = parseInt(hex.slice(3, 5), 16);
-            const b = parseInt(hex.slice(5, 7), 16);
-            card.style.backgroundColor = `rgba(${r}, ${g}, ${b}, ${opacity})`;
-        });
-    }
-
     // CENTRAR BLOQUE HORIZONTALMENTE
     centerBlockBtn.addEventListener("click", () => {
         if (!activeCardKey) {
@@ -521,6 +405,8 @@ document.addEventListener("DOMContentLoaded", () => {
         }
         
         const activeEl = activeCardKey === "header" ? headerCard : (activeCardKey === "footer" ? footerCard : mediaContainer);
+        if (!activeEl) return;
+        
         const parentWidth = reelCanvas.offsetWidth;
         const elWidth = activeEl.offsetWidth;
         
@@ -558,13 +444,17 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function syncDOMToState() {
-        currentTemplate.headerText = headerTextEl.innerHTML;
-        currentTemplate.footerText = footerTextEl.innerHTML;
+        currentProject.screens.forEach((screenData, idx) => {
+            const hText = document.getElementById(`header-text-${idx}`);
+            const fText = document.getElementById(`footer-text-${idx}`);
+            if (hText) screenData.headerText = hText.innerHTML;
+            if (fText) screenData.footerText = fText.innerHTML;
+        });
     }
 
     function saveTemplateQuietly() {
         syncDOMToState();
-        localStorage.setItem(`reels_project_${currentTemplateName}`, JSON.stringify(currentTemplate));
+        localStorage.setItem(`reels_project_${currentTemplateName}`, JSON.stringify(currentProject));
         
         if (saveStatus) {
             saveStatus.textContent = "Guardando...";
@@ -600,8 +490,16 @@ document.addEventListener("DOMContentLoaded", () => {
         initProjects();
         projectSelect.value = cleanName;
         
-        // Clonar actual y guardar
         currentTemplateName = cleanName;
+        currentProject = {
+            name: cleanName,
+            activeScreenIndex: 0,
+            screens: [createDefaultScreen(0)]
+        };
+        currentTemplate = currentProject.screens[0];
+        
+        renderScreens();
+        selectScreen(0);
         saveTemplateQuietly();
         alert(`Nueva plantilla "${cleanName}" creada.`);
     });
@@ -624,7 +522,9 @@ document.addEventListener("DOMContentLoaded", () => {
         initProjects();
         projectSelect.value = cleanName;
         currentTemplateName = cleanName;
+        currentProject.name = cleanName;
         saveTemplateQuietly();
+        alert(`Copia guardada como "${cleanName}".`);
     });
 
     // Cargar plantilla al cambiar selector
@@ -637,111 +537,397 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
+        // Crear diseño de pantalla por defecto
+    function createDefaultScreen(index = 0) {
+        return {
+            theme: "dark",
+            customColor: "#141414",
+            fontTitle: "'Montserrat', sans-serif",
+            mediaType: null,
+            mediaSrc: null,
+            showHeaderCard: true,
+            showFooterCard: true,
+            showInstagramOverlay: false,
+            headerText: index === 0 
+                ? "🔥 <strong>TÍTULO DE GANCHO</strong><br>¡Este tip te volará la cabeza!"
+                : `🔥 <strong>DISEÑO DE REEL ${index + 1}</strong><br>Edita este texto para tu gancho.`,
+            footerText: "💡 <strong>Aprende el secreto hoy</strong><br>Síguenos para más consejos diarios 👇<br><span style='color: #dfb15b;'>#cocina #consejos #tutorial</span>",
+            fontSizes: {
+                header: 115,
+                footer: 95
+            },
+            positions: {
+                header: { top: "80px", left: "28px" },
+                media: { top: "210px", left: "20px" },
+                footer: { top: "390px", left: "28px" },
+                logo: { top: "150px", left: "140px" }
+            },
+            styles: {
+                header: { color: "#ffffff", boxColor: "#000000", opacity: 85, width: 85 },
+                footer: { color: "#ffffff", boxColor: "#000000", opacity: 85, width: 85 }
+            },
+            logoSrc: null,
+            logoSize: 80
+        };
+    }
+
     function loadTemplateData(name) {
         currentTemplateName = name;
         const savedData = localStorage.getItem(`reels_project_${name}`);
+        let parsed = null;
         if (savedData) {
             try {
-                currentTemplate = JSON.parse(savedData);
+                parsed = JSON.parse(savedData);
             } catch (e) {
                 console.error("Error cargando plantilla:", e);
             }
         }
 
-        // Aplicar estilos a la interfaz e individualizar
-        headerTextEl.innerHTML = currentTemplate.headerText;
-        footerTextEl.innerHTML = currentTemplate.footerText;
+        if (parsed) {
+            if (parsed.screens && Array.isArray(parsed.screens)) {
+                currentProject = parsed;
+            } else {
+                // Migración para proyectos antiguos de pantalla única
+                if (parsed.positions && parsed.positions.footer && parsed.positions.footer.top === "auto") {
+                    parsed.positions.footer.top = "390px";
+                }
+                currentProject = {
+                    name: name,
+                    activeScreenIndex: 0,
+                    screens: [parsed]
+                };
+            }
+        } else {
+            currentProject = {
+                name: name,
+                activeScreenIndex: 0,
+                screens: [createDefaultScreen(0)]
+            };
+        }
+
+        renderScreens();
+        selectScreen(currentProject.activeScreenIndex);
+    }
+
+    function renderScreens() {
+        if (!simulatorPane) return;
+        simulatorPane.innerHTML = "";
         
+        currentProject.screens.forEach((screenData, index) => {
+            const wrapper = document.createElement("div");
+            wrapper.className = "phone-wrapper";
+            wrapper.dataset.index = index;
+            
+            wrapper.innerHTML = `
+                <div class="phone-mockup ${index === currentProject.activeScreenIndex ? 'selected-phone' : ''}" data-index="${index}">
+                    <div class="phone-screen">
+                        <div class="reel-canvas theme-${screenData.theme}" id="reel-canvas-${index}" style="${screenData.theme === 'custom' ? 'background: ' + screenData.customColor : ''}">
+                            
+                            <!-- Bloque de texto superior -->
+                            <div class="text-card drag-el" id="header-card-${index}" style="top: ${screenData.positions?.header?.top || '80px'}; left: ${screenData.positions?.header?.left || '28px'}; width: ${screenData.styles?.header?.width || 85}%; display: ${screenData.showHeaderCard ? 'block' : 'none'};">
+                                <div class="text-content" contenteditable="true" id="header-text-${index}">
+                                    ${screenData.headerText}
+                                </div>
+                            </div>
+
+                            <!-- Bloque central de video 1:1 -->
+                            <div class="media-container" id="media-container-${index}" style="top: ${screenData.positions?.media?.top || '210px'}; left: ${screenData.positions?.media?.left || '20px'};">
+                                <video id="reel-video-${index}" loop muted playsinline style="display: none;"></video>
+                                <img id="reel-img-${index}" src="" alt="Previsualización" style="display: none;">
+                                <div class="media-placeholder" id="media-placeholder-${index}">
+                                    <i class="fa-solid fa-video"></i>
+                                    <span>Carga un video/imagen 1:1</span>
+                                </div>
+                            </div>
+
+                            <!-- Bloque de texto inferior -->
+                            <div class="text-card drag-el" id="footer-card-${index}" style="top: ${screenData.positions?.footer?.top || '390px'}; left: ${screenData.positions?.footer?.left || '28px'}; width: ${screenData.styles?.footer?.width || 85}%; display: ${screenData.showFooterCard ? 'block' : 'none'};">
+                                <div class="text-content" contenteditable="true" id="footer-text-${index}">
+                                    ${screenData.footerText}
+                                </div>
+                            </div>
+
+                            <!-- Logo flotante arrastrable -->
+                            <div class="logo-card drag-el" id="logo-card-${index}" style="top: ${screenData.positions?.logo?.top || '150px'}; left: ${screenData.positions?.logo?.left || '140px'}; width: ${screenData.logoSize || 80}px; height: ${screenData.logoSize || 80}px; display: none;">
+                                <img id="logo-img-preview-${index}" src="" alt="Logo" style="width: 100%; height: 100%; object-fit: contain; pointer-events: none;">
+                            </div>
+
+                            <!-- Simulación de interfaz de Instagram Reels -->
+                            <div class="instagram-overlay" id="instagram-overlay-${index}" style="display: none;">
+                                <div class="ig-actions">
+                                    <div class="ig-action"><i class="fa-solid fa-heart"></i><span>12.4K</span></div>
+                                    <div class="ig-action"><i class="fa-solid fa-comment"></i><span>382</span></div>
+                                    <div class="ig-action"><i class="fa-solid fa-paper-plane"></i><span>95</span></div>
+                                    <div class="ig-action"><i class="fa-solid fa-ellipsis-vertical"></i></div>
+                                    <div class="ig-audio-disc">🎵</div>
+                                </div>
+                                <div class="ig-profile-info">
+                                    <div class="ig-user">
+                                        <div class="ig-avatar">🍳</div>
+                                        <span>chef_recetas</span>
+                                        <button class="ig-follow-btn">Seguir</button>
+                                    </div>
+                                    <div class="ig-caption">¡Aprende esta increíble receta en pocos pasos! ... <span class="ig-more">más</span></div>
+                                    <div class="ig-music-name">🎵 Audio original • chef_recetas</div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                    <div class="phone-home-indicator"></div>
+                </div>
+            `;
+            
+            simulatorPane.appendChild(wrapper);
+            
+            // Aplicar configuraciones guardadas
+            applyScreenStyles(index);
+            applyScreenMedia(index);
+            applyScreenLogo(index);
+            applyScreenIGOverlay(index);
+            
+            const mock = wrapper.querySelector(".phone-mockup");
+            const hCard = document.getElementById(`header-card-${index}`);
+            const fCard = document.getElementById(`footer-card-${index}`);
+            const mCont = document.getElementById(`media-container-${index}`);
+            const lCard = document.getElementById(`logo-card-${index}`);
+            
+            setupDraggable(hCard, "header", index);
+            setupDraggable(fCard, "footer", index);
+            setupDraggable(mCont, "media", index);
+            setupDraggable(lCard, "logo", index);
+            
+            mock.addEventListener("mousedown", (e) => {
+                if (currentProject.activeScreenIndex !== index) {
+                    selectScreen(index);
+                }
+            });
+            
+            hCard.addEventListener("click", (e) => {
+                e.stopPropagation();
+                selectScreen(index);
+                selectCard("header");
+            });
+            fCard.addEventListener("click", (e) => {
+                e.stopPropagation();
+                selectScreen(index);
+                selectCard("footer");
+            });
+            mCont.addEventListener("click", (e) => {
+                e.stopPropagation();
+                selectScreen(index);
+                selectCard("media");
+            });
+            lCard.addEventListener("click", (e) => {
+                e.stopPropagation();
+                selectScreen(index);
+                selectCard("logo");
+            });
+            
+            const hText = document.getElementById(`header-text-${index}`);
+            const fText = document.getElementById(`footer-text-${index}`);
+            
+            hText.addEventListener("input", () => {
+                currentProject.screens[index].headerText = hText.innerHTML;
+                saveTemplateQuietly();
+            });
+            fText.addEventListener("input", () => {
+                currentProject.screens[index].footerText = fText.innerHTML;
+                saveTemplateQuietly();
+            });
+        });
+    }
+
+    function selectScreen(index) {
+        if (index < 0 || index >= currentProject.screens.length) return;
+        currentProject.activeScreenIndex = index;
+        currentTemplate = currentProject.screens[index];
+        
+        // Actualizar visualmente la selección en la UI
+        document.querySelectorAll(".phone-mockup").forEach(mock => {
+            mock.classList.remove("selected-phone");
+        });
+        
+        const selectedMock = document.querySelector(`.phone-mockup[data-index="${index}"]`);
+        if (selectedMock) {
+            selectedMock.classList.add("selected-phone");
+        }
+        
+        // Vincular referencias a los elementos dinámicos
+        reelCanvas = document.getElementById(`reel-canvas-${index}`);
+        headerCard = document.getElementById(`header-card-${index}`);
+        footerCard = document.getElementById(`footer-card-${index}`);
+        headerTextEl = document.getElementById(`header-text-${index}`);
+        footerTextEl = document.getElementById(`footer-text-${index}`);
+        mediaContainer = document.getElementById(`media-container-${index}`);
+        reelVideo = document.getElementById(`reel-video-${index}`);
+        reelImg = document.getElementById(`reel-img-${index}`);
+        mediaPlaceholder = document.getElementById(`media-placeholder-${index}`);
+        logoCard = document.getElementById(`logo-card-${index}`);
+        logoImgPreview = document.getElementById(`logo-img-preview-${index}`);
+        instagramOverlay = document.getElementById(`instagram-overlay-${index}`);
+        
+        // Sincronizar selectores del panel izquierdo
         themeSelect.value = currentTemplate.theme;
-        reelCanvas.className = "reel-canvas";
         if (currentTemplate.theme === "custom") {
             customColorWrapper.style.display = "block";
-            reelCanvas.style.background = currentTemplate.customColor;
-            bgColorPicker.value = currentTemplate.customColor;
+            bgColorPicker.value = currentTemplate.customColor || "#141414";
         } else {
             customColorWrapper.style.display = "none";
-            reelCanvas.classList.add(`theme-${currentTemplate.theme}`);
-            reelCanvas.style.background = "";
         }
         
         fontTitleSelect.value = currentTemplate.fontTitle;
-        headerCard.style.fontFamily = currentTemplate.fontTitle;
-        footerCard.style.fontFamily = currentTemplate.fontTitle;
-        
-        // Migrar templates antiguos que no tengan estilos individuales
-        if (!currentTemplate.styles) {
-            currentTemplate.styles = {
-                header: { 
-                    color: currentTemplate.textColor || "#ffffff", 
-                    boxColor: currentTemplate.boxColor || "#000000", 
-                    opacity: currentTemplate.boxOpacity !== undefined ? currentTemplate.boxOpacity : 85,
-                    width: 85
-                },
-                footer: { 
-                    color: currentTemplate.textColor || "#ffffff", 
-                    boxColor: currentTemplate.boxColor || "#000000", 
-                    opacity: currentTemplate.boxOpacity !== undefined ? currentTemplate.boxOpacity : 85,
-                    width: 85
-                }
-            };
-        }
-        applyTextStyle();
-        
-        // Aplicar posiciones guardadas
-        if (currentTemplate.positions) {
-            if (currentTemplate.positions.header) {
-                headerCard.style.top = currentTemplate.positions.header.top;
-                headerCard.style.left = currentTemplate.positions.header.left;
-            }
-            if (currentTemplate.positions.media) {
-                mediaContainer.style.top = currentTemplate.positions.media.top;
-                mediaContainer.style.left = currentTemplate.positions.media.left;
-            } else {
-                mediaContainer.style.top = "210px";
-                mediaContainer.style.left = "20px";
-            }
-            if (currentTemplate.positions.footer) {
-                footerCard.style.top = currentTemplate.positions.footer.top;
-                footerCard.style.left = currentTemplate.positions.footer.left;
-                if (currentTemplate.positions.footer.top === "auto") {
-                    footerCard.style.bottom = "80px";
-                } else {
-                    footerCard.style.bottom = "auto";
-                }
-            }
-            if (currentTemplate.positions.logo) {
-                logoCard.style.top = currentTemplate.positions.logo.top;
-                logoCard.style.left = currentTemplate.positions.logo.left;
-            } else {
-                logoCard.style.top = "150px";
-                logoCard.style.left = "140px";
-            }
-        }
-        
-        // Aplicar tamaños de fuente
-        headerCard.style.fontSize = (currentTemplate.fontSizes.header / 100) + "rem";
-        footerCard.style.fontSize = (currentTemplate.fontSizes.footer / 100) + "rem";
-
-        // Aplicar tamaño del logo
-        if (logoCard) {
-            const logoSize = currentTemplate.logoSize || 80;
-            logoCard.style.width = logoSize + "px";
-            logoCard.style.height = logoSize + "px";
-        }
-
-        // Aplicar visibilidad de bloques de texto
-        if (currentTemplate.showHeaderCard === undefined) currentTemplate.showHeaderCard = true;
-        if (currentTemplate.showFooterCard === undefined) currentTemplate.showFooterCard = true;
-        
         toggleHeaderCard.checked = currentTemplate.showHeaderCard;
         toggleFooterCard.checked = currentTemplate.showFooterCard;
-        headerCard.style.display = currentTemplate.showHeaderCard ? "block" : "none";
-        footerCard.style.display = currentTemplate.showFooterCard ? "block" : "none";
+        toggleIgOverlay.checked = currentTemplate.showInstagramOverlay || false;
+        
+        // Sincronizar controles multimedia si hay video
+        if (currentTemplate.mediaType === "video") {
+            playPauseBtn.disabled = false;
+            muteBtn.disabled = false;
+            playPauseBtn.innerHTML = reelVideo.paused 
+                ? '<i class="fa-solid fa-play"></i> Reproducir' 
+                : '<i class="fa-solid fa-pause"></i> Pausar';
+            muteBtn.innerHTML = reelVideo.muted 
+                ? '<i class="fa-solid fa-volume-xmark"></i> Silenciar' 
+                : '<i class="fa-solid fa-volume-high"></i> Sonido';
+        } else {
+            playPauseBtn.disabled = true;
+            muteBtn.disabled = true;
+        }
 
-        applyMedia();
-        applyLogo();
-        selectCard(null);
+        // Sincronizar tarjeta si había una seleccionada
+        if (activeCardKey) {
+            selectCard(activeCardKey);
+        } else {
+            selectCard(null);
+        }
     }
+
+    function applyScreenStyles(index) {
+        const screenData = currentProject.screens[index];
+        const hCard = document.getElementById(`header-card-${index}`);
+        const fCard = document.getElementById(`footer-card-${index}`);
+        if (!hCard || !fCard) return;
+        
+        hCard.style.fontFamily = screenData.fontTitle;
+        fCard.style.fontFamily = screenData.fontTitle;
+        
+        hCard.style.setProperty("font-size", (screenData.fontSizes.header / 100) + "rem", "important");
+        fCard.style.setProperty("font-size", (screenData.fontSizes.footer / 100) + "rem", "important");
+        
+        ["header", "footer"].forEach(key => {
+            const card = key === "header" ? hCard : fCard;
+            const style = screenData.styles[key];
+            if (!style) return;
+            
+            card.style.color = style.color;
+            card.style.width = style.width + "%";
+            
+            const hex = style.boxColor;
+            const opacity = style.opacity / 100;
+            const r = parseInt(hex.slice(1, 3), 16);
+            const g = parseInt(hex.slice(3, 5), 16);
+            const b = parseInt(hex.slice(5, 7), 16);
+            card.style.backgroundColor = `rgba(${r}, ${g}, ${b}, ${opacity})`;
+        });
+    }
+
+    function applyScreenMedia(index) {
+        const screenData = currentProject.screens[index];
+        const video = document.getElementById(`reel-video-${index}`);
+        const img = document.getElementById(`reel-img-${index}`);
+        const placeholder = document.getElementById(`media-placeholder-${index}`);
+        if (!video || !img || !placeholder) return;
+        
+        if (screenData.mediaType === "video") {
+            img.style.display = "none";
+            video.style.display = "block";
+            placeholder.style.display = "none";
+            video.src = screenData.mediaSrc;
+            video.play().catch(() => console.log("Video auto-play blocked."));
+        } else if (screenData.mediaType === "image") {
+            video.style.display = "none";
+            video.pause();
+            img.style.display = "block";
+            placeholder.style.display = "none";
+            img.src = screenData.mediaSrc;
+        } else {
+            video.style.display = "none";
+            img.style.display = "none";
+            placeholder.style.display = "flex";
+        }
+    }
+
+    function applyScreenLogo(index) {
+        const screenData = currentProject.screens[index];
+        const card = document.getElementById(`logo-card-${index}`);
+        const preview = document.getElementById(`logo-img-preview-${index}`);
+        if (!card || !preview) return;
+        
+        if (screenData.logoSrc) {
+            preview.src = screenData.logoSrc;
+            card.style.display = "block";
+            card.style.width = (screenData.logoSize || 80) + "px";
+            card.style.height = (screenData.logoSize || 80) + "px";
+        } else {
+            card.style.display = "none";
+            preview.removeAttribute("src");
+        }
+    }
+
+    function applyScreenIGOverlay(index) {
+        const screenData = currentProject.screens[index];
+        const overlay = document.getElementById(`instagram-overlay-${index}`);
+        if (!overlay) return;
+        overlay.style.display = screenData.showInstagramOverlay ? "block" : "none";
+    }
+
+    // LISTENER DE GESTIÓN DE PANTALLAS (AÑADIR, DUPLICAR, ELIMINAR)
+    addPhoneBtn.addEventListener("click", () => {
+        const newScreen = createDefaultScreen(currentProject.screens.length);
+        currentProject.screens.push(newScreen);
+        currentProject.activeScreenIndex = currentProject.screens.length - 1;
+        
+        renderScreens();
+        selectScreen(currentProject.activeScreenIndex);
+        saveTemplateQuietly();
+    });
+
+    duplicatePhoneBtn.addEventListener("click", () => {
+        const activeIdx = currentProject.activeScreenIndex;
+        const originalScreen = currentProject.screens[activeIdx];
+        const clonedScreen = JSON.parse(JSON.stringify(originalScreen));
+        
+        // Modificar ligeramente el texto del gancho clonado
+        clonedScreen.headerText = originalScreen.headerText + " (Copia)";
+        
+        currentProject.screens.splice(activeIdx + 1, 0, clonedScreen);
+        currentProject.activeScreenIndex = activeIdx + 1;
+        
+        renderScreens();
+        selectScreen(currentProject.activeScreenIndex);
+        saveTemplateQuietly();
+    });
+
+    deletePhoneBtn.addEventListener("click", () => {
+        if (currentProject.screens.length <= 1) {
+            alert("Debes tener al menos una pantalla de teléfono en tu mesa de trabajo.");
+            return;
+        }
+        
+        if (!confirm("¿Seguro que deseas eliminar la pantalla de teléfono seleccionada?")) return;
+        
+        const activeIdx = currentProject.activeScreenIndex;
+        currentProject.screens.splice(activeIdx, 1);
+        
+        // Ajustar el índice activo
+        currentProject.activeScreenIndex = Math.max(0, activeIdx - 1);
+        
+        renderScreens();
+        selectScreen(currentProject.activeScreenIndex);
+        saveTemplateQuietly();
+    });
 
     // Auto-guardado cada 30 segundos
     setInterval(() => {
@@ -774,7 +960,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
             logToServer("[Grabador] Subiendo video bruto al servidor...");
             
-            // 1. Subir archivo de video bruto al servidor
             const uploadRes = await fetch('/api/upload-video', {
                 method: 'POST',
                 headers: { 'Content-Type': rawVideoFile.type },
@@ -788,7 +973,6 @@ document.addEventListener("DOMContentLoaded", () => {
             logToServer("[Grabador] Video subido con éxito. Solicitando procesamiento FFmpeg...");
             recordVideoBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Procesando en Servidor...';
 
-            // 2. Disparar exportación del video en el servidor
             const exportPayload = {
                 theme: themeSelect.value,
                 customColor: currentTemplate.customColor,
@@ -853,7 +1037,6 @@ document.addEventListener("DOMContentLoaded", () => {
             logToServer("[Grabador] Video procesado con éxito. Descargando MP4 final...");
             recordVideoBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Descargando...';
 
-            // Descargar el archivo binario final de video MP4
             const blob = await exportRes.blob();
             const url = URL.createObjectURL(blob);
             const a = document.createElement("a");
@@ -874,9 +1057,13 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-    if (toggleIgOverlay && instagramOverlay) {
+    if (toggleIgOverlay) {
         toggleIgOverlay.addEventListener("change", (e) => {
-            instagramOverlay.style.display = e.target.checked ? "block" : "none";
+            currentTemplate.showInstagramOverlay = e.target.checked;
+            if (instagramOverlay) {
+                instagramOverlay.style.display = e.target.checked ? "block" : "none";
+            }
+            saveTemplateQuietly();
         });
     }
 
