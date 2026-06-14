@@ -197,8 +197,12 @@
                 <i class="fa-solid fa-file-pdf"></i> Exportar Imagen/PDF (Print)
             </button>
 
-            <button id="record-video-btn" class="action-btn danger-btn">
-                <i class="fa-solid fa-circle-dot"></i> Exportar Video (MP4/WebM)
+            <button id="record-video-btn" class="action-btn danger-btn" style="margin-bottom: 10px;">
+                <i class="fa-solid fa-circle-dot"></i> Exportar Video Activo (MP4)
+            </button>
+
+            <button id="bulk-export-btn" class="action-btn accent-btn">
+                <i class="fa-solid fa-layer-group"></i> Exportar Varios en Lote
             </button>
         </aside>
 
@@ -264,6 +268,41 @@
                 <div class="phone-home-indicator"></div>
             </div>
         </main>
+    </div>
+
+    <!-- Modal de Exportación en Lote -->
+    <div id="bulk-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fa-solid fa-layer-group"></i> Exportación en Lote (Multiproceso)</h2>
+                <button id="close-bulk-modal" class="close-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p class="modal-desc">Selecciona las pantallas que deseas exportar a video (.mp4) consecutivamente:</p>
+                <div class="bulk-actions-row">
+                    <button id="bulk-select-all" class="action-btn text-btn" style="width: auto; font-size: 0.75rem; padding: 6px 12px;"><i class="fa-solid fa-square-check"></i> Seleccionar Todos</button>
+                    <button id="bulk-deselect-all" class="action-btn text-btn" style="width: auto; font-size: 0.75rem; padding: 6px 12px;"><i class="fa-solid fa-square"></i> Desmarcar Todos</button>
+                </div>
+                <div id="bulk-screens-grid" class="bulk-grid">
+                    <!-- Dinámico: tarjetas de vista previa -->
+                </div>
+                
+                <!-- Barra de progreso global -->
+                <div id="bulk-progress-container" class="progress-container" style="display: none;">
+                    <div class="progress-bar-labels">
+                        <span id="bulk-progress-text">Exportando 0 de 0 videos...</span>
+                        <span id="bulk-progress-percentage">0%</span>
+                    </div>
+                    <div class="progress-bar-track">
+                        <div id="bulk-progress-bar" class="progress-bar-fill" style="width: 0%;"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="cancel-bulk-btn" class="action-btn text-btn" style="width: auto; padding: 10px 20px;">Cancelar</button>
+                <button id="start-bulk-export-btn" class="action-btn success-btn" style="width: auto; padding: 10px 25px;"><i class="fa-solid fa-play"></i> Iniciar Exportación en Lote</button>
+            </div>
+        </div>
     </div>
     
     <script src="app.js"></script>

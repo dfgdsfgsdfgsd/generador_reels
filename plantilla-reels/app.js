@@ -1288,7 +1288,6 @@ document.addEventListener("DOMContentLoaded", () => {
                     saveTemplateQuietly();
                     renderScreens();
                     selectScreen(currentProject.activeScreenIndex || 0);
-
                     alert(`¡Proyecto "${importedName}" importado con éxito!`);
                 } catch (err) {
                     alert("Error al importar el archivo JSON: " + err.message);
@@ -1297,5 +1296,284 @@ document.addEventListener("DOMContentLoaded", () => {
             reader.readAsText(file);
             importJsonInput.value = ""; // Limpiar
         });
+    }
+
+    // ==========================================
+    // SISTEMA DE EXPORTACIÓN EN LOTE (MODAL)
+    // ==========================================
+    const bulkExportBtn = document.getElementById("bulk-export-btn");
+    const bulkModal = document.getElementById("bulk-modal");
+    const closeBulkModal = document.getElementById("close-bulk-modal");
+    const cancelBulkBtn = document.getElementById("cancel-bulk-btn");
+    const startBulkExportBtn = document.getElementById("start-bulk-export-btn");
+    const bulkScreensGrid = document.getElementById("bulk-screens-grid");
+    const bulkSelectAll = document.getElementById("bulk-select-all");
+    const bulkDeselectAll = document.getElementById("bulk-deselect-all");
+    const bulkProgressContainer = document.getElementById("bulk-progress-container");
+    const bulkProgressBar = document.getElementById("bulk-progress-bar");
+    const bulkProgressText = document.getElementById("bulk-progress-text");
+    const bulkProgressPercentage = document.getElementById("bulk-progress-percentage");
+
+    let selectedScreensToExport = new Set();
+    let isBulkExportRunning = false;
+
+    if (bulkExportBtn && bulkModal) {
+        bulkExportBtn.addEventListener("click", () => {
+            saveTemplateQuietly();
+            openBulkModal();
+        });
+
+        closeBulkModal.addEventListener("click", () => {
+            if (isBulkExportRunning) return;
+            bulkModal.style.display = "none";
+        });
+
+        cancelBulkBtn.addEventListener("click", () => {
+            if (isBulkExportRunning) return;
+            bulkModal.style.display = "none";
+        });
+
+        bulkSelectAll.addEventListener("click", () => {
+            if (isBulkExportRunning) return;
+            currentProject.screens.forEach((_, idx) => selectedScreensToExport.add(idx));
+            renderBulkScreensGrid();
+        });
+
+        bulkDeselectAll.addEventListener("click", () => {
+            if (isBulkExportRunning) return;
+            selectedScreensToExport.clear();
+            renderBulkScreensGrid();
+        });
+
+        startBulkExportBtn.addEventListener("click", async () => {
+            if (isBulkExportRunning) return;
+            if (selectedScreensToExport.size === 0) {
+                alert("Por favor, selecciona al menos una pantalla para exportar.");
+                return;
+            }
+
+            const indices = Array.from(selectedScreensToExport).sort((a, b) => a - b);
+            
+            // Validar que todas las pantallas seleccionadas tengan un video
+            for (let idx of indices) {
+                const screen = currentProject.screens[idx];
+                if (screen.mediaType !== "video" || (!screen.mediaSrc)) {
+                    alert(`La "${screen.name || 'Pantalla ' + (idx + 1)}" no tiene un video cargado. Por favor, selecciona un video para todas las pantallas seleccionadas.`);
+                    return;
+                }
+            }
+
+            // Iniciar proceso
+            isBulkExportRunning = true;
+            disableBulkModalControls(true);
+            bulkProgressContainer.style.display = "block";
+            
+            let completedCount = 0;
+            const totalCount = indices.length;
+
+            updateBulkProgress(0, totalCount, "Iniciando cola de procesamiento...");
+
+            for (let i = 0; i < totalCount; i++) {
+                const screenIndex = indices[i];
+                const screen = currentProject.screens[screenIndex];
+                const statusLabel = document.getElementById(`bulk-status-${screenIndex}`);
+                const cardEl = document.querySelector(`.bulk-card[data-index="${screenIndex}"]`);
+                
+                if (statusLabel) {
+                    statusLabel.className = "bulk-card-status processing";
+                    statusLabel.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Procesando...';
+                }
+                if (cardEl) {
+                    cardEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }
+
+                updateBulkProgress(i, totalCount, `Exportando "${screen.name || 'Pantalla ' + (screenIndex + 1)}"...`);
+
+                try {
+                    const payload = getExportPayloadForScreen(screenIndex);
+                    
+                    const exportRes = await fetch('/api/export-video', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (!exportRes.ok) {
+                        const errData = await exportRes.json().catch(() => ({}));
+                        throw new Error(errData.error || "Error en el servidor.");
+                    }
+
+                    const blob = await exportRes.blob();
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement("a");
+                    a.href = url;
+                    a.download = `reel_${screen.name ? screen.name.replace(/[^\w-]/g, '_') : screenIndex + 1}_${Date.now()}.mp4`;
+                    a.click();
+                    URL.revokeObjectURL(url);
+
+                    if (statusLabel) {
+                        statusLabel.className = "bulk-card-status done";
+                        statusLabel.innerHTML = '<i class="fa-solid fa-circle-check"></i> Completado';
+                    }
+                    completedCount++;
+                } catch (err) {
+                    console.error(`Error exportando pantalla ${screenIndex}:`, err);
+                    if (statusLabel) {
+                        statusLabel.className = "bulk-card-status error";
+                        statusLabel.innerHTML = '<i class="fa-solid fa-circle-xmark"></i> Error';
+                    }
+                }
+                
+                updateBulkProgress(i + 1, totalCount, `Progreso: ${i + 1} de ${totalCount} completado`);
+            }
+
+            updateBulkProgress(totalCount, totalCount, "¡Exportación en lote finalizada!");
+            isBulkExportRunning = false;
+            disableBulkModalControls(false);
+            
+            setTimeout(() => {
+                alert(`Exportación en lote terminada. Se procesaron ${completedCount} de ${totalCount} videos con éxito.`);
+            }, 500);
+        });
+    }
+
+    function openBulkModal() {
+        selectedScreensToExport.clear();
+        // Por defecto seleccionar todas las que tengan video
+        currentProject.screens.forEach((screen, idx) => {
+            if (screen.mediaType === "video" && screen.mediaSrc) {
+                selectedScreensToExport.add(idx);
+            }
+        });
+        
+        bulkProgressContainer.style.display = "none";
+        bulkProgressBar.style.width = "0%";
+        disableBulkModalControls(false);
+        
+        renderBulkScreensGrid();
+        bulkModal.style.display = "flex";
+    }
+
+    function renderBulkScreensGrid() {
+        if (!bulkScreensGrid) return;
+        bulkScreensGrid.innerHTML = "";
+
+        currentProject.screens.forEach((screen, idx) => {
+            const isSelected = selectedScreensToExport.has(idx);
+            const card = document.createElement("div");
+            card.className = `bulk-card ${isSelected ? 'selected' : ''}`;
+            card.dataset.index = idx;
+            
+            // Limpiar tags HTML para el título
+            const cleanText = screen.headerText ? screen.headerText.replace(/<[^>]*>/g, '').trim() : "Texto sin título";
+            const displayText = cleanText.length > 40 ? cleanText.substring(0, 40) + "..." : cleanText;
+            
+            card.innerHTML = `
+                <div class="bulk-checkbox-container">
+                    <input type="checkbox" class="bulk-checkbox" ${isSelected ? 'checked' : ''}>
+                </div>
+                <div class="bulk-card-content">
+                    <span class="bulk-card-index">${screen.name || 'Pantalla ' + (idx + 1)}</span>
+                    <div class="bulk-card-preview">
+                        ${screen.mediaType === 'video' ? '<i class="fa-solid fa-video" style="font-size: 1.5rem; margin-bottom: 6px; color: #3b82f6;"></i>' : '<i class="fa-solid fa-image" style="font-size: 1.5rem; margin-bottom: 6px; color: #888;"></i>'}
+                        <span class="bulk-card-title">${displayText}</span>
+                    </div>
+                    <span id="bulk-status-${idx}" class="bulk-card-status pending"><i class="fa-solid fa-clock"></i> Pendiente</span>
+                </div>
+            `;
+            
+            // Permitir seleccionar haciendo clic en toda la tarjeta (excepto el checkbox directamente para evitar doble toggle)
+            card.addEventListener("click", (e) => {
+                if (isBulkExportRunning) return;
+                
+                if (selectedScreensToExport.has(idx)) {
+                    selectedScreensToExport.delete(idx);
+                } else {
+                    selectedScreensToExport.add(idx);
+                }
+                renderBulkScreensGrid();
+            });
+            
+            bulkScreensGrid.appendChild(card);
+        });
+    }
+
+    function disableBulkModalControls(disable) {
+        closeBulkModal.style.pointerEvents = disable ? "none" : "auto";
+        cancelBulkBtn.disabled = disable;
+        startBulkExportBtn.disabled = disable;
+        bulkSelectAll.disabled = disable;
+        bulkDeselectAll.disabled = disable;
+        
+        document.querySelectorAll(".bulk-checkbox").forEach(cb => cb.disabled = disable);
+    }
+
+    function updateBulkProgress(current, total, text) {
+        const percentage = total > 0 ? Math.round((current / total) * 100) : 0;
+        bulkProgressBar.style.width = `${percentage}%`;
+        bulkProgressText.textContent = text;
+        bulkProgressPercentage.textContent = `${percentage}%`;
+    }
+
+    function getExportPayloadForScreen(index) {
+        const screenData = currentProject.screens[index];
+        const scrCanvas = document.getElementById(`reel-canvas-${index}`);
+        const hCard = document.getElementById(`header-card-${index}`);
+        const hText = document.getElementById(`header-text-${index}`);
+        const fCard = document.getElementById(`footer-card-${index}`);
+        const fText = document.getElementById(`footer-text-${index}`);
+        const mContainer = document.getElementById(`media-container-${index}`);
+        const lCard = document.getElementById(`logo-card-${index}`);
+        
+        return {
+            theme: screenData.theme,
+            customColor: screenData.customColor,
+            canvasWidth: scrCanvas.offsetWidth,
+            canvasHeight: scrCanvas.offsetHeight,
+            videoLeft: mContainer.offsetLeft,
+            videoTop: mContainer.offsetTop,
+            videoWidth: mContainer.offsetWidth,
+            videoHeight: mContainer.offsetHeight,
+            mediaSrc: screenData.mediaSrc,
+            headerHtml: screenData.showHeaderCard ? hText.innerHTML : "",
+            headerStyle: screenData.showHeaderCard ? {
+                fontFamily: window.getComputedStyle(hText).fontFamily,
+                fontSize: window.getComputedStyle(hText).fontSize,
+                fontWeight: window.getComputedStyle(hText).fontWeight,
+                color: window.getComputedStyle(hText).color,
+                backgroundColor: window.getComputedStyle(hCard).backgroundColor,
+                borderRadius: window.getComputedStyle(hCard).borderRadius,
+                padding: window.getComputedStyle(hCard).padding,
+                textAlign: window.getComputedStyle(hText).textAlign,
+                lineHeight: window.getComputedStyle(hCard).lineHeight,
+                width: hCard.offsetWidth,
+                height: hCard.offsetHeight,
+                left: hCard.offsetLeft,
+                top: hCard.offsetTop
+            } : null,
+            footerHtml: screenData.showFooterCard ? fText.innerHTML : "",
+            footerStyle: screenData.showFooterCard ? {
+                fontFamily: window.getComputedStyle(fText).fontFamily,
+                fontSize: window.getComputedStyle(fText).fontSize,
+                fontWeight: window.getComputedStyle(fText).fontWeight,
+                color: window.getComputedStyle(fText).color,
+                backgroundColor: window.getComputedStyle(fCard).backgroundColor,
+                borderRadius: window.getComputedStyle(fCard).borderRadius,
+                padding: window.getComputedStyle(fCard).padding,
+                textAlign: window.getComputedStyle(fText).textAlign,
+                lineHeight: window.getComputedStyle(fCard).lineHeight,
+                width: fCard.offsetWidth,
+                height: fCard.offsetHeight,
+                left: fCard.offsetLeft,
+                top: fCard.offsetTop
+            } : null,
+            logoSrc: screenData.logoSrc || null,
+            logoStyle: screenData.logoSrc ? {
+                width: lCard.offsetWidth,
+                height: lCard.offsetHeight,
+                left: lCard.offsetLeft,
+                top: lCard.offsetTop
+            } : null
+        };
     }
 });
