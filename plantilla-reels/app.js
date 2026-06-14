@@ -890,6 +890,24 @@ document.addEventListener("DOMContentLoaded", () => {
             muteBtn.disabled = true;
         }
 
+        // Pausar todos los videos de otras pantallas y reproducir el del teléfono seleccionado
+        currentProject.screens.forEach((_, idx) => {
+            const vid = document.getElementById(`reel-video-${idx}`);
+            if (vid) {
+                if (idx === index) {
+                    if (currentTemplate.mediaType === "video") {
+                        vid.play().catch(() => {});
+                    }
+                } else {
+                    vid.pause();
+                    vid.muted = true; // Asegurar que los no activos estén silenciados
+                    if (vid.currentTime === 0) {
+                        vid.currentTime = 0.1; // Forzar render del primer fotograma en inactivos
+                    }
+                }
+            }
+        });
+
         // Sincronizar tarjeta si había una seleccionada
         if (activeCardKey) {
             selectCard(activeCardKey);
@@ -934,13 +952,21 @@ document.addEventListener("DOMContentLoaded", () => {
         const placeholder = document.getElementById(`media-placeholder-${index}`);
         if (!video || !img || !placeholder) return;
         
-        if (screenData.mediaType === "video") {
+        if (screenData.mediaType === "video" && screenData.mediaSrc) {
             img.style.display = "none";
             video.style.display = "block";
             placeholder.style.display = "none";
             video.src = screenData.mediaSrc;
-            video.play().catch(() => console.log("Video auto-play blocked."));
-        } else if (screenData.mediaType === "image") {
+            video.muted = true; // Asegurar silencio inicial
+            if (index === currentProject.activeScreenIndex) {
+                video.play().catch(() => console.log("Video auto-play blocked."));
+            } else {
+                video.pause();
+                if (video.currentTime === 0) {
+                    video.currentTime = 0.1; // Forzar render del primer fotograma en inactivos
+                }
+            }
+        } else if (screenData.mediaType === "image" && screenData.mediaSrc) {
             video.style.display = "none";
             video.pause();
             img.style.display = "block";
