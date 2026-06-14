@@ -1464,9 +1464,42 @@ document.addEventListener("DOMContentLoaded", () => {
             card.className = `bulk-card ${isSelected ? 'selected' : ''}`;
             card.dataset.index = idx;
             
-            // Limpiar tags HTML para el título
-            const cleanText = screen.headerText ? screen.headerText.replace(/<[^>]*>/g, '').trim() : "Texto sin título";
-            const displayText = cleanText.length > 40 ? cleanText.substring(0, 40) + "..." : cleanText;
+            // Determinar estilos de fondo del mini teléfono
+            let bgStyle = "";
+            if (screen.theme === "custom") {
+                bgStyle = `background-color: ${screen.customColor || '#141414'}; background-image: none;`;
+            }
+
+            // Preparar estilos para cajas de texto mini
+            let headerStyle = "";
+            if (screen.showHeaderCard && screen.styles?.header) {
+                const hStyle = screen.styles.header;
+                const r = parseInt(hStyle.boxColor.slice(1, 3), 16) || 0;
+                const g = parseInt(hStyle.boxColor.slice(3, 5), 16) || 0;
+                const b = parseInt(hStyle.boxColor.slice(5, 7), 16) || 0;
+                const opacity = (hStyle.opacity || 85) / 100;
+                headerStyle = `
+                    color: ${hStyle.color || '#fff'}; 
+                    background-color: rgba(${r}, ${g}, ${b}, ${opacity});
+                    width: ${hStyle.width || 85}%;
+                    font-family: ${screen.fontTitle || 'inherit'};
+                `;
+            }
+
+            let footerStyle = "";
+            if (screen.showFooterCard && screen.styles?.footer) {
+                const fStyle = screen.styles.footer;
+                const r = parseInt(fStyle.boxColor.slice(1, 3), 16) || 0;
+                const g = parseInt(fStyle.boxColor.slice(3, 5), 16) || 0;
+                const b = parseInt(fStyle.boxColor.slice(5, 7), 16) || 0;
+                const opacity = (fStyle.opacity || 85) / 100;
+                footerStyle = `
+                    color: ${fStyle.color || '#fff'}; 
+                    background-color: rgba(${r}, ${g}, ${b}, ${opacity});
+                    width: ${fStyle.width || 85}%;
+                    font-family: ${screen.fontTitle || 'inherit'};
+                `;
+            }
             
             card.innerHTML = `
                 <div class="bulk-checkbox-container">
@@ -1474,9 +1507,31 @@ document.addEventListener("DOMContentLoaded", () => {
                 </div>
                 <div class="bulk-card-content">
                     <span class="bulk-card-index">${screen.name || 'Pantalla ' + (idx + 1)}</span>
-                    <div class="bulk-card-preview">
-                        ${screen.mediaType === 'video' ? '<i class="fa-solid fa-video" style="font-size: 1.5rem; margin-bottom: 6px; color: #3b82f6;"></i>' : '<i class="fa-solid fa-image" style="font-size: 1.5rem; margin-bottom: 6px; color: #888;"></i>'}
-                        <span class="bulk-card-title">${displayText}</span>
+                    <div class="bulk-card-preview mini-phone-screen theme-${screen.theme}" style="${bgStyle}">
+                        
+                        <!-- Header Text Card Mini -->
+                        ${screen.showHeaderCard ? `
+                            <div class="mini-text-card header" style="${headerStyle}">
+                                ${screen.headerText || ""}
+                            </div>
+                        ` : ''}
+
+                        <!-- Media Container Mini -->
+                        <div class="mini-media-container">
+                            ${screen.mediaSrc ? (
+                                screen.mediaType === "video" 
+                                ? `<video src="${screen.mediaSrc}" preload="metadata" muted></video><div class="mini-play-icon"><i class="fa-solid fa-play"></i></div>`
+                                : `<img src="${screen.mediaSrc}" />`
+                            ) : '<i class="fa-solid fa-video placeholder"></i>'}
+                        </div>
+
+                        <!-- Footer Text Card Mini -->
+                        ${screen.showFooterCard ? `
+                            <div class="mini-text-card footer" style="${footerStyle}">
+                                ${screen.footerText || ""}
+                            </div>
+                        ` : ''}
+
                     </div>
                     <span id="bulk-status-${idx}" class="bulk-card-status pending"><i class="fa-solid fa-clock"></i> Pendiente</span>
                 </div>

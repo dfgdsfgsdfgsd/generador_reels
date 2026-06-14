@@ -804,7 +804,7 @@ input[type="color"] {
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    height: 180px;
+    height: 290px;
 }
 
 .bulk-card:hover {
@@ -822,6 +822,7 @@ input[type="color"] {
     position: absolute;
     top: 8px;
     right: 8px;
+    z-index: 20;
 }
 
 .bulk-checkbox {
@@ -840,11 +841,14 @@ input[type="color"] {
 }
 
 .bulk-card-index {
-    font-size: 0.7rem;
+    font-size: 0.72rem;
     font-weight: 700;
-    color: #888;
+    color: #fff;
     text-transform: uppercase;
     letter-spacing: 0.5px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .bulk-card-title {
@@ -869,6 +873,92 @@ input[type="color"] {
     padding: 4px;
     text-align: center;
     overflow: hidden;
+}
+
+/* MINI PHONE PREVIEW INSIDE MODAL CARDS */
+.mini-phone-screen {
+    width: 100%;
+    height: 190px;
+    border-radius: 8px;
+    border: 1px solid #3c4048;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 4px;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    box-shadow: inset 0 0 20px rgba(0,0,0,0.8);
+    background-color: #141619;
+}
+
+.mini-text-card {
+    font-size: 0.38rem !important;
+    line-height: 1.2;
+    padding: 2px 4px;
+    border-radius: 3px;
+    text-align: center;
+    word-break: break-all;
+    z-index: 10;
+    max-height: 40px;
+    overflow: hidden;
+    pointer-events: none;
+    box-sizing: border-box;
+}
+
+.mini-text-card * {
+    font-size: inherit !important;
+    color: inherit !important;
+    background-color: transparent !important;
+    line-height: inherit !important;
+}
+
+.mini-text-card.header {
+    margin-top: 2px;
+}
+
+.mini-text-card.footer {
+    margin-bottom: 2px;
+}
+
+.mini-media-container {
+    width: 75px;
+    height: 75px;
+    background-color: #121417;
+    border-radius: 4px;
+    overflow: hidden;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid rgba(255,255,255,0.05);
+}
+
+.mini-media-container video, .mini-media-container img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.mini-media-container .placeholder {
+    font-size: 1.1rem;
+    color: #444;
+}
+
+.mini-play-icon {
+    position: absolute;
+    font-size: 0.65rem;
+    color: rgba(255,255,255,0.9);
+    background-color: rgba(0,0,0,0.6);
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .bulk-card-status {
