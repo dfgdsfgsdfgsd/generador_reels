@@ -804,7 +804,7 @@ input[type="color"] {
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    height: 290px;
+    height: 310px;
 }
 
 .bulk-card:hover {
@@ -838,6 +838,7 @@ input[type="color"] {
     gap: 8px;
     margin-top: 15px;
     height: calc(100% - 25px);
+    align-items: center;
 }
 
 .bulk-card-index {
@@ -847,8 +848,10 @@ input[type="color"] {
     text-transform: uppercase;
     letter-spacing: 0.5px;
     white-space: nowrap;
+    width: 100%;
     overflow: hidden;
     text-overflow: ellipsis;
+    text-align: left;
 }
 
 .bulk-card-title {
@@ -861,107 +864,59 @@ input[type="color"] {
 }
 
 .bulk-card-preview {
-    flex: 1;
-    background-color: #121417;
-    border-radius: 6px;
+    width: 100%;
     display: flex;
-    flex-direction: column;
-    align-items: center;
     justify-content: center;
-    font-size: 0.72rem;
-    color: #888;
-    padding: 4px;
-    text-align: center;
+    align-items: center;
     overflow: hidden;
 }
 
-/* MINI PHONE PREVIEW INSIDE MODAL CARDS */
-.mini-phone-screen {
-    width: 100%;
-    height: 190px;
-    border-radius: 8px;
+/* MINI PHONE PREVIEW INSIDE MODAL CARDS (SCALED REPLICA) */
+.mini-phone-container {
+    width: 126px;
+    height: 224px;
+    overflow: hidden;
+    position: relative;
+    border-radius: 12px;
     border: 1px solid #3c4048;
-    position: relative;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    align-items: center;
-    padding: 10px 4px;
-    background-size: cover;
-    background-position: center;
-    background-repeat: no-repeat;
-    box-shadow: inset 0 0 20px rgba(0,0,0,0.8);
-    background-color: #141619;
+    background-color: #0b0c0d;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.5);
 }
 
-.mini-text-card {
-    font-size: 0.38rem !important;
-    line-height: 1.2;
-    padding: 2px 4px;
-    border-radius: 3px;
-    text-align: center;
-    word-break: break-all;
-    z-index: 10;
-    max-height: 40px;
-    overflow: hidden;
-    pointer-events: none;
-    box-sizing: border-box;
+.mini-phone-screen-scaled {
+    width: 380px !important;
+    height: 676px !important;
+    transform: scale(0.3315) !important;
+    transform-origin: top left !important;
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    pointer-events: none !important;
+    padding: 40px 20px !important;
+    box-sizing: border-box !important;
 }
 
-.mini-text-card * {
-    font-size: inherit !important;
-    color: inherit !important;
-    background-color: transparent !important;
-    line-height: inherit !important;
+/* Sobrescribir y limpiar estilos de edición dentro de la miniatura */
+.mini-phone-screen-scaled .text-card {
+    cursor: default !important;
+    outline: none !important;
+    box-shadow: none !important;
 }
 
-.mini-text-card.header {
-    margin-top: 2px;
+.mini-phone-screen-scaled .media-container {
+    cursor: default !important;
+    outline: none !important;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.4) !important;
 }
 
-.mini-text-card.footer {
-    margin-bottom: 2px;
-}
-
-.mini-media-container {
-    width: 75px;
-    height: 75px;
-    background-color: #121417;
-    border-radius: 4px;
-    overflow: hidden;
-    position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border: 1px solid rgba(255,255,255,0.05);
-}
-
-.mini-media-container video, .mini-media-container img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
-
-.mini-media-container .placeholder {
-    font-size: 1.1rem;
-    color: #444;
-}
-
-.mini-play-icon {
-    position: absolute;
-    font-size: 0.65rem;
-    color: rgba(255,255,255,0.9);
-    background-color: rgba(0,0,0,0.6);
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+.mini-phone-screen-scaled .logo-card {
+    cursor: default !important;
+    outline: none !important;
 }
 
 .bulk-card-status {
+    width: 100%;
+    text-align: left;
     font-size: 0.72rem;
     font-weight: 600;
     margin-top: 8px;

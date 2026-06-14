@@ -1454,6 +1454,21 @@ document.addEventListener("DOMContentLoaded", () => {
         bulkModal.style.display = "flex";
     }
 
+    function hexToRgb(hex) {
+        if (!hex) return "0,0,0";
+        const cleanHex = hex.replace('#', '');
+        if (cleanHex.length === 3) {
+            const r = parseInt(cleanHex[0] + cleanHex[0], 16) || 0;
+            const g = parseInt(cleanHex[1] + cleanHex[1], 16) || 0;
+            const b = parseInt(cleanHex[2] + cleanHex[2], 16) || 0;
+            return `${r}, ${g}, ${b}`;
+        }
+        const r = parseInt(cleanHex.substring(0, 2), 16) || 0;
+        const g = parseInt(cleanHex.substring(2, 4), 16) || 0;
+        const b = parseInt(cleanHex.substring(4, 6), 16) || 0;
+        return `${r}, ${g}, ${b}`;
+    }
+
     function renderBulkScreensGrid() {
         if (!bulkScreensGrid) return;
         bulkScreensGrid.innerHTML = "";
@@ -1464,42 +1479,44 @@ document.addEventListener("DOMContentLoaded", () => {
             card.className = `bulk-card ${isSelected ? 'selected' : ''}`;
             card.dataset.index = idx;
             
-            // Determinar estilos de fondo del mini teléfono
-            let bgStyle = "";
+            // Determinar estilos de fondo del canvas
+            let canvasBgStyle = "";
             if (screen.theme === "custom") {
-                bgStyle = `background-color: ${screen.customColor || '#141414'}; background-image: none;`;
+                canvasBgStyle = `background: ${screen.customColor || '#141414'};`;
             }
 
-            // Preparar estilos para cajas de texto mini
-            let headerStyle = "";
-            if (screen.showHeaderCard && screen.styles?.header) {
-                const hStyle = screen.styles.header;
-                const r = parseInt(hStyle.boxColor.slice(1, 3), 16) || 0;
-                const g = parseInt(hStyle.boxColor.slice(3, 5), 16) || 0;
-                const b = parseInt(hStyle.boxColor.slice(5, 7), 16) || 0;
-                const opacity = (hStyle.opacity || 85) / 100;
-                headerStyle = `
-                    color: ${hStyle.color || '#fff'}; 
-                    background-color: rgba(${r}, ${g}, ${b}, ${opacity});
-                    width: ${hStyle.width || 85}%;
-                    font-family: ${screen.fontTitle || 'inherit'};
-                `;
-            }
-
-            let footerStyle = "";
-            if (screen.showFooterCard && screen.styles?.footer) {
-                const fStyle = screen.styles.footer;
-                const r = parseInt(fStyle.boxColor.slice(1, 3), 16) || 0;
-                const g = parseInt(fStyle.boxColor.slice(3, 5), 16) || 0;
-                const b = parseInt(fStyle.boxColor.slice(5, 7), 16) || 0;
-                const opacity = (fStyle.opacity || 85) / 100;
-                footerStyle = `
-                    color: ${fStyle.color || '#fff'}; 
-                    background-color: rgba(${r}, ${g}, ${b}, ${opacity});
-                    width: ${fStyle.width || 85}%;
-                    font-family: ${screen.fontTitle || 'inherit'};
-                `;
-            }
+            // Generar el clon exacto del HTML del canvas para esta pantalla
+            const headerHtml = screen.showHeaderCard && screen.styles?.header ? `
+                <div class="text-card" style="top: ${screen.positions?.header?.top || '40px'}; left: ${screen.positions?.header?.left || '28px'}; width: ${screen.styles?.header?.width || 85}%; font-family: ${screen.fontTitle}; font-size: ${(screen.fontSizes.header / 100)}rem; color: ${screen.styles.header.color}; background-color: rgba(${hexToRgb(screen.styles.header.boxColor)}, ${screen.styles.header.opacity / 100}); display: block;">
+                    <div class="text-content" style="font-size: 1.15em !important; line-height: 1.45 !important;">
+                        ${screen.headerText}
+                    </div>
+                </div>
+            ` : "";
+            
+            const mediaHtml = `
+                <div class="media-container" style="top: ${screen.positions?.media?.top || '160px'}; left: ${screen.positions?.media?.left || '20px'}; display: flex;">
+                    ${screen.mediaSrc ? (
+                        screen.mediaType === "video" 
+                        ? `<video src="${screen.mediaSrc}" preload="metadata" muted></video><div class="mini-play-icon" style="position: absolute; z-index: 10; font-size: 1.5rem; color: rgba(255,255,255,0.8); background: rgba(0,0,0,0.5); width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center;"><i class="fa-solid fa-play"></i></div>`
+                        : `<img src="${screen.mediaSrc}" style="width:100%; height:100%; object-fit:cover;" />`
+                    ) : '<i class="fa-solid fa-video placeholder" style="font-size: 2.5rem; color:#4b5260;"></i>'}
+                </div>
+            `;
+            
+            const footerHtml = screen.showFooterCard && screen.styles?.footer ? `
+                <div class="text-card" style="top: ${screen.positions?.footer?.top || '490px'}; left: ${screen.positions?.footer?.left || '28px'}; width: ${screen.styles?.footer?.width || 85}%; font-family: ${screen.fontTitle}; font-size: ${(screen.fontSizes.footer / 100)}rem; color: ${screen.styles.footer.color}; background-color: rgba(${hexToRgb(screen.styles.footer.boxColor)}, ${screen.styles.footer.opacity / 100}); display: block;">
+                    <div class="text-content" style="font-size: 1.15em !important; line-height: 1.45 !important;">
+                        ${screen.footerText}
+                    </div>
+                </div>
+            ` : "";
+            
+            const logoHtml = screen.logoSrc ? `
+                <div class="logo-card" style="top: ${screen.positions?.logo?.top || '150px'}; left: ${screen.positions?.logo?.left || '140px'}; width: ${screen.logoSize || 80}px; height: ${screen.logoSize || 80}px; display: block;">
+                    <img src="${screen.logoSrc}" style="width: 100%; height: 100%; object-fit: contain;" />
+                </div>
+            ` : "";
             
             card.innerHTML = `
                 <div class="bulk-checkbox-container">
@@ -1507,31 +1524,15 @@ document.addEventListener("DOMContentLoaded", () => {
                 </div>
                 <div class="bulk-card-content">
                     <span class="bulk-card-index">${screen.name || 'Pantalla ' + (idx + 1)}</span>
-                    <div class="bulk-card-preview mini-phone-screen theme-${screen.theme}" style="${bgStyle}">
-                        
-                        <!-- Header Text Card Mini -->
-                        ${screen.showHeaderCard ? `
-                            <div class="mini-text-card header" style="${headerStyle}">
-                                ${screen.headerText || ""}
+                    <div class="bulk-card-preview">
+                        <div class="mini-phone-container">
+                            <div class="mini-phone-screen-scaled reel-canvas theme-${screen.theme}" style="${canvasBgStyle}">
+                                ${headerHtml}
+                                ${mediaHtml}
+                                ${footerHtml}
+                                ${logoHtml}
                             </div>
-                        ` : ''}
-
-                        <!-- Media Container Mini -->
-                        <div class="mini-media-container">
-                            ${screen.mediaSrc ? (
-                                screen.mediaType === "video" 
-                                ? `<video src="${screen.mediaSrc}" preload="metadata" muted></video><div class="mini-play-icon"><i class="fa-solid fa-play"></i></div>`
-                                : `<img src="${screen.mediaSrc}" />`
-                            ) : '<i class="fa-solid fa-video placeholder"></i>'}
                         </div>
-
-                        <!-- Footer Text Card Mini -->
-                        ${screen.showFooterCard ? `
-                            <div class="mini-text-card footer" style="${footerStyle}">
-                                ${screen.footerText || ""}
-                            </div>
-                        ` : ''}
-
                     </div>
                     <span id="bulk-status-${idx}" class="bulk-card-status pending"><i class="fa-solid fa-clock"></i> Pendiente</span>
                 </div>
