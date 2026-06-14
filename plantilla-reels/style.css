@@ -289,16 +289,9 @@ input[type="color"] {
 
 .phone-wrapper.drag-over {
     transform: scale(1.02);
-}
-
-.phone-wrapper.drag-over .phone-header {
-    border-color: var(--color-primary);
-    box-shadow: 0 0 10px rgba(59, 130, 246, 0.3);
-}
-
-.phone-wrapper.drag-over .phone-mockup {
-    border-color: var(--color-primary);
-    box-shadow: 0 0 15px rgba(59, 130, 246, 0.3), 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+    outline: 2px dashed var(--color-primary);
+    outline-offset: 8px;
+    border-radius: 12px;
 }
 
 /* PHONE HEADER BAR ABOVE MOCKUP */
