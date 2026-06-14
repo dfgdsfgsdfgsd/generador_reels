@@ -32,10 +32,10 @@ async def upload_video(request: Request):
         body = await request.body()
         with open(temp_video_path, "wb") as f:
             f.write(body)
-        print("[Python Exportador] Video bruto recibido y guardado.")
+        print("[Generador Reels] Video bruto recibido y guardado.")
         return {"success": True}
     except Exception as e:
-        print("[Python Exportador] Error guardando video:", e)
+        print("[Generador Reels] Error guardando video:", e)
         raise HTTPException(status_code=500, detail=str(e))
 
 def parse_val(val, default):

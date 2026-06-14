@@ -1,7 +1,7 @@
 @echo off
-title Exportador Python - Puerto 3002
+title Generador Reels - Puerto 3002
 echo ===================================================
-echo   Iniciando Exportador Python (FastAPI/Uvicorn)
+echo   Iniciando Generador Reels (FastAPI/Uvicorn)
 echo   Puerto: 3002
 echo ===================================================
 echo.
