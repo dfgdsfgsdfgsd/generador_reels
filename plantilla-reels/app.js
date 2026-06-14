@@ -557,9 +557,9 @@ document.addEventListener("DOMContentLoaded", () => {
                 footer: 95
             },
             positions: {
-                header: { top: "80px", left: "28px" },
-                media: { top: "210px", left: "20px" },
-                footer: { top: "390px", left: "28px" },
+                header: { top: "40px", left: "28px" },
+                media: { top: "160px", left: "20px" },
+                footer: { top: "490px", left: "28px" },
                 logo: { top: "150px", left: "140px" }
             },
             styles: {
@@ -589,7 +589,7 @@ document.addEventListener("DOMContentLoaded", () => {
             } else {
                 // Migración para proyectos antiguos de pantalla única
                 if (parsed.positions && parsed.positions.footer && parsed.positions.footer.top === "auto") {
-                    parsed.positions.footer.top = "390px";
+                    parsed.positions.footer.top = "490px";
                 }
                 currentProject = {
                     name: name,
@@ -624,14 +624,14 @@ document.addEventListener("DOMContentLoaded", () => {
                         <div class="reel-canvas theme-${screenData.theme}" id="reel-canvas-${index}" style="${screenData.theme === 'custom' ? 'background: ' + screenData.customColor : ''}">
                             
                             <!-- Bloque de texto superior -->
-                            <div class="text-card drag-el" id="header-card-${index}" style="top: ${screenData.positions?.header?.top || '80px'}; left: ${screenData.positions?.header?.left || '28px'}; width: ${screenData.styles?.header?.width || 85}%; display: ${screenData.showHeaderCard ? 'block' : 'none'};">
+                            <div class="text-card drag-el" id="header-card-${index}" style="top: ${screenData.positions?.header?.top || '40px'}; left: ${screenData.positions?.header?.left || '28px'}; width: ${screenData.styles?.header?.width || 85}%; display: ${screenData.showHeaderCard ? 'block' : 'none'};">
                                 <div class="text-content" contenteditable="true" id="header-text-${index}">
                                     ${screenData.headerText}
                                 </div>
                             </div>
 
                             <!-- Bloque central de video 1:1 -->
-                            <div class="media-container" id="media-container-${index}" style="top: ${screenData.positions?.media?.top || '210px'}; left: ${screenData.positions?.media?.left || '20px'};">
+                            <div class="media-container" id="media-container-${index}" style="top: ${screenData.positions?.media?.top || '160px'}; left: ${screenData.positions?.media?.left || '20px'};">
                                 <video id="reel-video-${index}" loop muted playsinline style="display: none;"></video>
                                 <img id="reel-img-${index}" src="" alt="Previsualización" style="display: none;">
                                 <div class="media-placeholder" id="media-placeholder-${index}">
@@ -641,7 +641,7 @@ document.addEventListener("DOMContentLoaded", () => {
                             </div>
 
                             <!-- Bloque de texto inferior -->
-                            <div class="text-card drag-el" id="footer-card-${index}" style="top: ${screenData.positions?.footer?.top || '390px'}; left: ${screenData.positions?.footer?.left || '28px'}; width: ${screenData.styles?.footer?.width || 85}%; display: ${screenData.showFooterCard ? 'block' : 'none'};">
+                            <div class="text-card drag-el" id="footer-card-${index}" style="top: ${screenData.positions?.footer?.top || '490px'}; left: ${screenData.positions?.footer?.left || '28px'}; width: ${screenData.styles?.footer?.width || 85}%; display: ${screenData.showFooterCard ? 'block' : 'none'};">
                                 <div class="text-content" contenteditable="true" id="footer-text-${index}">
                                     ${screenData.footerText}
                                 </div>
