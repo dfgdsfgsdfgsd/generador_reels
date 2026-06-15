@@ -1040,8 +1040,8 @@ document.addEventListener("DOMContentLoaded", () => {
         const originalScreen = currentProject.screens[activeIdx];
         const clonedScreen = JSON.parse(JSON.stringify(originalScreen));
         
-        // Mantener el nombre y texto originales sin agregar "(Copia)"
-        clonedScreen.name = originalScreen.name ? originalScreen.name : `Pantalla ${activeIdx + 2}`;
+        // Modificar el nombre de la pantalla clonada pero mantener el texto original del gancho sin "(Copia)"
+        clonedScreen.name = originalScreen.name ? originalScreen.name + " (Copia)" : `Pantalla ${activeIdx + 2} (Copia)`;
         
         currentProject.screens.splice(activeIdx + 1, 0, clonedScreen);
         currentProject.activeScreenIndex = activeIdx + 1;
