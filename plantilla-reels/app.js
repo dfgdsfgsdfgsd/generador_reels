@@ -143,6 +143,80 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
+    // FUNCIONES DE REDIMENSIONAMIENTO (RESIZE)
+    function setupResizable(cardEl, key, index) {
+        if (!cardEl) return;
+        
+        const handles = cardEl.querySelectorAll(".resize-handle");
+        handles.forEach(handle => {
+            handle.addEventListener("mousedown", (e) => {
+                e.stopPropagation(); // Evitar que inicie el arrastre (drag) de la tarjeta entera
+                e.preventDefault();
+                
+                selectScreen(index);
+                selectCard(key);
+                
+                const startX = e.clientX;
+                const startY = e.clientY;
+                const startWidth = cardEl.offsetWidth;
+                const startHeight = cardEl.offsetHeight;
+                
+                const canvas = document.getElementById(`reel-canvas-${index}`);
+                const canvasWidth = canvas.offsetWidth;
+                const scale = 0.75; // Escala del mockup
+                
+                const isRight = handle.classList.contains("resize-r");
+                const isBottom = handle.classList.contains("resize-b");
+                const isCorner = handle.classList.contains("resize-se");
+                
+                function onMouseMove(moveEvent) {
+                    const dx = (moveEvent.clientX - startX) / scale;
+                    const dy = (moveEvent.clientY - startY) / scale;
+                    
+                    const screenData = currentProject.screens[index];
+                    
+                    // Ajuste Ancho (Horizontal)
+                    if (isRight || isCorner) {
+                        let newWidthPx = startWidth + dx;
+                        let newWidthPercent = Math.round((newWidthPx / canvasWidth) * 100);
+                        newWidthPercent = Math.max(30, Math.min(100, newWidthPercent));
+                        
+                        cardEl.style.width = newWidthPercent + "%";
+                        if (!screenData.styles) screenData.styles = {};
+                        if (!screenData.styles[key]) screenData.styles[key] = { color: "#ffffff", boxColor: "#000000", opacity: 85, width: 85 };
+                        screenData.styles[key].width = newWidthPercent;
+                        
+                        // Sincronizar UI lateral
+                        if (index === currentProject.activeScreenIndex && activeCardKey === key) {
+                            boxWidthSlider.value = newWidthPercent;
+                            boxWidthVal.textContent = newWidthPercent + "%";
+                        }
+                    }
+                    
+                    // Ajuste Alto (Vertical)
+                    if (isBottom || isCorner) {
+                        let newHeightPx = startHeight + dy;
+                        newHeightPx = Math.max(40, newHeightPx);
+                        
+                        cardEl.style.height = newHeightPx + "px";
+                        if (!screenData.styles) screenData.styles = {};
+                        if (!screenData.styles[key]) screenData.styles[key] = { color: "#ffffff", boxColor: "#000000", opacity: 85, width: 85 };
+                        screenData.styles[key].height = newHeightPx;
+                    }
+                }
+                
+                function onMouseUp() {
+                    document.removeEventListener("mousemove", onMouseMove);
+                    document.removeEventListener("mouseup", onMouseUp);
+                    saveTemplateQuietly();
+                }
+                
+                document.addEventListener("mousemove", onMouseMove);
+                document.addEventListener("mouseup", onMouseUp);
+            });
+        });
+    }
+
     document.addEventListener("click", (e) => {
         // Deseleccionar si hace clic fuera
         if (!e.target.closest(".text-card") && !e.target.closest(".media-container") && !e.target.closest(".logo-card") && !e.target.closest(".sidebar") && !e.target.closest(".phone-mockup")) {
@@ -654,10 +728,13 @@ document.addEventListener("DOMContentLoaded", () => {
                         <div class="reel-canvas theme-${screenData.theme}" id="reel-canvas-${index}" style="${screenData.theme === 'custom' ? 'background: ' + screenData.customColor : ''}">
                             
                             <!-- Bloque de texto superior -->
-                            <div class="text-card drag-el" id="header-card-${index}" style="top: ${screenData.positions?.header?.top || '40px'}; left: ${screenData.positions?.header?.left || '28px'}; width: ${screenData.styles?.header?.width || 85}%; display: ${screenData.showHeaderCard ? 'block' : 'none'};">
+                            <div class="text-card drag-el" id="header-card-${index}" style="top: ${screenData.positions?.header?.top || '40px'}; left: ${screenData.positions?.header?.left || '28px'}; width: ${screenData.styles?.header?.width || 85}%; display: ${screenData.showHeaderCard ? 'block' : 'none'}; height: ${screenData.styles?.header?.height ? screenData.styles.header.height + 'px' : 'auto'};">
                                 <div class="text-content" contenteditable="true" id="header-text-${index}">
                                     ${screenData.headerText}
                                 </div>
+                                <div class="resize-handle resize-r" data-key="header" data-index="${index}"></div>
+                                <div class="resize-handle resize-b" data-key="header" data-index="${index}"></div>
+                                <div class="resize-handle resize-se" data-key="header" data-index="${index}"></div>
                             </div>
 
                             <!-- Bloque central de video 1:1 -->
@@ -671,10 +748,13 @@ document.addEventListener("DOMContentLoaded", () => {
                             </div>
 
                             <!-- Bloque de texto inferior -->
-                            <div class="text-card drag-el" id="footer-card-${index}" style="top: ${screenData.positions?.footer?.top || '490px'}; left: ${screenData.positions?.footer?.left || '28px'}; width: ${screenData.styles?.footer?.width || 85}%; display: ${screenData.showFooterCard ? 'block' : 'none'};">
+                            <div class="text-card drag-el" id="footer-card-${index}" style="top: ${screenData.positions?.footer?.top || '490px'}; left: ${screenData.positions?.footer?.left || '28px'}; width: ${screenData.styles?.footer?.width || 85}%; display: ${screenData.showFooterCard ? 'block' : 'none'}; height: ${screenData.styles?.footer?.height ? screenData.styles.footer.height + 'px' : 'auto'};">
                                 <div class="text-content" contenteditable="true" id="footer-text-${index}">
                                     ${screenData.footerText}
                                 </div>
+                                <div class="resize-handle resize-r" data-key="footer" data-index="${index}"></div>
+                                <div class="resize-handle resize-b" data-key="footer" data-index="${index}"></div>
+                                <div class="resize-handle resize-se" data-key="footer" data-index="${index}"></div>
                             </div>
 
                             <!-- Logo flotante arrastrable -->
@@ -726,6 +806,9 @@ document.addEventListener("DOMContentLoaded", () => {
             setupDraggable(fCard, "footer", index);
             setupDraggable(mCont, "media", index);
             setupDraggable(lCard, "logo", index);
+            
+            setupResizable(hCard, "header", index);
+            setupResizable(fCard, "footer", index);
             
             // Manejadores de eventos para arrastrar y soltar teléfonos (Mesa de trabajo)
             let dragAllowed = false;
@@ -956,6 +1039,7 @@ document.addEventListener("DOMContentLoaded", () => {
             
             card.style.color = style.color;
             card.style.width = style.width + "%";
+            card.style.height = style.height ? style.height + "px" : "auto";
             
             const hex = style.boxColor;
             const opacity = style.opacity / 100;
