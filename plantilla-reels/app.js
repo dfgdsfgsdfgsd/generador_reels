@@ -160,6 +160,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 const startY = e.clientY;
                 const startWidth = cardEl.offsetWidth;
                 const startHeight = cardEl.offsetHeight;
+                const startTop = cardEl.offsetTop;
                 
                 const canvas = document.getElementById(`reel-canvas-${index}`);
                 const canvasWidth = canvas.offsetWidth;
@@ -167,6 +168,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 
                 const isRight = handle.classList.contains("resize-r");
                 const isBottom = handle.classList.contains("resize-b");
+                const isTop = handle.classList.contains("resize-t");
                 const isCorner = handle.classList.contains("resize-se");
                 
                 function onMouseMove(moveEvent) {
@@ -193,7 +195,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         }
                     }
                     
-                    // Ajuste Alto (Vertical)
+                    // Ajuste Alto (Vertical hacia abajo)
                     if (isBottom || isCorner) {
                         let newHeightPx = startHeight + dy;
                         newHeightPx = Math.max(40, newHeightPx);
@@ -202,6 +204,27 @@ document.addEventListener("DOMContentLoaded", () => {
                         if (!screenData.styles) screenData.styles = {};
                         if (!screenData.styles[key]) screenData.styles[key] = { color: "#ffffff", boxColor: "#000000", opacity: 85, width: 85 };
                         screenData.styles[key].height = newHeightPx;
+                    }
+
+                    // Ajuste Alto (Vertical hacia arriba)
+                    if (isTop) {
+                        let newHeightPx = startHeight - dy;
+                        if (newHeightPx >= 40) {
+                            let newTopPx = startTop + dy;
+                            newTopPx = Math.max(10, newTopPx);
+                            
+                            cardEl.style.top = newTopPx + "px";
+                            cardEl.style.height = newHeightPx + "px";
+                            cardEl.style.bottom = "auto";
+                            
+                            if (!screenData.positions) screenData.positions = {};
+                            if (!screenData.positions[key]) screenData.positions[key] = {};
+                            screenData.positions[key].top = newTopPx + "px";
+                            
+                            if (!screenData.styles) screenData.styles = {};
+                            if (!screenData.styles[key]) screenData.styles[key] = { color: "#ffffff", boxColor: "#000000", opacity: 85, width: 85 };
+                            screenData.styles[key].height = newHeightPx;
+                        }
                     }
                 }
                 
@@ -728,10 +751,11 @@ document.addEventListener("DOMContentLoaded", () => {
                         <div class="reel-canvas theme-${screenData.theme}" id="reel-canvas-${index}" style="${screenData.theme === 'custom' ? 'background: ' + screenData.customColor : ''}">
                             
                             <!-- Bloque de texto superior -->
-                            <div class="text-card drag-el" id="header-card-${index}" style="top: ${screenData.positions?.header?.top || '40px'}; left: ${screenData.positions?.header?.left || '28px'}; width: ${screenData.styles?.header?.width || 85}%; display: ${screenData.showHeaderCard ? 'block' : 'none'}; height: ${screenData.styles?.header?.height ? screenData.styles.header.height + 'px' : 'auto'};">
+                            <div class="text-card drag-el" id="header-card-${index}" style="top: ${screenData.positions?.header?.top || '40px'}; left: ${screenData.positions?.header?.left || '28px'}; width: ${screenData.styles?.header?.width || 85}%; display: ${screenData.showHeaderCard ? 'flex' : 'none'}; height: ${screenData.styles?.header?.height ? screenData.styles.header.height + 'px' : 'auto'};">
                                 <div class="text-content" contenteditable="true" id="header-text-${index}">
                                     ${screenData.headerText}
                                 </div>
+                                <div class="resize-handle resize-t" data-key="header" data-index="${index}"></div>
                                 <div class="resize-handle resize-r" data-key="header" data-index="${index}"></div>
                                 <div class="resize-handle resize-b" data-key="header" data-index="${index}"></div>
                                 <div class="resize-handle resize-se" data-key="header" data-index="${index}"></div>
@@ -748,10 +772,11 @@ document.addEventListener("DOMContentLoaded", () => {
                             </div>
 
                             <!-- Bloque de texto inferior -->
-                            <div class="text-card drag-el" id="footer-card-${index}" style="top: ${screenData.positions?.footer?.top || '490px'}; left: ${screenData.positions?.footer?.left || '28px'}; width: ${screenData.styles?.footer?.width || 85}%; display: ${screenData.showFooterCard ? 'block' : 'none'}; height: ${screenData.styles?.footer?.height ? screenData.styles.footer.height + 'px' : 'auto'};">
+                            <div class="text-card drag-el" id="footer-card-${index}" style="top: ${screenData.positions?.footer?.top || '490px'}; left: ${screenData.positions?.footer?.left || '28px'}; width: ${screenData.styles?.footer?.width || 85}%; display: ${screenData.showFooterCard ? 'flex' : 'none'}; height: ${screenData.styles?.footer?.height ? screenData.styles.footer.height + 'px' : 'auto'};">
                                 <div class="text-content" contenteditable="true" id="footer-text-${index}">
                                     ${screenData.footerText}
                                 </div>
+                                <div class="resize-handle resize-t" data-key="footer" data-index="${index}"></div>
                                 <div class="resize-handle resize-r" data-key="footer" data-index="${index}"></div>
                                 <div class="resize-handle resize-b" data-key="footer" data-index="${index}"></div>
                                 <div class="resize-handle resize-se" data-key="footer" data-index="${index}"></div>
@@ -1306,7 +1331,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (toggleHeaderCard) {
         toggleHeaderCard.addEventListener("change", (e) => {
             currentTemplate.showHeaderCard = e.target.checked;
-            headerCard.style.display = e.target.checked ? "block" : "none";
+            headerCard.style.display = e.target.checked ? "flex" : "none";
             saveTemplateQuietly();
         });
     }
@@ -1314,7 +1339,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (toggleFooterCard) {
         toggleFooterCard.addEventListener("change", (e) => {
             currentTemplate.showFooterCard = e.target.checked;
-            footerCard.style.display = e.target.checked ? "block" : "none";
+            footerCard.style.display = e.target.checked ? "flex" : "none";
             saveTemplateQuietly();
         });
     }
