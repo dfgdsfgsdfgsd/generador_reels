@@ -131,6 +131,13 @@ body {
     transform: scale(0.98);
 }
 
+.action-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    background-color: #555 !important;
+}
+
+
 .primary-btn { background-color: var(--color-primary); }
 .primary-btn:hover { background-color: var(--color-primary-hover); }
 

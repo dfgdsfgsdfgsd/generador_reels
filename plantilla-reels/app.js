@@ -1437,7 +1437,12 @@ document.addEventListener("DOMContentLoaded", () => {
         });
 
         cancelBulkBtn.addEventListener("click", () => {
-            if (isBulkExportRunning) return;
+            if (isBulkExportRunning) {
+                if (confirm("¿Deseas cancelar el procesamiento en lote actual? (Se detendrá en el próximo video)")) {
+                    window.shouldCancelBulkExport = true;
+                }
+                return;
+            }
             bulkModal.style.display = "none";
         });
 
@@ -1473,6 +1478,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
             // Iniciar proceso
             isBulkExportRunning = true;
+            window.shouldCancelBulkExport = false;
             disableBulkModalControls(true);
             bulkProgressContainer.style.display = "block";
             
@@ -1482,6 +1488,11 @@ document.addEventListener("DOMContentLoaded", () => {
             updateBulkProgress(0, totalCount, "Iniciando cola de procesamiento...");
 
             for (let i = 0; i < totalCount; i++) {
+                if (window.shouldCancelBulkExport) {
+                    updateBulkProgress(i, totalCount, "Procesamiento cancelado por el usuario.");
+                    break;
+                }
+
                 const screenIndex = indices[i];
                 const screen = currentProject.screens[screenIndex];
                 const statusLabel = document.getElementById(`bulk-status-${screenIndex}`);
@@ -1535,8 +1546,13 @@ document.addEventListener("DOMContentLoaded", () => {
                 updateBulkProgress(i + 1, totalCount, `Progreso: ${i + 1} de ${totalCount} completado`);
             }
 
-            updateBulkProgress(totalCount, totalCount, "¡Exportación en lote finalizada!");
+            if (window.shouldCancelBulkExport) {
+                updateBulkProgress(completedCount, totalCount, "¡Exportación en lote cancelada!");
+            } else {
+                updateBulkProgress(totalCount, totalCount, "¡Exportación en lote finalizada!");
+            }
             isBulkExportRunning = false;
+            window.shouldCancelBulkExport = false;
             disableBulkModalControls(false);
             
             setTimeout(() => {
@@ -1664,7 +1680,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function disableBulkModalControls(disable) {
         closeBulkModal.style.pointerEvents = disable ? "none" : "auto";
-        cancelBulkBtn.disabled = disable;
+        cancelBulkBtn.disabled = false; // El botón de Cancelar siempre queda habilitado
         startBulkExportBtn.disabled = disable;
         bulkSelectAll.disabled = disable;
         bulkDeselectAll.disabled = disable;
