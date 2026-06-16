@@ -24,13 +24,15 @@ body {
     color: var(--color-text);
     height: 100vh;
     overflow: hidden;
+    zoom: 0.95;
 }
 
 .app-container {
     display: flex;
-    width: 100vw;
-    height: 100vh;
+    width: 105.26vw;
+    height: 105.26vh;
 }
+
 
 /* SIDEBAR STYLING */
 .sidebar {
@@ -606,7 +608,17 @@ input[type="color"] {
     text-align: center;
     word-break: break-word;
     cursor: text;
+    display: inline-block;
+    max-width: 100%;
 }
+
+.text-card {
+    cursor: move;
+    align-items: center; /* Centrar horizontalmente el inline-block */
+}
+
+
+
 
 /* SLIDER ADJUSTMENT BUTTONS */
 .adjust-btn {

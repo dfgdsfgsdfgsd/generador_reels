@@ -743,7 +743,7 @@ document.addEventListener("DOMContentLoaded", () => {
             
             wrapper.innerHTML = `
                 <div class="phone-header">
-                    <span class="phone-title" contenteditable="true" id="phone-title-${index}" style="outline: none; cursor: text;">${screenData.name || 'Pantalla ' + (index + 1)}</span>
+                    <span class="phone-title" contenteditable="true" id="phone-title-${index}" style="outline: none; cursor: text; display: inline-block; min-width: 80px; padding-right: 20px;">${screenData.name || 'Pantalla ' + (index + 1)}</span>
                     <span class="drag-handle" title="Arrastra para reordenar"><i class="fa-solid fa-grip-vertical"></i></span>
                 </div>
                 <div class="phone-mockup ${index === currentProject.activeScreenIndex ? 'selected-phone' : ''}" data-index="${index}">
