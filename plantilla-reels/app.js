@@ -1438,7 +1438,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         cancelBulkBtn.addEventListener("click", () => {
             if (isBulkExportRunning) {
-                if (confirm("¿Deseas cancelar el procesamiento en lote actual? (Se detendrá en el próximo video)")) {
+                if (confirm("¿Deseas cancelar el procesamiento en lote actual? (Se detendrá en el video actual)")) {
                     window.shouldCancelBulkExport = true;
                 }
                 return;
