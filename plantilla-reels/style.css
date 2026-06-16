@@ -1054,6 +1054,18 @@ input[type="color"] {
 .bulk-card-status.done { color: var(--color-success); }
 .bulk-card-status.error { color: var(--color-danger); }
 
+/* Animación de giro para el spinner de procesamiento */
+.bulk-card-status.processing i, .fa-spinner.fa-spin {
+    animation: spin-loader 1s linear infinite;
+    display: inline-block;
+}
+
+@keyframes spin-loader {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+
 /* PROGRESS BAR */
 .progress-container {
     margin-top: 20px;
