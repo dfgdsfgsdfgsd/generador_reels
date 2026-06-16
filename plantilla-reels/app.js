@@ -1424,6 +1424,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     let selectedScreensToExport = new Set();
     let isBulkExportRunning = false;
+    let shouldCancelBulkExport = false;
 
     if (bulkExportBtn && bulkModal) {
         bulkExportBtn.addEventListener("click", () => {
@@ -1439,7 +1440,7 @@ document.addEventListener("DOMContentLoaded", () => {
         cancelBulkBtn.addEventListener("click", () => {
             if (isBulkExportRunning) {
                 if (confirm("¿Deseas cancelar el procesamiento en lote actual? (Se detendrá en el video actual)")) {
-                    window.shouldCancelBulkExport = true;
+                    shouldCancelBulkExport = true;
                 }
                 return;
             }
@@ -1478,7 +1479,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
             // Iniciar proceso
             isBulkExportRunning = true;
-            window.shouldCancelBulkExport = false;
+            shouldCancelBulkExport = false;
             disableBulkModalControls(true);
             bulkProgressContainer.style.display = "block";
             
@@ -1488,7 +1489,7 @@ document.addEventListener("DOMContentLoaded", () => {
             updateBulkProgress(0, totalCount, "Iniciando cola de procesamiento...");
 
             for (let i = 0; i < totalCount; i++) {
-                if (window.shouldCancelBulkExport) {
+                if (shouldCancelBulkExport) {
                     updateBulkProgress(i, totalCount, "Procesamiento cancelado por el usuario.");
                     break;
                 }
@@ -1546,13 +1547,13 @@ document.addEventListener("DOMContentLoaded", () => {
                 updateBulkProgress(i + 1, totalCount, `Progreso: ${i + 1} de ${totalCount} completado`);
             }
 
-            if (window.shouldCancelBulkExport) {
+            if (shouldCancelBulkExport) {
                 updateBulkProgress(completedCount, totalCount, "¡Exportación en lote cancelada!");
             } else {
                 updateBulkProgress(totalCount, totalCount, "¡Exportación en lote finalizada!");
             }
             isBulkExportRunning = false;
-            window.shouldCancelBulkExport = false;
+            shouldCancelBulkExport = false;
             disableBulkModalControls(false);
             
             setTimeout(() => {
