@@ -785,6 +785,10 @@ document.addEventListener("DOMContentLoaded", () => {
                             <!-- Logo flotante arrastrable -->
                             <div class="logo-card drag-el" id="logo-card-${index}" style="top: ${screenData.positions?.logo?.top || '150px'}; left: ${screenData.positions?.logo?.left || '140px'}; width: ${screenData.logoSize || 80}px; height: ${screenData.logoSize || 80}px; display: none;">
                                 <img id="logo-img-preview-${index}" src="" alt="Logo" style="width: 100%; height: 100%; object-fit: contain; pointer-events: none;">
+                                <div class="resize-handle resize-t" data-key="logo" data-index="${index}"></div>
+                                <div class="resize-handle resize-r" data-key="logo" data-index="${index}"></div>
+                                <div class="resize-handle resize-b" data-key="logo" data-index="${index}"></div>
+                                <div class="resize-handle resize-se" data-key="logo" data-index="${index}"></div>
                             </div>
 
                             <!-- Simulación de interfaz de Instagram Reels -->
@@ -834,6 +838,7 @@ document.addEventListener("DOMContentLoaded", () => {
             
             setupResizable(hCard, "header", index);
             setupResizable(fCard, "footer", index);
+            setupResizable(lCard, "logo", index);
             
             // Manejadores de eventos para arrastrar y soltar teléfonos (Mesa de trabajo)
             let dragAllowed = false;
@@ -1019,6 +1024,25 @@ document.addEventListener("DOMContentLoaded", () => {
             muteBtn.disabled = true;
         }
 
+        // Sincronizar botones de logo y media
+        if (currentTemplate.logoSrc) {
+            if (removeLogoBtn) removeLogoBtn.disabled = false;
+            const editLogoBtn = document.getElementById('edit-logo-btn');
+            if (editLogoBtn) editLogoBtn.disabled = false;
+        } else {
+            if (removeLogoBtn) removeLogoBtn.disabled = true;
+            const editLogoBtn = document.getElementById('edit-logo-btn');
+            if (editLogoBtn) editLogoBtn.disabled = true;
+        }
+        
+        if (currentTemplate.mediaSrc) {
+            const editMediaBtn = document.getElementById('edit-media-btn');
+            if (editMediaBtn) editMediaBtn.disabled = false;
+        } else {
+            const editMediaBtn = document.getElementById('edit-media-btn');
+            if (editMediaBtn) editMediaBtn.disabled = true;
+        }
+
         // Pausar todos los videos de otras pantallas y reproducir el del teléfono seleccionado
         currentProject.screens.forEach((_, idx) => {
             const vid = document.getElementById(`reel-video-${idx}`);
@@ -1082,6 +1106,8 @@ document.addEventListener("DOMContentLoaded", () => {
         const placeholder = document.getElementById(`media-placeholder-${index}`);
         if (!video || !img || !placeholder) return;
         
+        if (window.resetMediaZoom) window.resetMediaZoom(index);
+
         if (screenData.mediaType === "video" && screenData.mediaSrc) {
             img.style.display = "none";
             video.style.display = "block";
@@ -1090,6 +1116,8 @@ document.addEventListener("DOMContentLoaded", () => {
             video.muted = true; // Asegurar silencio inicial
             if (index === currentProject.activeScreenIndex) {
                 video.play().catch(() => console.log("Video auto-play blocked."));
+                const editMediaBtn = document.getElementById('edit-media-btn');
+                if (editMediaBtn) editMediaBtn.disabled = true; // El editor es solo para imagenes
             } else {
                 video.pause();
                 if (video.currentTime === 0) {
@@ -1102,10 +1130,18 @@ document.addEventListener("DOMContentLoaded", () => {
             img.style.display = "block";
             placeholder.style.display = "none";
             img.src = screenData.mediaSrc;
+            if (index === currentProject.activeScreenIndex) {
+                const editMediaBtn = document.getElementById('edit-media-btn');
+                if (editMediaBtn) editMediaBtn.disabled = false;
+            }
         } else {
             video.style.display = "none";
             img.style.display = "none";
             placeholder.style.display = "flex";
+            if (index === currentProject.activeScreenIndex) {
+                const editMediaBtn = document.getElementById('edit-media-btn');
+                if (editMediaBtn) editMediaBtn.disabled = true;
+            }
         }
     }
 
@@ -1120,9 +1156,19 @@ document.addEventListener("DOMContentLoaded", () => {
             card.style.display = "block";
             card.style.width = (screenData.logoSize || 80) + "px";
             card.style.height = (screenData.logoSize || 80) + "px";
+            if (index === currentProject.activeScreenIndex) {
+                if (removeLogoBtn) removeLogoBtn.disabled = false;
+                const editLogoBtn = document.getElementById('edit-logo-btn');
+                if (editLogoBtn) editLogoBtn.disabled = false;
+            }
         } else {
             card.style.display = "none";
             preview.removeAttribute("src");
+            if (index === currentProject.activeScreenIndex) {
+                if (removeLogoBtn) removeLogoBtn.disabled = true;
+                const editLogoBtn = document.getElementById('edit-logo-btn');
+                if (editLogoBtn) editLogoBtn.disabled = true;
+            }
         }
     }
 
@@ -1757,4 +1803,330 @@ document.addEventListener("DOMContentLoaded", () => {
             } : null
         };
     }
+
+    // --- STICKER EDITOR LOGIC ---
+    (function setupStickerEditor() {
+        const overlay = document.getElementById('sticker-editor-overlay');
+        if (!overlay) return;
+
+        const modal         = document.getElementById('sticker-editor-modal');
+        const canvas        = document.getElementById('sticker-editor-canvas');
+        const ctx           = canvas.getContext('2d', { willReadFrequently: true });
+        const cursorDiv     = document.getElementById('eraser-cursor-preview');
+        const sizeSlider    = document.getElementById('eraser-size-slider');
+        const sizeLabel     = document.getElementById('eraser-size-label');
+        const sizeWrap      = document.getElementById('eraser-size-wrap');
+        const undoBtn       = document.getElementById('eraser-undo-btn');
+        const confirmBtn    = document.getElementById('sticker-editor-confirm');
+        const cancelBtn     = document.getElementById('sticker-editor-cancel');
+        const eraserToolBtn  = document.getElementById('tool-eraser-btn');
+        const magicWandToolBtn = document.getElementById('tool-magicwand-btn');
+        const restoreToolBtn = document.getElementById('tool-restore-btn');
+        const cropToolBtn    = document.getElementById('tool-crop-btn'); // Oculto por defecto
+        const canvasWrap     = document.getElementById('sticker-canvas-wrap');
+        
+        // Esconder herramienta Recortar ya que en Reels solo hay 1 logo
+        if(cropToolBtn) cropToolBtn.style.display = 'none';
+
+        let editingImg    = null;
+        let currentTool   = 'eraser'; 
+        let undoStack     = [];        
+        let isDrawing     = false;
+        let eraserSize    = 20;
+
+        const magicWandTolWrap = document.getElementById('magicwand-tol-wrap');
+        const magicWandTolSlider = document.getElementById('magicwand-tol-slider');
+        const magicWandTolLabel = document.getElementById('magicwand-tol-label');
+        if(magicWandTolSlider) {
+            magicWandTolSlider.addEventListener('input', (e) => {
+                magicWandTolLabel.textContent = e.target.value;
+            });
+        }
+
+        function getCanvasScale() {
+            const rect = canvas.getBoundingClientRect();
+            return { sx: canvas.width / rect.width, sy: canvas.height / rect.height };
+        }
+
+        function pushUndo() {
+            undoStack.push(ctx.getImageData(0, 0, canvas.width, canvas.height));
+            if (undoStack.length > 30) undoStack.shift();
+        }
+
+        window.openEraserEditor = function(imgElement, initialTool = 'eraser') {
+            editingImg = imgElement;
+            undoStack  = [];
+            setTool(initialTool);
+
+            const natural = new Image();
+            natural.crossOrigin = 'anonymous';
+            natural.onload = () => {
+                const maxW = 900, maxH = 700;
+                let w = natural.width, h = natural.height;
+                if (w > maxW) { h = Math.round(h * maxW / w); w = maxW; }
+                if (h > maxH) { w = Math.round(w * maxH / h); h = maxH; }
+                canvas.width  = w;
+                canvas.height = h;
+                ctx.clearRect(0, 0, w, h);
+                ctx.drawImage(natural, 0, 0, w, h);
+                pushUndo(); 
+                overlay.classList.add('active');
+            };
+            natural.src = imgElement.src;
+        };
+
+        function setTool(tool) {
+            currentTool = tool;
+            eraserToolBtn.classList.toggle('active-tool', tool === 'eraser');
+            magicWandToolBtn.classList.toggle('active-tool', tool === 'magicwand');
+            restoreToolBtn.classList.toggle('active-tool', tool === 'restore');
+
+            const isMagic = tool === 'magicwand';
+            canvas.style.cursor = isMagic ? 'crosshair' : 'none';
+            sizeWrap.style.display   = isMagic ? 'none' : 'flex';
+            if(magicWandTolWrap) magicWandTolWrap.style.display = isMagic ? 'flex' : 'none';
+            if (isMagic) cursorDiv.style.display = 'none';
+        }
+
+        eraserToolBtn.addEventListener('click', () => setTool('eraser'));
+        magicWandToolBtn.addEventListener('click', () => setTool('magicwand'));
+        restoreToolBtn.addEventListener('click', () => setTool('restore'));
+
+        sizeSlider.addEventListener('input', () => {
+            eraserSize = parseInt(sizeSlider.value);
+            sizeLabel.textContent = eraserSize + 'px';
+            updateCursorSize();
+        });
+
+        function updateCursorSize() {
+            const rect = canvas.getBoundingClientRect();
+            const displayScale = rect.width / canvas.width;
+            const displayPx = eraserSize * displayScale;
+            cursorDiv.style.width  = displayPx + 'px';
+            cursorDiv.style.height = displayPx + 'px';
+        }
+
+        canvas.addEventListener('mouseenter', () => {
+            if (currentTool === 'magicwand') return;
+            cursorDiv.style.display = 'block';
+            updateCursorSize();
+        });
+        canvas.addEventListener('mouseleave', () => {
+            cursorDiv.style.display = 'none';
+        });
+        canvas.addEventListener('mousemove', (e) => {
+            if (currentTool === 'magicwand') return;
+            cursorDiv.style.left = e.clientX + 'px';
+            cursorDiv.style.top  = e.clientY + 'px';
+            if (isDrawing) applyBrush(e);
+        });
+
+        function applyBrush(e) {
+            const rect = canvas.getBoundingClientRect();
+            const { sx, sy } = getCanvasScale();
+            const cx = (e.clientX - rect.left) * sx;
+            const cy = (e.clientY - rect.top)  * sy;
+            const r  = eraserSize / 2;
+
+            if (currentTool === 'eraser') {
+                ctx.save();
+                ctx.globalCompositeOperation = 'destination-out';
+                ctx.beginPath();
+                ctx.arc(cx, cy, r, 0, Math.PI * 2);
+                ctx.fillStyle = 'rgba(0,0,0,1)';
+                ctx.fill();
+                ctx.restore();
+            } else if (currentTool === 'restore') {
+                if (undoStack.length === 0) return;
+                const original = undoStack[0];
+                const x0 = Math.max(0, Math.floor(cx - r));
+                const y0 = Math.max(0, Math.floor(cy - r));
+                const x1 = Math.min(canvas.width,  Math.ceil(cx + r));
+                const y1 = Math.min(canvas.height, Math.ceil(cy + r));
+                const current = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                for (let py = y0; py < y1; py++) {
+                    for (let px = x0; px < x1; px++) {
+                        const dist = Math.sqrt((px - cx) ** 2 + (py - cy) ** 2);
+                        if (dist <= r) {
+                            const idx = (py * canvas.width + px) * 4;
+                            current.data[idx]     = original.data[idx];
+                            current.data[idx + 1] = original.data[idx + 1];
+                            current.data[idx + 2] = original.data[idx + 2];
+                            current.data[idx + 3] = original.data[idx + 3];
+                        }
+                    }
+                }
+                ctx.putImageData(current, 0, 0);
+            }
+        }
+
+        canvas.addEventListener('mousedown', (e) => {
+            if (currentTool === 'magicwand') {
+                pushUndo();
+                const rect = canvas.getBoundingClientRect();
+                const { sx, sy } = getCanvasScale();
+                const cx = Math.floor((e.clientX - rect.left) * sx);
+                const cy = Math.floor((e.clientY - rect.top)  * sy);
+                const tol = parseInt(magicWandTolSlider.value);
+                
+                const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                const data = imageData.data;
+                const targetIdx = (cy * canvas.width + cx) * 4;
+                const tr = data[targetIdx], tg = data[targetIdx+1], tb = data[targetIdx+2], ta = data[targetIdx+3];
+                
+                if (ta === 0) return; 
+                
+                function match(pos) {
+                    const r = data[pos], g = data[pos+1], b = data[pos+2], a = data[pos+3];
+                    if (a === 0) return false;
+                    return Math.abs(r - tr) <= tol && Math.abs(g - tg) <= tol && Math.abs(b - tb) <= tol && Math.abs(a - ta) <= tol;
+                }
+
+                const stack = [[cx, cy]];
+                while(stack.length > 0) {
+                    let [x, y] = stack.pop();
+                    let pos = (y * canvas.width + x) * 4;
+                    
+                    while(y >= 0 && match(pos)) { y--; pos -= canvas.width * 4; }
+                    pos += canvas.width * 4; y++;
+                    
+                    let reachLeft = false, reachRight = false;
+                    while(y < canvas.height && match(pos)) {
+                        data[pos+3] = 0; data[pos] = 0; data[pos+1] = 0; data[pos+2] = 0; 
+                        
+                        if(x > 0) {
+                            if(match(pos - 4)) {
+                                if(!reachLeft) { stack.push([x - 1, y]); reachLeft = true; }
+                            } else reachLeft = false;
+                        }
+                        if(x < canvas.width - 1) {
+                            if(match(pos + 4)) {
+                                if(!reachRight) { stack.push([x + 1, y]); reachRight = true; }
+                            } else reachRight = false;
+                        }
+                        y++; pos += canvas.width * 4;
+                    }
+                }
+                ctx.putImageData(imageData, 0, 0);
+            } else if (currentTool === 'eraser' || currentTool === 'restore') {
+                pushUndo();
+                isDrawing = true;
+                applyBrush(e);
+            }
+        });
+        window.addEventListener('mouseup', () => { isDrawing = false; });
+
+        undoBtn.addEventListener('click', () => {
+            if (undoStack.length <= 1) return; 
+            undoStack.pop();
+            ctx.putImageData(undoStack[undoStack.length - 1], 0, 0);
+        });
+
+        confirmBtn.addEventListener('click', () => {
+            if (!editingImg) return;
+            const newSrc = canvas.toDataURL('image/png');
+            editingImg.src = newSrc;
+            
+            // Determinar si era media o logo para guardarlo en los datos persistentes de la pantalla
+            if (editingImg.id.startsWith('reel-img-')) {
+                const idx = editingImg.id.replace('reel-img-', '');
+                currentProject.screens[idx].mediaSrc = newSrc;
+                saveTemplateQuietly();
+            } else if (editingImg.id.startsWith('logo-img-preview-')) {
+                const idx = editingImg.id.replace('logo-img-preview-', '');
+                currentProject.screens[idx].logoSrc = newSrc;
+                saveTemplateQuietly();
+            }
+            closeEditor();
+        });
+
+        cancelBtn.addEventListener('click', closeEditor);
+        overlay.addEventListener('click', (e) => {
+            if (e.target === overlay) closeEditor();
+        });
+
+        function closeEditor() {
+            overlay.classList.remove('active');
+            cursorDiv.style.display = 'none';
+            editingImg = null;
+            undoStack  = [];
+        }
+
+        const editMediaBtn = document.getElementById('edit-media-btn');
+        const editLogoBtn = document.getElementById('edit-logo-btn');
+
+        if(editMediaBtn) {
+            editMediaBtn.addEventListener('click', () => {
+                const idx = currentProject.activeScreenIndex;
+                const reelImg = document.getElementById(`reel-img-${idx}`);
+                if (reelImg && reelImg.src && reelImg.style.display !== 'none') {
+                    window.openEraserEditor(reelImg);
+                } else {
+                    alert('El editor mágico solo funciona con imágenes, no con videos.');
+                }
+            });
+        }
+
+        if(editLogoBtn) {
+            editLogoBtn.addEventListener('click', () => {
+                const idx = currentProject.activeScreenIndex;
+                const logoImgPreview = document.getElementById(`logo-img-preview-${idx}`);
+                if (logoImgPreview && logoImgPreview.src) {
+                    window.openEraserEditor(logoImgPreview);
+                }
+            });
+        }
+
+    })();
+
+    // --- ZOOM LOGIC FOR MEDIA (Image/Video) ---
+    (function setupMediaZoom() {
+        const ZOOM_SPEED = 0.05;
+        const MIN_ZOOM = 0.5;
+        const MAX_ZOOM = 3.0;
+        
+        // Guardar zooms temporalmente por indice
+        const zoomMap = {};
+
+        document.addEventListener('wheel', (e) => {
+            const mediaContainer = e.target.closest('.media-container');
+            if (!mediaContainer) return;
+
+            const match = mediaContainer.id.match(/media-container-(\d+)/);
+            if (!match) return;
+            const index = match[1];
+
+            e.preventDefault();
+            
+            if (!zoomMap[index]) zoomMap[index] = 1;
+
+            if (e.deltaY < 0) {
+                zoomMap[index] += ZOOM_SPEED;
+            } else {
+                zoomMap[index] -= ZOOM_SPEED;
+            }
+
+            zoomMap[index] = Math.min(Math.max(zoomMap[index], MIN_ZOOM), MAX_ZOOM);
+
+            const reelImg = document.getElementById(`reel-img-${index}`);
+            const reelVideo = document.getElementById(`reel-video-${index}`);
+            
+            // Aplicar escala a los divs correspondientes
+            if (reelImg && reelImg.style.display !== 'none') {
+                reelImg.style.transform = `scale(${zoomMap[index]})`;
+            }
+            if (reelVideo && reelVideo.style.display !== 'none') {
+                reelVideo.style.transform = `scale(${zoomMap[index]})`;
+            }
+        }, { passive: false });
+        
+        window.resetMediaZoom = function(index) {
+            zoomMap[index] = 1;
+            const reelImg = document.getElementById(`reel-img-${index}`);
+            const reelVideo = document.getElementById(`reel-video-${index}`);
+            if (reelImg) reelImg.style.transform = `scale(1)`;
+            if (reelVideo) reelVideo.style.transform = `scale(1)`;
+        };
+    })();
+
 });

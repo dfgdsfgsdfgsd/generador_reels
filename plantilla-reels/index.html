@@ -67,6 +67,7 @@
                 <div class="row-flex" style="margin-top: 8px;">
                     <button id="play-pause-btn" class="action-btn text-btn" disabled><i class="fa-solid fa-play"></i> Reproducir</button>
                     <button id="mute-btn" class="action-btn text-btn" disabled><i class="fa-solid fa-volume-xmark"></i> Silenciar</button>
+                    <button id="edit-media-btn" class="action-btn text-btn" style="color: var(--color-accent); border-color: var(--color-accent);" disabled><i class="fa-solid fa-wand-magic-sparkles"></i> Editar</button>
                 </div>
             </div>
 
@@ -81,6 +82,7 @@
                 </div>
                 <div class="row-flex" style="margin-top: 8px;">
                     <button id="remove-logo-btn" class="action-btn text-btn danger" style="color: var(--color-danger); border-color: var(--color-danger);" disabled><i class="fa-solid fa-trash"></i> Quitar Logo</button>
+                    <button id="edit-logo-btn" class="action-btn text-btn" style="color: var(--color-accent); border-color: var(--color-accent);" disabled><i class="fa-solid fa-wand-magic-sparkles"></i> Editar</button>
                 </div>
             </div>
 
@@ -305,6 +307,66 @@
         </div>
     </div>
     
+    <!-- MODAL EDITOR DE STICKER -->
+    <div id="sticker-editor-overlay">
+        <div id="sticker-editor-modal">
+            <h3><i class="fa-solid fa-eraser"></i> Editor de Pegatina</h3>
+            <div id="sticker-editor-toolbar">
+                <button class="editor-btn secondary active-tool" id="tool-eraser-btn">
+                    <i class="fa-solid fa-eraser"></i> Goma
+                </button>
+                <button class="editor-btn secondary" id="tool-magicwand-btn" title="Borrador Mágico (Flood Fill)">
+                    🪄 Varita Mágica
+                </button>
+                <button class="editor-btn secondary" id="tool-restore-btn">
+                    <i class="fa-solid fa-paintbrush"></i> Restaurar
+                </button>
+                <button class="editor-btn secondary" id="tool-crop-btn">
+                    <i class="fa-solid fa-scissors"></i> Recortar
+                </button>
+                <div id="eraser-size-wrap">
+                    <i class="fa-solid fa-circle" style="font-size:0.5em; color:#aaa;"></i>
+                    <input type="range" id="eraser-size-slider" min="4" max="80" value="20">
+                    <i class="fa-solid fa-circle" style="font-size:1em; color:#aaa;"></i>
+                    <span id="eraser-size-label" style="display:inline-block; min-width:40px; text-align:left;">20px</span>
+                </div>
+                <div id="magicwand-tol-wrap" style="display:none; align-items:center; gap:8px;">
+                    <label style="color:#ddd; font-size:13px; font-weight: bold;">Tolerancia:</label>
+                    <input type="range" id="magicwand-tol-slider" min="0" max="255" value="30">
+                    <span id="magicwand-tol-label" style="color:#ddd; font-size:13px; font-weight: bold; min-width: 30px;">30</span>
+                </div>
+                <button class="editor-btn danger" id="eraser-undo-btn">
+                    <i class="fa-solid fa-rotate-left"></i> Deshacer
+                </button>
+            </div>
+
+            <p id="crop-hint" style="display:none; color:#ddd; font-size:0.8rem; margin:0 0 6px 0; text-align:center;">
+                Dibujá un rectángulo sobre cada pedazo que quieras separar. Podés marcar varios.
+            </p>
+
+            <div id="sticker-canvas-wrap" style="position:relative; display:inline-block;">
+                <canvas id="sticker-editor-canvas"></canvas>
+                <canvas id="sticker-crop-overlay" style="position:absolute; top:0; left:0;"></canvas>
+            </div>
+
+            <div id="crop-pieces-list" style="display:none; flex-wrap:wrap; gap:8px; margin-top:8px; max-width:100%;"></div>
+
+            <div style="display:flex; gap:10px; margin-top:4px;">
+                <button class="editor-btn primary" id="sticker-editor-confirm">
+                    <i class="fa-solid fa-check"></i> Aplicar
+                </button>
+                <button class="editor-btn primary" id="sticker-crop-apply-btn" style="display:none; background-color:#8e44ad;">
+                    <i class="fa-solid fa-scissors"></i> Aplicar división (<span id="crop-pieces-count">0</span>)
+                </button>
+                <button class="editor-btn secondary" id="sticker-editor-cancel">
+                    <i class="fa-solid fa-xmark"></i> Cancelar
+                </button>
+            </div>
+        </div>
+    </div>
+    <!-- Cursor visual de la goma -->
+    <div id="eraser-cursor-preview"></div>
+
     <script src="app.js"></script>
 </body>
 </html>
