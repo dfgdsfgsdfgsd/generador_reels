@@ -1,11 +1,38 @@
 document.addEventListener("DOMContentLoaded", () => {
-    // ESTADO DE LA APLICACIÓN
-    let templatesList = [{ id: "default", name: "Diseño por Defecto" }];
+    // ESTADO DE LA APLICACIÃ“N
+    let templatesList = [{ id: "default", name: "DiseÃ±o por Defecto" }];
     let currentTemplateName = "default";
     let activeCardKey = null; // 'header', 'footer', 'media', o 'logo'
     let rawVideoFile = null;
     
-    // Proyecto activo en memoria (que contiene múltiples pantallas)
+    // Proyecto activo en memoria (que contiene mÃºltiples pantallas)
+    // Utilidad para comprimir imgenes y evitar llenar el localStorage
+    function compressImage(src, maxWidth = 1000, quality = 0.8) {
+        return new Promise((resolve) => {
+            const img = new Image();
+            img.crossOrigin = "anonymous";
+            img.onload = () => {
+                let width = img.width;
+                let height = img.height;
+                
+                if (width > maxWidth) {
+                    height = Math.round((height * maxWidth) / width);
+                    width = maxWidth;
+                }
+                
+                const canvas = document.createElement("canvas");
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext("2d");
+                ctx.drawImage(img, 0, 0, width, height);
+                
+                resolve(canvas.toDataURL("image/webp", quality));
+            };
+            img.onerror = () => resolve(src);
+            img.src = src;
+        });
+    }
+    
     let currentProject = {
         name: "default",
         activeScreenIndex: 0,
@@ -15,7 +42,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // Referencia a la pantalla activa (se actualiza al seleccionar)
     let currentTemplate = null;
 
-    // ELEMENTOS DINÁMICOS DEL DOM (se actualizan al seleccionar pantalla)
+    // ELEMENTOS DINÃ MICOS DEL DOM (se actualizan al seleccionar pantalla)
     let reelCanvas = null;
     let headerCard = null;
     let footerCard = null;
@@ -29,7 +56,7 @@ document.addEventListener("DOMContentLoaded", () => {
     let logoImgPreview = null;
     let instagramOverlay = null;
 
-    // ELEMENTOS ESTÁTICOS DEL DOM DE LA BARRA LATERAL
+    // ELEMENTOS ESTÃ TICOS DEL DOM DE LA BARRA LATERAL
     const simulatorPane = document.getElementById("simulator-pane");
     const projectSelect = document.getElementById("project-select");
     const newProjectBtn = document.getElementById("new-project-btn");
@@ -71,12 +98,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const logoInput = document.getElementById("logo-input");
     const removeLogoBtn = document.getElementById("remove-logo-btn");
+    const stickerInput = document.getElementById("sticker-input");
 
     const toggleIgOverlay = document.getElementById("toggle-ig-overlay");
     const toggleHeaderCard = document.getElementById("toggle-header-card");
     const toggleFooterCard = document.getElementById("toggle-footer-card");
 
-    // Botones de gestión de pantallas
+    // Botones de gestiÃ³n de pantallas
     const addPhoneBtn = document.getElementById("add-phone-btn");
     const duplicatePhoneBtn = document.getElementById("duplicate-phone-btn");
     const deletePhoneBtn = document.getElementById("delete-phone-btn");
@@ -116,20 +144,32 @@ document.addEventListener("DOMContentLoaded", () => {
                 let top = startTop + dy;
                 let left = startLeft + dx;
                 
-                // Límites de la pantalla del teléfono
+                // LÃ­mites de la pantalla del telÃ©fono
                 top = Math.max(10, Math.min(canvas.offsetHeight - el.offsetHeight - 10, top));
-                left = Math.max(10, Math.min(canvas.offsetWidth - el.offsetWidth - 10, left));
+                if (key === 'media') {
+                    left = 20; // Bloquear arrastre horizontal para media
+                } else {
+                    left = Math.max(10, Math.min(canvas.offsetWidth - el.offsetWidth - 10, left));
+                }
                 
                 el.style.top = top + "px";
                 el.style.left = left + "px";
                 el.style.bottom = "auto"; // Limpiar posicionamiento relativo de bottom
                 
                 const screenData = currentProject.screens[index];
-                if (!screenData.positions) screenData.positions = {};
-                screenData.positions[key] = {
-                    top: top + "px",
-                    left: left + "px"
-                };
+                if (key.startsWith('sticker_')) {
+                    const sIdx = parseInt(key.split('_')[1], 10);
+                    if(screenData.stickers && screenData.stickers[sIdx]) {
+                        screenData.stickers[sIdx].top = top + "px";
+                        screenData.stickers[sIdx].left = left + "px";
+                    }
+                } else {
+                    if (!screenData.positions) screenData.positions = {};
+                    screenData.positions[key] = {
+                        top: top + "px",
+                        left: top + "px" // Esto parece ser un error en el original, pero mantengo la lÃ³gica original
+                    };
+                }
             }
             
             function onMouseUp() {
@@ -180,30 +220,56 @@ document.addEventListener("DOMContentLoaded", () => {
                     // Ajuste Ancho (Horizontal)
                     if (isRight || isCorner) {
                         let newWidthPx = startWidth + dx;
-                        let newWidthPercent = Math.round((newWidthPx / canvasWidth) * 100);
-                        newWidthPercent = Math.max(30, Math.min(100, newWidthPercent));
-                        
-                        cardEl.style.width = newWidthPercent + "%";
-                        if (!screenData.styles) screenData.styles = {};
-                        if (!screenData.styles[key]) screenData.styles[key] = { color: "#ffffff", boxColor: "#000000", opacity: 85, width: 85 };
-                        screenData.styles[key].width = newWidthPercent;
-                        
-                        // Sincronizar UI lateral
-                        if (index === currentProject.activeScreenIndex && activeCardKey === key) {
-                            boxWidthSlider.value = newWidthPercent;
-                            boxWidthVal.textContent = newWidthPercent + "%";
+                        if (key.startsWith('sticker_')) {
+                            cardEl.style.width = newWidthPx + "px";
+                            const sIdx = parseInt(key.split('_')[1], 10);
+                            if(screenData.stickers && screenData.stickers[sIdx]) {
+                                screenData.stickers[sIdx].width = newWidthPx + "px";
+                            }
+                        } else if (key === 'logo') {
+                            cardEl.style.width = newWidthPx + "px";
+                            screenData.logoSize = newWidthPx;
+                        } else {
+                            let newWidthPercent = Math.round((newWidthPx / canvasWidth) * 100);
+                            newWidthPercent = Math.max(30, Math.min(100, newWidthPercent));
+                            cardEl.style.width = newWidthPercent + "%";
+                            if (!screenData.styles) screenData.styles = {};
+                            if (!screenData.styles[key]) screenData.styles[key] = { color: "#ffffff", boxColor: "#000000", opacity: 85, width: 85 };
+                            screenData.styles[key].width = newWidthPercent;
+                            
+                            // Sincronizar UI lateral
+                            if (index === currentProject.activeScreenIndex && activeCardKey === key) {
+                                boxWidthSlider.value = newWidthPercent;
+                                boxWidthVal.textContent = newWidthPercent + "%";
+                            }
                         }
                     }
                     
                     // Ajuste Alto (Vertical hacia abajo)
                     if (isBottom || isCorner) {
                         let newHeightPx = startHeight + dy;
+                        
+                        if (key.startsWith('sticker_') && isCorner) {
+                            let newWidthPx = startWidth + dx;
+                            newHeightPx = newWidthPx * (startHeight / startWidth);
+                        }
+                        
                         newHeightPx = Math.max(40, newHeightPx);
                         
                         cardEl.style.height = newHeightPx + "px";
-                        if (!screenData.styles) screenData.styles = {};
-                        if (!screenData.styles[key]) screenData.styles[key] = { color: "#ffffff", boxColor: "#000000", opacity: 85, width: 85 };
-                        screenData.styles[key].height = newHeightPx;
+                        
+                        if (key.startsWith('sticker_')) {
+                            const sIdx = parseInt(key.split('_')[1], 10);
+                            if(screenData.stickers && screenData.stickers[sIdx]) {
+                                screenData.stickers[sIdx].height = newHeightPx + "px";
+                            }
+                        } else if (key === 'logo') {
+                            screenData.logoSize = newHeightPx;
+                        } else {
+                            if (!screenData.styles) screenData.styles = {};
+                            if (!screenData.styles[key]) screenData.styles[key] = { color: "#ffffff", boxColor: "#000000", opacity: 85, width: 85 };
+                            screenData.styles[key].height = newHeightPx;
+                        }
                     }
 
                     // Ajuste Alto (Vertical hacia arriba)
@@ -217,13 +283,26 @@ document.addEventListener("DOMContentLoaded", () => {
                             cardEl.style.height = newHeightPx + "px";
                             cardEl.style.bottom = "auto";
                             
-                            if (!screenData.positions) screenData.positions = {};
-                            if (!screenData.positions[key]) screenData.positions[key] = {};
-                            screenData.positions[key].top = newTopPx + "px";
-                            
-                            if (!screenData.styles) screenData.styles = {};
-                            if (!screenData.styles[key]) screenData.styles[key] = { color: "#ffffff", boxColor: "#000000", opacity: 85, width: 85 };
-                            screenData.styles[key].height = newHeightPx;
+                            if (key.startsWith('sticker_')) {
+                                const sIdx = parseInt(key.split('_')[1], 10);
+                                if(screenData.stickers && screenData.stickers[sIdx]) {
+                                    screenData.stickers[sIdx].top = newTopPx + "px";
+                                    screenData.stickers[sIdx].height = newHeightPx + "px";
+                                }
+                            } else if (key === 'logo') {
+                                screenData.logoSize = newHeightPx;
+                                if (!screenData.positions) screenData.positions = {};
+                                if (!screenData.positions[key]) screenData.positions[key] = {};
+                                screenData.positions[key].top = newTopPx + "px";
+                            } else {
+                                if (!screenData.positions) screenData.positions = {};
+                                if (!screenData.positions[key]) screenData.positions[key] = {};
+                                screenData.positions[key].top = newTopPx + "px";
+                                
+                                if (!screenData.styles) screenData.styles = {};
+                                if (!screenData.styles[key]) screenData.styles[key] = { color: "#ffffff", boxColor: "#000000", opacity: 85, width: 85 };
+                                screenData.styles[key].height = newHeightPx;
+                            }
                         }
                     }
                 }
@@ -250,23 +329,50 @@ document.addEventListener("DOMContentLoaded", () => {
     function selectCard(key) {
         activeCardKey = key;
         
-        // Limpiar estilos de selección
+        // Limpiar estilos de selecciÃ³n
         document.querySelectorAll(".text-card").forEach(c => c.classList.remove("card-selected-highlight"));
         document.querySelectorAll(".media-container").forEach(c => c.classList.remove("card-selected-highlight"));
         document.querySelectorAll(".logo-card").forEach(c => c.classList.remove("card-selected-highlight"));
+        document.querySelectorAll(".sticker-card").forEach(c => c.classList.remove("card-selected-highlight"));
         
         if (!key) {
             fontSizeSlider.disabled = true;
-            fontSizeLabel.textContent = "Tamaño: Selecciona un bloque";
+            fontSizeLabel.textContent = "TamaÃ±o: Selecciona un bloque";
             boxWidthSlider.disabled = true;
             boxWidthLabel.textContent = "Ancho de Caja: Selecciona un bloque";
+            syncAdjustButtonsState();
+            return;
+        }
+
+        if (key.startsWith("sticker_")) {
+            fontSizeSlider.disabled = true;
+            fontSizeLabel.textContent = "Tamaño: Pegatina";
+            
+            const idx = parseInt(key.split('_')[1], 10);
+            const sCard = document.getElementById(`sticker-card-${currentProject.activeScreenIndex}-${idx}`);
+            if (sCard) {
+                sCard.classList.add("card-selected-highlight");
+                
+                boxWidthSlider.disabled = false;
+                boxWidthSlider.min = 10;
+                boxWidthSlider.max = 100;
+                // Get current width or default to 40
+                const currentWidth = parseFloat(sCard.style.width) || 40;
+                boxWidthSlider.value = currentWidth;
+                boxWidthLabel.textContent = "Tamaño Pegatina:";
+                boxWidthVal.textContent = Math.round(currentWidth) + "%";
+            } else {
+                boxWidthSlider.disabled = true;
+                boxWidthLabel.textContent = "Ancho de Caja: N/A";
+            }
+            
             syncAdjustButtonsState();
             return;
         }
         
         if (key === "media") {
             fontSizeSlider.disabled = true;
-            fontSizeLabel.textContent = "Tamaño: Video/Imagen (Fijo 1:1)";
+            fontSizeLabel.textContent = "TamaÃ±o: Video/Imagen (Fijo 1:1)";
             boxWidthSlider.disabled = true;
             boxWidthLabel.textContent = "Ancho de Caja: Fijo 1:1";
             if (mediaContainer) mediaContainer.classList.add("card-selected-highlight");
@@ -276,13 +382,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
         if (key === "logo") {
             fontSizeSlider.disabled = true;
-            fontSizeLabel.textContent = "Tamaño: Logo Flotante";
+            fontSizeLabel.textContent = "TamaÃ±o: Logo Flotante";
             boxWidthSlider.disabled = false;
             boxWidthSlider.min = 30;
             boxWidthSlider.max = 300;
             boxWidthSlider.value = currentTemplate.logoSize || 80;
             boxWidthVal.textContent = boxWidthSlider.value + "px";
-            boxWidthLabel.textContent = "Tamaño Logo:";
+            boxWidthLabel.textContent = "TamaÃ±o Logo:";
             if (logoCard) logoCard.classList.add("card-selected-highlight");
             syncAdjustButtonsState();
             return;
@@ -295,7 +401,7 @@ document.addEventListener("DOMContentLoaded", () => {
         
         // Habilitar controles del slider de fuentes
         fontSizeSlider.disabled = false;
-        fontSizeLabel.textContent = `Tamaño: ${key === "header" ? "Título Superior" : "Descripción Inferior"}`;
+        fontSizeLabel.textContent = `TamaÃ±o: ${key === "header" ? "TÃ­tulo Superior" : "DescripciÃ³n Inferior"}`;
         
         const currentSize = currentTemplate.fontSizes[key] || 100;
         fontSizeSlider.value = currentSize;
@@ -312,12 +418,12 @@ document.addEventListener("DOMContentLoaded", () => {
         boxWidthSlider.max = 100;
         boxWidthSlider.value = style.width;
         boxWidthVal.textContent = style.width + "%";
-        boxWidthLabel.textContent = `Ancho: ${key === "header" ? "Título Superior" : "Descripción Inferior"}`;
+        boxWidthLabel.textContent = `Ancho: ${key === "header" ? "TÃ­tulo Superior" : "DescripciÃ³n Inferior"}`;
         
         syncAdjustButtonsState();
     }
 
-    // ACTUALIZAR TAMAÑO DE FUENTE
+    // ACTUALIZAR TAMAÃ‘O DE FUENTE
     fontSizeSlider.addEventListener("input", (e) => {
         if (!activeCardKey) return;
         const val = e.target.value;
@@ -336,7 +442,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (!file) return;
 
         try {
-            // Mostrar previsualización temporal inmediata usando blob local
+            // Mostrar previsualizaciÃ³n temporal inmediata usando blob local
             const fileURL = URL.createObjectURL(file);
             currentTemplate.mediaType = file.type.startsWith("video/") ? "video" : "image";
             currentTemplate.mediaSrc = fileURL;
@@ -362,7 +468,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 console.log("[Editor] Video guardado de forma persistente en servidor:", resData.url);
                 saveTemplateQuietly();
             } else {
-                console.warn("[Editor] Falló subida persistente, se usará sesión temporal.");
+                console.warn("[Editor] FallÃ³ subida persistente, se usarÃ¡ sesiÃ³n temporal.");
             }
         } catch (err) {
             console.error("[Editor] Error subiendo video persistentemente:", err);
@@ -379,15 +485,49 @@ document.addEventListener("DOMContentLoaded", () => {
         saveTemplateQuietly();
     });
 
+    // CARGA DE PEGATINAS / IMÁGENES FLOTANTES (botón unificado)
+    stickerInput.addEventListener("change", (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = async (event) => {
+            const compressedSrc = await compressImage(event.target.result, 800, 0.8);
+            const screenData = currentProject.screens[currentProject.activeScreenIndex];
+            if (!screenData.stickers) screenData.stickers = [];
+            
+            // Generate a random ID
+            const sId = 'sticker-' + Date.now() + '-' + Math.floor(Math.random() * 1000);
+            
+            screenData.stickers.push({
+                src: compressedSrc,
+                width: '40%',
+                height: 'auto',
+                top: '30%',
+                left: '30%',
+                id: sId
+            });
+            saveTemplateQuietly();
+            renderScreens();
+            
+            // Habilitar botón "Editar última"
+            const editLastStickerBtn = document.getElementById('edit-last-sticker-btn');
+            if (editLastStickerBtn) editLastStickerBtn.disabled = false;
+            
+            // Limpiar input para permitir seleccionar el mismo archivo de nuevo
+            stickerInput.value = "";
+        };
+        reader.readAsDataURL(file);
+    });
+
     // CARGA DE LOGO FLOTANTE
     logoInput.addEventListener("change", (e) => {
         const file = e.target.files[0];
         if (!file) return;
 
         const reader = new FileReader();
-        reader.onload = (event) => {
-            currentTemplate.logoSrc = event.target.result;
-            // Posición por defecto
+        reader.onload = async (event) => {
+            currentTemplate.logoSrc = await compressImage(event.target.result, 400, 0.8);
+            // PosiciÃ³n por defecto
             if (!currentTemplate.positions) currentTemplate.positions = {};
             if (!currentTemplate.positions.logo) {
                 currentTemplate.positions.logo = { top: "150px", left: "140px" };
@@ -406,7 +546,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // CONTROLES DE REPRODUCCIÓN DE VIDEO
+    // CONTROLES DE REPRODUCCIÃ“N DE VIDEO
     playPauseBtn.addEventListener("click", () => {
         if (!reelVideo) return;
         if (reelVideo.paused) {
@@ -493,6 +633,20 @@ document.addEventListener("DOMContentLoaded", () => {
             saveTemplateQuietly();
             return;
         }
+        if (activeCardKey.startsWith("sticker_")) {
+            boxWidthVal.textContent = val + "%";
+            const idx = parseInt(activeCardKey.split('_')[1], 10);
+            const sCard = document.getElementById(`sticker-card-${currentProject.activeScreenIndex}-${idx}`);
+            if (sCard) {
+                sCard.style.width = val + "%";
+                sCard.style.height = "auto";
+                if(currentProject.screens[currentProject.activeScreenIndex].stickers[idx]) {
+                    currentProject.screens[currentProject.activeScreenIndex].stickers[idx].width = val + "%";
+                }
+            }
+            saveTemplateQuietly();
+            return;
+        }
         boxWidthVal.textContent = val + "%";
         currentTemplate.styles[activeCardKey].width = val;
         applyScreenStyles(currentProject.activeScreenIndex);
@@ -521,7 +675,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // CENTRAR BLOQUE HORIZONTALMENTE
     centerBlockBtn.addEventListener("click", () => {
         if (!activeCardKey) {
-            alert("Selecciona primero el bloque de texto o multimedia haciendo clic sobre él.");
+            alert("Selecciona primero el bloque de texto o multimedia haciendo clic sobre Ã©l.");
             return;
         }
         
@@ -541,14 +695,14 @@ document.addEventListener("DOMContentLoaded", () => {
         saveTemplateQuietly();
     });
 
-    // EXPORTACIÓN A PDF (Impresión nativa)
+    // EXPORTACIÃ“N A PDF (ImpresiÃ³n nativa)
     exportBtn.addEventListener("click", () => {
         selectCard(null);
         syncDOMToState();
         window.print();
     });
 
-    // SISTEMA DE PROYECTOS / GESTIÓN DE PLANTILLAS
+    // SISTEMA DE PROYECTOS / GESTIÃ“N DE PLANTILLAS
     function initProjects() {
         const savedList = localStorage.getItem("reels_projects");
         if (savedList) {
@@ -559,7 +713,7 @@ document.addEventListener("DOMContentLoaded", () => {
         templatesList.forEach(p => {
             const opt = document.createElement("option");
             opt.value = p.id;
-            opt.textContent = p.name === "default" ? "Diseño por Defecto" : p.name;
+            opt.textContent = p.name === "default" ? "DiseÃ±o por Defecto" : p.name;
             projectSelect.appendChild(opt);
         });
     }
@@ -590,7 +744,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // Guardado manual
     saveBtn.addEventListener("click", () => {
         saveTemplateQuietly();
-        alert(`¡Plantilla "${currentTemplateName === "default" ? "por Defecto" : currentTemplateName}" guardada con éxito!`);
+        alert(`Â¡Plantilla "${currentTemplateName === "default" ? "por Defecto" : currentTemplateName}" guardada con Ã©xito!`);
     });
 
     // Crear nuevo proyecto
@@ -627,7 +781,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Guardar copia
     saveProjectAsBtn.addEventListener("click", () => {
-        const name = prompt("Guardar diseño actual como (nombre nuevo):");
+        const name = prompt("Guardar diseÃ±o actual como (nombre nuevo):");
         if (!name) return;
         const cleanName = name.replace(/[^\w-]/g, '').trim();
         if (!cleanName) return;
@@ -651,14 +805,14 @@ document.addEventListener("DOMContentLoaded", () => {
     // Cargar plantilla al cambiar selector
     projectSelect.addEventListener("change", (e) => {
         const selected = e.target.value;
-        if (confirm(`¿Quieres cargar la plantilla "${selected === "default" ? "por defecto" : selected}"?`)) {
+        if (confirm(`Â¿Quieres cargar la plantilla "${selected === "default" ? "por defecto" : selected}"?`)) {
             loadTemplateData(selected);
         } else {
             projectSelect.value = currentTemplateName;
         }
     });
 
-        // Crear diseño de pantalla por defecto
+        // Crear diseÃ±o de pantalla por defecto
     function createDefaultScreen(index = 0) {
         return {
             name: `Pantalla ${index + 1}`,
@@ -671,9 +825,9 @@ document.addEventListener("DOMContentLoaded", () => {
             showFooterCard: true,
             showInstagramOverlay: false,
             headerText: index === 0 
-                ? "🔥 <strong>TÍTULO DE GANCHO</strong><br>¡Este tip te volará la cabeza!"
-                : `🔥 <strong>DISEÑO DE REEL ${index + 1}</strong><br>Edita este texto para tu gancho.`,
-            footerText: "💡 <strong>Aprende el secreto hoy</strong><br>Síguenos para más consejos diarios 👇<br><span style='color: #dfb15b;'>#cocina #consejos #tutorial</span>",
+                ? "ðŸ”¥ <strong>TÃ TULO DE GANCHO</strong><br>Â¡Este tip te volarÃ¡ la cabeza!"
+                : `ðŸ”¥ <strong>DISEÃ‘O DE REEL ${index + 1}</strong><br>Edita este texto para tu gancho.`,
+            footerText: "ðŸ’¡ <strong>Aprende el secreto hoy</strong><br>SÃ­guenos para mÃ¡s consejos diarios ðŸ‘‡<br><span style='color: #dfb15b;'>#cocina #consejos #tutorial</span>",
             fontSizes: {
                 header: 115,
                 footer: 95
@@ -709,7 +863,7 @@ document.addEventListener("DOMContentLoaded", () => {
             if (parsed.screens && Array.isArray(parsed.screens)) {
                 currentProject = parsed;
             } else {
-                // Migración para proyectos antiguos de pantalla única
+                // MigraciÃ³n para proyectos antiguos de pantalla Ãºnica
                 if (parsed.positions && parsed.positions.footer && parsed.positions.footer.top === "auto") {
                     parsed.positions.footer.top = "490px";
                 }
@@ -762,9 +916,9 @@ document.addEventListener("DOMContentLoaded", () => {
                             </div>
 
                             <!-- Bloque central de video 1:1 -->
-                            <div class="media-container" id="media-container-${index}" style="top: ${screenData.positions?.media?.top || '160px'}; left: ${screenData.positions?.media?.left || '20px'};">
+                            <div class="media-container" id="media-container-${index}" style="top: ${screenData.positions?.media?.top || '160px'}; left: 20px;">
                                 <video id="reel-video-${index}" loop muted playsinline style="display: none;"></video>
-                                <img id="reel-img-${index}" src="" alt="Previsualización" style="display: none;">
+                                <img id="reel-img-${index}" src="" alt="PrevisualizaciÃ³n" style="display: none;">
                                 <div class="media-placeholder" id="media-placeholder-${index}">
                                     <i class="fa-solid fa-video"></i>
                                     <span>Carga un video/imagen 1:1</span>
@@ -791,23 +945,32 @@ document.addEventListener("DOMContentLoaded", () => {
                                 <div class="resize-handle resize-se" data-key="logo" data-index="${index}"></div>
                             </div>
 
-                            <!-- Simulación de interfaz de Instagram Reels -->
+                            // Pegatinas dinÃ¡micas
+                            ${(screenData.stickers || []).map((sticker, sIdx) => `
+                                <div class="sticker-card drag-el" id="sticker-card-${index}-${sIdx}" data-sticker-index="${sIdx}" style="top: ${sticker.top}; left: ${sticker.left}; width: ${sticker.width}; height: ${sticker.height}; position: absolute; z-index: 120;">
+                                    <img src="${sticker.src}" alt="Pegatina" style="width: 100%; height: auto; display: block; pointer-events: none;">
+                                    <button class="delete-sticker-btn" data-screen="${index}" data-sticker="${sIdx}" style="position: absolute; top: -10px; right: -10px; background: red; color: white; border: none; border-radius: 50%; width: 20px; height: 20px; cursor: pointer; align-items: center; justify-content: center; font-size: 10px; z-index: 60;"><i class="fa-solid fa-xmark"></i></button>
+                                    <div class="resize-handle resize-se" data-key="sticker_${sIdx}" data-index="${index}"></div>
+                                </div>
+                            `).join('')}
+
+                            <!-- SimulaciÃ³n de interfaz de Instagram Reels -->
                             <div class="instagram-overlay" id="instagram-overlay-${index}" style="display: none;">
                                 <div class="ig-actions">
                                     <div class="ig-action"><i class="fa-solid fa-heart"></i><span>12.4K</span></div>
                                     <div class="ig-action"><i class="fa-solid fa-comment"></i><span>382</span></div>
                                     <div class="ig-action"><i class="fa-solid fa-paper-plane"></i><span>95</span></div>
                                     <div class="ig-action"><i class="fa-solid fa-ellipsis-vertical"></i></div>
-                                    <div class="ig-audio-disc">🎵</div>
+                                    <div class="ig-audio-disc">ðŸŽµ</div>
                                 </div>
                                 <div class="ig-profile-info">
                                     <div class="ig-user">
-                                        <div class="ig-avatar">🍳</div>
+                                        <div class="ig-avatar">ðŸ ³</div>
                                         <span>chef_recetas</span>
                                         <button class="ig-follow-btn">Seguir</button>
                                     </div>
-                                    <div class="ig-caption">¡Aprende esta increíble receta en pocos pasos! ... <span class="ig-more">más</span></div>
-                                    <div class="ig-music-name">🎵 Audio original • chef_recetas</div>
+                                    <div class="ig-caption">Â¡Aprende esta increÃ­ble receta en pocos pasos! ... <span class="ig-more">mÃ¡s</span></div>
+                                    <div class="ig-music-name">ðŸŽµ Audio original â€¢ chef_recetas</div>
                                 </div>
                             </div>
 
@@ -839,8 +1002,45 @@ document.addEventListener("DOMContentLoaded", () => {
             setupResizable(hCard, "header", index);
             setupResizable(fCard, "footer", index);
             setupResizable(lCard, "logo", index);
+
+            // Pegatinas dinÃ¡micas
+            (screenData.stickers || []).forEach((_, sIdx) => {
+                const sCard = document.getElementById(`sticker-card-${index}-${sIdx}`);
+                if(sCard) {
+                    setupDraggable(sCard, `sticker_${sIdx}`, index);
+                    setupResizable(sCard, `sticker_${sIdx}`, index);
+                    
+                    const delBtn = sCard.querySelector('.delete-sticker-btn');
+                    
+                    if(delBtn) {
+                        delBtn.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            currentProject.screens[index].stickers.splice(sIdx, 1);
+                            renderScreens();
+                        });
+                    }
+                    
+                    sCard.addEventListener("click", (e) => {
+                        e.stopPropagation();
+                        selectScreen(index);
+                        selectCard(`sticker_${sIdx}`);
+                    });
+                    
+                    sCard.addEventListener("dblclick", (e) => {
+                        e.stopPropagation();
+                        selectScreen(index);
+                        selectCard(`sticker_${sIdx}`);
+                        const imgEl = sCard.querySelector('img');
+                        if (imgEl) {
+                            window._editingStickerScreenIdx = index;
+                            window._editingStickerIdx = sIdx;
+                            window.openEraserEditor(imgEl);
+                        }
+                    });
+                }
+            });
             
-            // Manejadores de eventos para arrastrar y soltar teléfonos (Mesa de trabajo)
+            // Manejadores de eventos para arrastrar y soltar telÃ©fonos (Mesa de trabajo)
             let dragAllowed = false;
             
             wrapper.addEventListener("mousedown", (e) => {
@@ -888,7 +1088,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     const [movedScreen] = currentProject.screens.splice(fromIndex, 1);
                     currentProject.screens.splice(toIndex, 0, movedScreen);
                     
-                    // Actualizar el índice de la pantalla activa
+                    // Actualizar el Ã­ndice de la pantalla activa
                     if (currentProject.activeScreenIndex === fromIndex) {
                         currentProject.activeScreenIndex = toIndex;
                     } else if (currentProject.activeScreenIndex > fromIndex && currentProject.activeScreenIndex <= toIndex) {
@@ -971,7 +1171,7 @@ document.addEventListener("DOMContentLoaded", () => {
         currentProject.activeScreenIndex = index;
         currentTemplate = currentProject.screens[index];
         
-        // Actualizar visualmente la selección en la UI
+        // Actualizar visualmente la selecciÃ³n en la UI
         document.querySelectorAll(".phone-mockup").forEach(mock => {
             mock.classList.remove("selected-phone");
         });
@@ -981,7 +1181,7 @@ document.addEventListener("DOMContentLoaded", () => {
             selectedMock.classList.add("selected-phone");
         }
         
-        // Vincular referencias a los elementos dinámicos
+        // Vincular referencias a los elementos dinÃ¡micos
         reelCanvas = document.getElementById(`reel-canvas-${index}`);
         headerCard = document.getElementById(`header-card-${index}`);
         footerCard = document.getElementById(`footer-card-${index}`);
@@ -1035,6 +1235,13 @@ document.addEventListener("DOMContentLoaded", () => {
             if (editLogoBtn) editLogoBtn.disabled = true;
         }
         
+        // Sincronizar botón "Editar última" según stickers de la pantalla activa
+        const editLastStickerBtn = document.getElementById('edit-last-sticker-btn');
+        if (editLastStickerBtn) {
+            const hasStickers = currentTemplate.stickers && currentTemplate.stickers.length > 0;
+            editLastStickerBtn.disabled = !hasStickers;
+        }
+        
         if (currentTemplate.mediaSrc) {
             const editMediaBtn = document.getElementById('edit-media-btn');
             if (editMediaBtn) editMediaBtn.disabled = false;
@@ -1043,7 +1250,7 @@ document.addEventListener("DOMContentLoaded", () => {
             if (editMediaBtn) editMediaBtn.disabled = true;
         }
 
-        // Pausar todos los videos de otras pantallas y reproducir el del teléfono seleccionado
+        // Pausar todos los videos de otras pantallas y reproducir el del telÃ©fono seleccionado
         currentProject.screens.forEach((_, idx) => {
             const vid = document.getElementById(`reel-video-${idx}`);
             if (vid) {
@@ -1053,7 +1260,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     }
                 } else {
                     vid.pause();
-                    vid.muted = true; // Asegurar que los no activos estén silenciados
+                    vid.muted = true; // Asegurar que los no activos estÃ©n silenciados
                     if (vid.currentTime === 0) {
                         vid.currentTime = 0.1; // Forzar render del primer fotograma en inactivos
                     }
@@ -1061,7 +1268,7 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         });
 
-        // Sincronizar tarjeta si había una seleccionada
+        // Sincronizar tarjeta si habÃ­a una seleccionada
         if (activeCardKey) {
             selectCard(activeCardKey);
         } else {
@@ -1179,7 +1386,7 @@ document.addEventListener("DOMContentLoaded", () => {
         overlay.style.display = screenData.showInstagramOverlay ? "block" : "none";
     }
 
-    // LISTENER DE GESTIÓN DE PANTALLAS (AÑADIR, DUPLICAR, ELIMINAR)
+    // LISTENER DE GESTIÃ“N DE PANTALLAS (AÃ‘ADIR, DUPLICAR, ELIMINAR)
     addPhoneBtn.addEventListener("click", () => {
         const newScreen = createDefaultScreen(currentProject.screens.length);
         currentProject.screens.push(newScreen);
@@ -1208,16 +1415,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
     deletePhoneBtn.addEventListener("click", () => {
         if (currentProject.screens.length <= 1) {
-            alert("Debes tener al menos una pantalla de teléfono en tu mesa de trabajo.");
+            alert("Debes tener al menos una pantalla de telÃ©fono en tu mesa de trabajo.");
             return;
         }
         
-        if (!confirm("¿Seguro que deseas eliminar la pantalla de teléfono seleccionada?")) return;
+        if (!confirm("Â¿Seguro que deseas eliminar la pantalla de telÃ©fono seleccionada?")) return;
         
         const activeIdx = currentProject.activeScreenIndex;
         currentProject.screens.splice(activeIdx, 1);
         
-        // Ajustar el índice activo
+        // Ajustar el Ã­ndice activo
         currentProject.activeScreenIndex = Math.max(0, activeIdx - 1);
         
         renderScreens();
@@ -1230,7 +1437,7 @@ document.addEventListener("DOMContentLoaded", () => {
         saveTemplateQuietly();
     }, 30000);
 
-    // SISTEMA DE EXPORTACIÓN DE VIDEO EN SERVIDOR (MP4)
+    // SISTEMA DE EXPORTACIÃ“N DE VIDEO EN SERVIDOR (MP4)
     function logToServer(msg) {
         console.log(msg);
         fetch("/api/log", {
@@ -1242,7 +1449,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     recordVideoBtn.addEventListener("click", async () => {
         const hasPersistentVideo = currentTemplate.mediaSrc && currentTemplate.mediaSrc.startsWith("/uploads/");
-        logToServer(`[Grabador] Click en botón de exportación. mediaType=${currentTemplate.mediaType}, tieneFile=${!!rawVideoFile}, tienePersistencia=${hasPersistentVideo}`);
+        logToServer(`[Grabador] Click en botÃ³n de exportaciÃ³n. mediaType=${currentTemplate.mediaType}, tieneFile=${!!rawVideoFile}, tienePersistencia=${hasPersistentVideo}`);
 
         if (currentTemplate.mediaType !== "video") {
             alert("Por favor, selecciona un video (.mp4) en el simulador antes de exportar.");
@@ -1259,7 +1466,7 @@ document.addEventListener("DOMContentLoaded", () => {
             recordVideoBtn.disabled = true;
             recordVideoBtn.classList.add("recording");
 
-            // Solo subir el archivo si es un archivo nuevo seleccionado en esta sesión
+            // Solo subir el archivo si es un archivo nuevo seleccionado en esta sesiÃ³n
             if (rawVideoFile) {
                 recordVideoBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Subiendo video...';
                 logToServer("[Grabador] Subiendo video bruto al servidor...");
@@ -1273,7 +1480,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (!uploadRes.ok) {
                     throw new Error("No se pudo subir el archivo de video al servidor.");
                 }
-                logToServer("[Grabador] Video subido con éxito.");
+                logToServer("[Grabador] Video subido con Ã©xito.");
             }
 
             logToServer("[Grabador] Solicitando procesamiento FFmpeg...");
@@ -1341,7 +1548,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 throw new Error(errData.error || "Error durante el procesamiento del video en el servidor.");
             }
 
-            logToServer("[Grabador] Video procesado con éxito. Descargando MP4 final...");
+            logToServer("[Grabador] Video procesado con Ã©xito. Descargando MP4 final...");
             recordVideoBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Descargando...';
 
             const blob = await exportRes.blob();
@@ -1355,7 +1562,7 @@ document.addEventListener("DOMContentLoaded", () => {
             logToServer("[Grabador] Descarga final completada.");
 
         } catch (err) {
-            logToServer(`[Grabador] Error crítico al exportar: ${err.message}`);
+            logToServer(`[Grabador] Error crÃ­tico al exportar: ${err.message}`);
             alert(`Error al exportar video: ${err.message}`);
         } finally {
             recordVideoBtn.disabled = false;
@@ -1420,9 +1627,9 @@ document.addEventListener("DOMContentLoaded", () => {
                 try {
                     const parsed = JSON.parse(event.target.result);
 
-                    // Validar estructura básica
+                    // Validar estructura bÃ¡sica
                     if (!parsed.screens || !Array.isArray(parsed.screens)) {
-                        throw new Error("El archivo no tiene el formato de proyecto válido de Reels.");
+                        throw new Error("El archivo no tiene el formato de proyecto vÃ¡lido de Reels.");
                     }
 
                     // Forzar nombre y persistencia
@@ -1442,7 +1649,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     saveTemplateQuietly();
                     renderScreens();
                     selectScreen(currentProject.activeScreenIndex || 0);
-                    alert(`¡Proyecto "${importedName}" importado con éxito!`);
+                    alert(`Â¡Proyecto "${importedName}" importado con Ã©xito!`);
                 } catch (err) {
                     alert("Error al importar el archivo JSON: " + err.message);
                 }
@@ -1453,7 +1660,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // ==========================================
-    // SISTEMA DE EXPORTACIÓN EN LOTE (MODAL)
+    // SISTEMA DE EXPORTACIÃ“N EN LOTE (MODAL)
     // ==========================================
     const bulkExportBtn = document.getElementById("bulk-export-btn");
     const bulkModal = document.getElementById("bulk-modal");
@@ -1485,7 +1692,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         cancelBulkBtn.addEventListener("click", () => {
             if (isBulkExportRunning) {
-                if (confirm("¿Deseas cancelar el procesamiento en lote actual? (Se detendrá en el video actual)")) {
+                if (confirm("Â¿Deseas cancelar el procesamiento en lote actual? (Se detendrÃ¡ en el video actual)")) {
                     shouldCancelBulkExport = true;
                 }
                 return;
@@ -1594,16 +1801,16 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
             if (shouldCancelBulkExport) {
-                updateBulkProgress(completedCount, totalCount, "¡Exportación en lote cancelada!");
+                updateBulkProgress(completedCount, totalCount, "Â¡ExportaciÃ³n en lote cancelada!");
             } else {
-                updateBulkProgress(totalCount, totalCount, "¡Exportación en lote finalizada!");
+                updateBulkProgress(totalCount, totalCount, "Â¡ExportaciÃ³n en lote finalizada!");
             }
             isBulkExportRunning = false;
             shouldCancelBulkExport = false;
             disableBulkModalControls(false);
             
             setTimeout(() => {
-                alert(`Exportación en lote terminada. Se procesaron ${completedCount} de ${totalCount} videos con éxito.`);
+                alert(`ExportaciÃ³n en lote terminada. Se procesaron ${completedCount} de ${totalCount} videos con Ã©xito.`);
             }, 500);
         });
     }
@@ -1666,7 +1873,7 @@ document.addEventListener("DOMContentLoaded", () => {
             ` : "";
             
             const mediaHtml = `
-                <div class="media-container" style="top: ${screen.positions?.media?.top || '160px'}; left: ${screen.positions?.media?.left || '20px'}; display: flex;">
+                <div class="media-container" style="top: ${screen.positions?.media?.top || '160px'}; left: 20px; display: flex;">
                     ${screen.mediaSrc ? (
                         screen.mediaType === "video" 
                         ? `<video src="${screen.mediaSrc}" preload="metadata" muted></video><div class="mini-play-icon" style="position: absolute; z-index: 10; font-size: 1.5rem; color: rgba(255,255,255,0.8); background: rgba(0,0,0,0.5); width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center;"><i class="fa-solid fa-play"></i></div>`
@@ -1727,7 +1934,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function disableBulkModalControls(disable) {
         closeBulkModal.style.pointerEvents = disable ? "none" : "auto";
-        cancelBulkBtn.disabled = false; // El botón de Cancelar siempre queda habilitado
+        cancelBulkBtn.disabled = false; // El botÃ³n de Cancelar siempre queda habilitado
         startBulkExportBtn.disabled = disable;
         bulkSelectAll.disabled = disable;
         bulkDeselectAll.disabled = disable;
@@ -1822,17 +2029,24 @@ document.addEventListener("DOMContentLoaded", () => {
         const eraserToolBtn  = document.getElementById('tool-eraser-btn');
         const magicWandToolBtn = document.getElementById('tool-magicwand-btn');
         const restoreToolBtn = document.getElementById('tool-restore-btn');
-        const cropToolBtn    = document.getElementById('tool-crop-btn'); // Oculto por defecto
+        const cropToolBtn    = document.getElementById('tool-crop-btn');
         const canvasWrap     = document.getElementById('sticker-canvas-wrap');
-        
-        // Esconder herramienta Recortar ya que en Reels solo hay 1 logo
-        if(cropToolBtn) cropToolBtn.style.display = 'none';
+        const cropOverlay    = document.getElementById('sticker-crop-overlay');
+        const cropCtx        = cropOverlay ? cropOverlay.getContext('2d') : null;
+        const cropHint       = document.getElementById('crop-hint');
+        const cropPiecesList = document.getElementById('crop-pieces-list');
+        const cropApplyBtn   = document.getElementById('sticker-crop-apply-btn');
+        const cropPiecesCountEl = document.getElementById('crop-pieces-count');
 
         let editingImg    = null;
         let currentTool   = 'eraser'; 
         let undoStack     = [];        
         let isDrawing     = false;
         let eraserSize    = 20;
+
+        let cropPieces      = [];
+        let isCropDragging  = false;
+        let cropStartX = 0, cropStartY = 0;
 
         const magicWandTolWrap = document.getElementById('magicwand-tol-wrap');
         const magicWandTolSlider = document.getElementById('magicwand-tol-slider');
@@ -1856,6 +2070,7 @@ document.addEventListener("DOMContentLoaded", () => {
         window.openEraserEditor = function(imgElement, initialTool = 'eraser') {
             editingImg = imgElement;
             undoStack  = [];
+            resetCropState();
             setTool(initialTool);
 
             const natural = new Image();
@@ -1867,6 +2082,10 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (h > maxH) { w = Math.round(w * maxH / h); h = maxH; }
                 canvas.width  = w;
                 canvas.height = h;
+                if (cropOverlay) {
+                    cropOverlay.width = w;
+                    cropOverlay.height = h;
+                }
                 ctx.clearRect(0, 0, w, h);
                 ctx.drawImage(natural, 0, 0, w, h);
                 pushUndo(); 
@@ -1880,17 +2099,321 @@ document.addEventListener("DOMContentLoaded", () => {
             eraserToolBtn.classList.toggle('active-tool', tool === 'eraser');
             magicWandToolBtn.classList.toggle('active-tool', tool === 'magicwand');
             restoreToolBtn.classList.toggle('active-tool', tool === 'restore');
+            if (cropToolBtn) cropToolBtn.classList.toggle('active-tool', tool === 'crop');
 
             const isMagic = tool === 'magicwand';
+            const isCrop = tool === 'crop';
+            if (canvasWrap) canvasWrap.classList.toggle('crop-mode', isCrop);
             canvas.style.cursor = isMagic ? 'crosshair' : 'none';
-            sizeWrap.style.display   = isMagic ? 'none' : 'flex';
-            if(magicWandTolWrap) magicWandTolWrap.style.display = isMagic ? 'flex' : 'none';
-            if (isMagic) cursorDiv.style.display = 'none';
+            sizeWrap.style.display   = (isCrop || isMagic) ? 'none' : 'flex';
+            if (magicWandTolWrap) magicWandTolWrap.style.display = isMagic ? 'flex' : 'none';
+            
+            undoBtn.style.display    = isCrop ? 'none' : 'flex';
+            if (cropHint) cropHint.style.display   = isCrop ? 'block' : 'none';
+            if (cropPiecesList) cropPiecesList.style.display = (isCrop && cropPieces.length > 0) ? 'flex' : 'none';
+            confirmBtn.style.display = isCrop ? 'none' : 'flex';
+            if (cropApplyBtn) cropApplyBtn.style.display = (isCrop && cropPieces.length > 0) ? 'flex' : 'none';
+            
+            if (isCrop || isMagic) cursorDiv.style.display = 'none';
         }
 
         eraserToolBtn.addEventListener('click', () => setTool('eraser'));
         magicWandToolBtn.addEventListener('click', () => setTool('magicwand'));
         restoreToolBtn.addEventListener('click', () => setTool('restore'));
+        if (cropToolBtn) cropToolBtn.addEventListener('click', () => setTool('crop'));
+
+        function resetCropState() {
+            cropPieces = [];
+            isCropDragging = false;
+            if(cropPiecesList) {
+                cropPiecesList.innerHTML = '';
+                cropPiecesList.style.display = 'none';
+            }
+            if(cropApplyBtn) cropApplyBtn.style.display = 'none';
+            if(cropPiecesCountEl) cropPiecesCountEl.textContent = '0';
+            if (cropCtx && cropOverlay) cropCtx.clearRect(0, 0, cropOverlay.width, cropOverlay.height);
+        }
+
+        let activeCropPieceIndex = -1;
+        let activeCropMode = null;
+        let cropDragOffsetX = 0;
+        let cropDragOffsetY = 0;
+        const HANDLE_SIZE = 8;
+
+        function autoTrimPiece(piece, sourceCtx) {
+            const imgData = sourceCtx.getImageData(piece.x, piece.y, piece.w, piece.h);
+            const data = imgData.data;
+            const w = imgData.width;
+            const h = imgData.height;
+            let minX = w, minY = h, maxX = -1, maxY = -1;
+            let hasPixels = false;
+            for (let y = 0; y < h; y++) {
+                for (let x = 0; x < w; x++) {
+                    const alpha = data[(y * w + x) * 4 + 3];
+                    if (alpha > 10) {
+                        if (x < minX) minX = x;
+                        if (x > maxX) maxX = x;
+                        if (y < minY) minY = y;
+                        if (y > maxY) maxY = y;
+                        hasPixels = true;
+                    }
+                }
+            }
+            if (!hasPixels) return null;
+            return {
+                x: piece.x + minX,
+                y: piece.y + minY,
+                w: maxX - minX + 1,
+                h: maxY - minY + 1
+            };
+        }
+
+        function drawCropHandle(x, y) {
+            cropCtx.fillStyle = '#fff';
+            cropCtx.fillRect(x - HANDLE_SIZE/2, y - HANDLE_SIZE/2, HANDLE_SIZE, HANDLE_SIZE);
+            cropCtx.strokeRect(x - HANDLE_SIZE/2, y - HANDLE_SIZE/2, HANDLE_SIZE, HANDLE_SIZE);
+        }
+
+        function redrawCropOverlay(liveRect) {
+            if(!cropCtx || !cropOverlay) return;
+            cropCtx.clearRect(0, 0, cropOverlay.width, cropOverlay.height);
+            cropCtx.lineWidth = 2;
+            cropCtx.strokeStyle = '#8e44ad';
+            
+            cropPieces.forEach(p => {
+                cropCtx.fillStyle = 'rgba(142, 68, 173, 0.18)';
+                cropCtx.fillRect(p.x, p.y, p.w, p.h);
+                cropCtx.strokeRect(p.x, p.y, p.w, p.h);
+                
+                drawCropHandle(p.x, p.y);
+                drawCropHandle(p.x + p.w, p.y);
+                drawCropHandle(p.x, p.y + p.h);
+                drawCropHandle(p.x + p.w, p.y + p.h);
+            });
+            
+            if (liveRect) {
+                cropCtx.setLineDash([6, 4]);
+                cropCtx.strokeStyle = '#e74c3c';
+                cropCtx.fillStyle = 'rgba(231, 76, 60, 0.15)';
+                cropCtx.fillRect(liveRect.x, liveRect.y, liveRect.w, liveRect.h);
+                cropCtx.strokeRect(liveRect.x, liveRect.y, liveRect.w, liveRect.h);
+                cropCtx.setLineDash([]);
+            }
+        }
+
+        function addCropPieceThumb(piece, index) {
+            const thumbCanvas = document.createElement('canvas');
+            thumbCanvas.width  = piece.w;
+            thumbCanvas.height = piece.h;
+            thumbCanvas.getContext('2d').drawImage(
+                canvas, piece.x, piece.y, piece.w, piece.h, 0, 0, piece.w, piece.h
+            );
+            const wrapDiv = document.createElement('div');
+            wrapDiv.className = 'crop-piece-thumb';
+            const img = document.createElement('img');
+            img.src = thumbCanvas.toDataURL('image/webp', 0.8);
+            wrapDiv.appendChild(img);
+            const rmBtn = document.createElement('button');
+            rmBtn.className = 'crop-piece-remove';
+            rmBtn.innerHTML = '<i class="fa-solid fa-xmark"></i>';
+            rmBtn.addEventListener('click', () => {
+                cropPieces.splice(index, 1);
+                rebuildCropPiecesList();
+            });
+            wrapDiv.appendChild(rmBtn);
+            if(cropPiecesList) cropPiecesList.appendChild(wrapDiv);
+        }
+
+        function rebuildCropPiecesList() {
+            if(!cropPiecesList) return;
+            cropPiecesList.innerHTML = '';
+            cropPieces.forEach((p, i) => addCropPieceThumb(p, i));
+            if(cropPiecesCountEl) cropPiecesCountEl.textContent = cropPieces.length;
+            const hasPieces = cropPieces.length > 0;
+            cropPiecesList.style.display = hasPieces ? 'flex' : 'none';
+            if(cropApplyBtn) cropApplyBtn.style.display   = hasPieces ? 'flex' : 'none';
+            redrawCropOverlay();
+        }
+
+        if(cropOverlay) {
+            cropOverlay.addEventListener('mousedown', (e) => {
+                if (currentTool !== 'crop') return;
+                const rect = cropOverlay.getBoundingClientRect();
+                const { sx, sy } = getCanvasScale();
+                const curX = (e.clientX - rect.left) * sx;
+                const curY = (e.clientY - rect.top)  * sy;
+
+                activeCropPieceIndex = -1;
+                activeCropMode = null;
+
+                for (let i = cropPieces.length - 1; i >= 0; i--) {
+                    const p = cropPieces[i];
+                    const hs = HANDLE_SIZE;
+                    if (Math.abs(curX - p.x) <= hs && Math.abs(curY - p.y) <= hs) {
+                        activeCropPieceIndex = i; activeCropMode = 'nw'; break;
+                    }
+                    if (Math.abs(curX - (p.x + p.w)) <= hs && Math.abs(curY - p.y) <= hs) {
+                        activeCropPieceIndex = i; activeCropMode = 'ne'; break;
+                    }
+                    if (Math.abs(curX - p.x) <= hs && Math.abs(curY - (p.y + p.h)) <= hs) {
+                        activeCropPieceIndex = i; activeCropMode = 'sw'; break;
+                    }
+                    if (Math.abs(curX - (p.x + p.w)) <= hs && Math.abs(curY - (p.y + p.h)) <= hs) {
+                        activeCropPieceIndex = i; activeCropMode = 'se'; break;
+                    }
+                    if (curX >= p.x && curX <= p.x + p.w && curY >= p.y && curY <= p.y + p.h) {
+                        activeCropPieceIndex = i; 
+                        activeCropMode = 'move';
+                        cropDragOffsetX = curX - p.x;
+                        cropDragOffsetY = curY - p.y;
+                        break;
+                    }
+                }
+
+                if (activeCropPieceIndex !== -1) {
+                    isCropDragging = true;
+                    return;
+                }
+
+                cropStartX = curX;
+                cropStartY = curY;
+                isCropDragging = true;
+            });
+            cropOverlay.addEventListener('mousemove', (e) => {
+                if (currentTool !== 'crop') return;
+                const rect = cropOverlay.getBoundingClientRect();
+                const { sx, sy } = getCanvasScale();
+                const curX = (e.clientX - rect.left) * sx;
+                const curY = (e.clientY - rect.top)  * sy;
+
+                let hoverMode = null;
+                for (let i = cropPieces.length - 1; i >= 0; i--) {
+                    const p = cropPieces[i];
+                    const hs = HANDLE_SIZE;
+                    if (Math.abs(curX - p.x) <= hs && Math.abs(curY - p.y) <= hs) { hoverMode = 'nwse-resize'; break; }
+                    if (Math.abs(curX - (p.x + p.w)) <= hs && Math.abs(curY - (p.y + p.h)) <= hs) { hoverMode = 'nwse-resize'; break; }
+                    if (Math.abs(curX - (p.x + p.w)) <= hs && Math.abs(curY - p.y) <= hs) { hoverMode = 'nesw-resize'; break; }
+                    if (Math.abs(curX - p.x) <= hs && Math.abs(curY - (p.y + p.h)) <= hs) { hoverMode = 'nesw-resize'; break; }
+                    if (curX >= p.x && curX <= p.x + p.w && curY >= p.y && curY <= p.y + p.h) { hoverMode = 'move'; break; }
+                }
+                cropOverlay.style.cursor = hoverMode || 'crosshair';
+
+                if (!isCropDragging) return;
+
+                if (activeCropPieceIndex !== -1) {
+                    const p = cropPieces[activeCropPieceIndex];
+                    if (activeCropMode === 'move') {
+                        p.x = curX - cropDragOffsetX;
+                        p.y = curY - cropDragOffsetY;
+                    } else if (activeCropMode === 'nw') {
+                        const newW = p.w + (p.x - curX);
+                        const newH = p.h + (p.y - curY);
+                        if (newW > 10) { p.w = newW; p.x = curX; }
+                        if (newH > 10) { p.h = newH; p.y = curY; }
+                    } else if (activeCropMode === 'ne') {
+                        const newW = curX - p.x;
+                        const newH = p.h + (p.y - curY);
+                        if (newW > 10) { p.w = newW; }
+                        if (newH > 10) { p.h = newH; p.y = curY; }
+                    } else if (activeCropMode === 'sw') {
+                        const newW = p.w + (p.x - curX);
+                        const newH = curY - p.y;
+                        if (newW > 10) { p.w = newW; p.x = curX; }
+                        if (newH > 10) { p.h = newH; }
+                    } else if (activeCropMode === 'se') {
+                        const newW = curX - p.x;
+                        const newH = curY - p.y;
+                        if (newW > 10) { p.w = newW; }
+                        if (newH > 10) { p.h = newH; }
+                    }
+                    redrawCropOverlay();
+                    return;
+                }
+
+                const liveRect = {
+                    x: Math.min(cropStartX, curX),
+                    y: Math.min(cropStartY, curY),
+                    w: Math.abs(curX - cropStartX),
+                    h: Math.abs(curY - cropStartY)
+                };
+                redrawCropOverlay(liveRect);
+            });
+            window.addEventListener('mouseup', (e) => {
+                if (currentTool !== 'crop' || !isCropDragging) return;
+                isCropDragging = false;
+
+                if (activeCropPieceIndex !== -1) {
+                    activeCropPieceIndex = -1;
+                    activeCropMode = null;
+                    rebuildCropPiecesList();
+                    return;
+                }
+
+                const rect = cropOverlay.getBoundingClientRect();
+                const { sx, sy } = getCanvasScale();
+                const curX = (e.clientX - rect.left) * sx;
+                const curY = (e.clientY - rect.top)  * sy;
+                const piece = {
+                    x: Math.max(0, Math.round(Math.min(cropStartX, curX))),
+                    y: Math.max(0, Math.round(Math.min(cropStartY, curY))),
+                    w: Math.round(Math.abs(curX - cropStartX)),
+                    h: Math.round(Math.abs(curY - cropStartY))
+                };
+                if (piece.w >= 8 && piece.h >= 8) {
+                    piece.w = Math.min(piece.w, canvas.width  - piece.x);
+                    piece.h = Math.min(piece.h, canvas.height - piece.y);
+                    const trimmed = autoTrimPiece(piece, ctx);
+                    if (trimmed && trimmed.w >= 8 && trimmed.h >= 8) {
+                        cropPieces.push(trimmed);
+                        rebuildCropPiecesList();
+                    } else {
+                        redrawCropOverlay();
+                    }
+                } else {
+                    redrawCropOverlay();
+                }
+            });
+        }
+
+        if(cropApplyBtn) {
+            cropApplyBtn.addEventListener('click', () => {
+                if (!editingImg || cropPieces.length === 0) return;
+                const parentBox = editingImg.parentElement;
+                const originalW = parentBox ? parentBox.offsetWidth : 120;
+                const originalH = parentBox ? parentBox.offsetHeight : 120;
+                const scaleX = originalW / canvas.width;
+                const scaleY = originalH / canvas.height;
+
+                const screen = currentProject.screens[currentProject.activeScreenIndex];
+                if(!screen.stickers) screen.stickers = [];
+
+                cropPieces.forEach((piece, index) => {
+                    const pieceCanvas = document.createElement('canvas');
+                    pieceCanvas.width  = piece.w;
+                    pieceCanvas.height = piece.h;
+                    pieceCanvas.getContext('2d').drawImage(
+                        canvas, piece.x, piece.y, piece.w, piece.h, 0, 0, piece.w, piece.h
+                    );
+                    const pieceSrc = pieceCanvas.toDataURL('image/webp', 0.8);
+                    
+                    const topPercent = 30 + (index * 5);
+                    const leftPercent = 30 + (index * 5);
+                    
+                    screen.stickers.push({
+                        src: pieceSrc,
+                        width: '40%',
+                        height: 'auto',
+                        top: topPercent + '%',
+                        left: leftPercent + '%',
+                        id: 'sticker-' + Date.now() + '-' + Math.floor(Math.random() * 1000)
+                    });
+                });
+                
+                overlay.classList.remove('active');
+                renderScreens(); // Re-render to show stickers
+                selectScreen(currentProject.activeScreenIndex);
+            });
+        }
 
         sizeSlider.addEventListener('input', () => {
             eraserSize = parseInt(sizeSlider.value);
@@ -2027,7 +2550,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const newSrc = canvas.toDataURL('image/png');
             editingImg.src = newSrc;
             
-            // Determinar si era media o logo para guardarlo en los datos persistentes de la pantalla
+            // Determinar si era media, logo o sticker para guardarlo en los datos persistentes de la pantalla
             if (editingImg.id.startsWith('reel-img-')) {
                 const idx = editingImg.id.replace('reel-img-', '');
                 currentProject.screens[idx].mediaSrc = newSrc;
@@ -2036,6 +2559,16 @@ document.addEventListener("DOMContentLoaded", () => {
                 const idx = editingImg.id.replace('logo-img-preview-', '');
                 currentProject.screens[idx].logoSrc = newSrc;
                 saveTemplateQuietly();
+            } else if (window._editingStickerScreenIdx !== undefined && window._editingStickerIdx !== undefined) {
+                // Era un sticker editado desde el botón unificado
+                const sIdx = window._editingStickerScreenIdx;
+                const stickIdx = window._editingStickerIdx;
+                if (currentProject.screens[sIdx] && currentProject.screens[sIdx].stickers && currentProject.screens[sIdx].stickers[stickIdx]) {
+                    currentProject.screens[sIdx].stickers[stickIdx].src = newSrc;
+                    saveTemplateQuietly();
+                }
+                window._editingStickerScreenIdx = undefined;
+                window._editingStickerIdx = undefined;
             }
             closeEditor();
         });
@@ -2050,6 +2583,8 @@ document.addEventListener("DOMContentLoaded", () => {
             cursorDiv.style.display = 'none';
             editingImg = null;
             undoStack  = [];
+            window._editingStickerScreenIdx = undefined;
+            window._editingStickerIdx = undefined;
         }
 
         const editMediaBtn = document.getElementById('edit-media-btn');
@@ -2062,7 +2597,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (reelImg && reelImg.src && reelImg.style.display !== 'none') {
                     window.openEraserEditor(reelImg);
                 } else {
-                    alert('El editor mágico solo funciona con imágenes, no con videos.');
+                    alert('El editor mÃ¡gico solo funciona con imÃ¡genes, no con videos.');
                 }
             });
         }
@@ -2073,6 +2608,34 @@ document.addEventListener("DOMContentLoaded", () => {
                 const logoImgPreview = document.getElementById(`logo-img-preview-${idx}`);
                 if (logoImgPreview && logoImgPreview.src) {
                     window.openEraserEditor(logoImgPreview);
+                }
+            });
+        }
+
+        // BOTÓN EDITAR STICKER SELECCIONADA O ÚLTIMA CARGADA
+        const editLastStickerBtn = document.getElementById('edit-last-sticker-btn');
+        if (editLastStickerBtn) {
+            editLastStickerBtn.addEventListener('click', () => {
+                const idx = currentProject.activeScreenIndex;
+                const screenData = currentProject.screens[idx];
+                if (!screenData.stickers || screenData.stickers.length === 0) return;
+
+                let targetStickerIdx = screenData.stickers.length - 1;
+                
+                // Si hay un sticker seleccionado, usar ese en lugar del último
+                if (activeCardKey && activeCardKey.startsWith('sticker_')) {
+                    const selectedIdx = parseInt(activeCardKey.split('_')[1], 10);
+                    if (!isNaN(selectedIdx) && selectedIdx >= 0 && selectedIdx < screenData.stickers.length) {
+                        targetStickerIdx = selectedIdx;
+                    }
+                }
+
+                const stickerImgEl = document.querySelector(`#sticker-card-${idx}-${targetStickerIdx} img`);
+                if (stickerImgEl) {
+                    // Al confirmar, guardar de vuelta en el sticker correspondiente
+                    window._editingStickerScreenIdx = idx;
+                    window._editingStickerIdx = targetStickerIdx;
+                    window.openEraserEditor(stickerImgEl);
                 }
             });
         }

@@ -71,18 +71,27 @@
                 </div>
             </div>
 
-            <!-- Carga de Logo Flotante -->
+            <!-- Carga Unificada: Imágenes Flotantes (Logo / Sticker) -->
             <div class="control-group">
-                <label class="control-label"><i class="fa-solid fa-image"></i> Logo o Sticker Flotante (PNG)</label>
+                <label class="control-label"><i class="fa-solid fa-images"></i> Imágenes Flotantes</label>
                 <div class="file-upload-wrapper">
-                    <label for="logo-input" class="upload-btn" style="border-color: var(--color-accent); color: var(--color-accent); cursor: pointer;">
-                        <i class="fa-solid fa-image"></i> Cargar Logo PNG
+                    <label for="sticker-input" class="upload-btn" style="border-color: var(--color-accent); color: var(--color-accent); cursor: pointer;">
+                        <i class="fa-solid fa-cloud-arrow-up"></i> Cargar Imagen / Logo / Sticker
                     </label>
+                    <input type="file" id="sticker-input" accept="image/png,image/jpeg" style="display: none;">
+                    <!-- Mantener logo-input oculto para compatibilidad interna -->
                     <input type="file" id="logo-input" accept="image/png,image/jpeg" style="display: none;">
                 </div>
                 <div class="row-flex" style="margin-top: 8px;">
-                    <button id="remove-logo-btn" class="action-btn text-btn danger" style="color: var(--color-danger); border-color: var(--color-danger);" disabled><i class="fa-solid fa-trash"></i> Quitar Logo</button>
-                    <button id="edit-logo-btn" class="action-btn text-btn" style="color: var(--color-accent); border-color: var(--color-accent);" disabled><i class="fa-solid fa-wand-magic-sparkles"></i> Editar</button>
+                    <button id="edit-last-sticker-btn" class="action-btn text-btn" style="color: var(--color-accent); border-color: var(--color-accent);" disabled>
+                        <i class="fa-solid fa-wand-magic-sparkles"></i> Editar Pegatina
+                    </button>
+                    <button id="remove-logo-btn" class="action-btn text-btn" style="color: var(--color-danger); border-color: var(--color-danger); display: none;" disabled>
+                        <i class="fa-solid fa-trash"></i> Quitar Logo
+                    </button>
+                    <button id="edit-logo-btn" class="action-btn text-btn" style="color: var(--color-accent); border-color: var(--color-accent); display: none;" disabled>
+                        <i class="fa-solid fa-wand-magic-sparkles"></i> Editar Logo
+                    </button>
                 </div>
             </div>
 

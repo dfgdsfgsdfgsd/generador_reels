@@ -1,4 +1,4 @@
-:root {
+﻿:root {
     --color-bg-app: #0f1012;
     --color-sidebar: #17191d;
     --color-border: #2c2f36;
@@ -441,7 +441,7 @@ input[type="color"] {
     width: 100%;
     height: 100%;
     object-fit: cover;
-    /* Optimización de hardware y decodificación para rendimiento */
+    /* OptimizaciÃ³n de hardware y decodificaciÃ³n para rendimiento */
     will-change: transform;
     transform: translate3d(0, 0, 0);
     backface-visibility: hidden;
@@ -1027,7 +1027,7 @@ input[type="color"] {
     box-sizing: border-box !important;
 }
 
-/* Sobrescribir y limpiar estilos de edición dentro de la miniatura */
+/* Sobrescribir y limpiar estilos de ediciÃ³n dentro de la miniatura */
 .mini-phone-screen-scaled .text-card {
     cursor: default !important;
     outline: none !important;
@@ -1061,7 +1061,7 @@ input[type="color"] {
 .bulk-card-status.done { color: var(--color-success); }
 .bulk-card-status.error { color: var(--color-danger); }
 
-/* Animación de giro para el spinner de procesamiento */
+/* AnimaciÃ³n de giro para el spinner de procesamiento */
 .bulk-card-status.processing i, .fa-spinner.fa-spin {
     animation: spin-loader 1s linear infinite;
     display: inline-block;
@@ -1255,3 +1255,41 @@ input[type="color"] {
     display: none;
     z-index: 10000;
 }
+
+/* Sticker Card Selection Styles */
+.sticker-card {
+    outline: 2px solid transparent;
+    transition: outline 0.15s ease, box-shadow 0.15s ease;
+}
+.sticker-card:hover {
+    outline: 2px dashed #8e44ad !important;
+    box-shadow: 0 0 12px rgba(142, 68, 173, 0.35);
+}
+.sticker-card.card-selected-highlight {
+    outline: 2px solid #8e44ad !important;
+    box-shadow: 0 0 16px rgba(142, 68, 173, 0.65);
+}
+.sticker-card.card-selected-highlight:hover {
+    outline: 2px solid #8e44ad !important;
+}
+.sticker-card.card-selected-highlight .resize-handle {
+    display: block !important;
+}
+.sticker-card.card-selected-highlight .delete-sticker-btn {
+    display: flex !important;
+}
+
+/* Ampliar el área de clic del tirador oblicuo (esquina inferior derecha) */
+.resize-handle.resize-se::after {
+    content: '';
+    position: absolute;
+    top: -20px;
+    left: -20px;
+    right: -20px;
+    bottom: -20px;
+    cursor: se-resize;
+}
+/* Sticker Delete Button Visibility */
+.delete-sticker-btn { display: none !important; }
+.sticker-card.card-selected-highlight .delete-sticker-btn, .sticker-card:hover .delete-sticker-btn { display: flex !important; }
+
