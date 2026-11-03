@@ -1,4 +1,4 @@
-import os
+﻿import os
 import json
 import time
 import asyncio
@@ -20,6 +20,15 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+@app.middleware("http")
+async def add_utf8_charset(request: Request, call_next):
+    response = await call_next(request)
+    ct = response.headers.get("content-type", "")
+    if ("text/html" in ct or "javascript" in ct) and "charset" not in ct:
+        response.headers["content-type"] = f"{ct}; charset=utf-8"
+    return response
+
 
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../Libro de recetas"))
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -198,7 +207,7 @@ def get_text_card_drawing(draw, style: Dict[str, Any], html_text: str, scale: fl
             wrapped_lines.append(" ".join(current_line))
         return wrapped_lines
 
-    # Separar líneas por <br>
+    # Separar lÃ­neas por <br>
     import re
     import html
     raw_lines = re.split(r'<br\s*/?>', html_text, flags=re.IGNORECASE)
@@ -222,7 +231,7 @@ def get_text_card_drawing(draw, style: Dict[str, Any], html_text: str, scale: fl
         line_clean = re.sub(r'<[^>]*>', '', line)
         line_clean = html.unescape(line_clean).replace('\xa0', ' ').strip()
         
-        # Ajustar/envolver línea si supera el ancho útil
+        # Ajustar/envolver lÃ­nea si supera el ancho Ãºtil
         wrapped = wrap_text_line(line_clean, font, emoji_font, max_text_width)
         for w_line in wrapped:
             clean_lines.append(w_line)
@@ -232,7 +241,7 @@ def get_text_card_drawing(draw, style: Dict[str, Any], html_text: str, scale: fl
     line_height = size * 1.35
     total_text_height = (line_count - 1) * line_height + (size * 0.8)
 
-    # Dibujar Rectángulo con bordes redondeados usando las medidas exactas del cliente
+    # Dibujar RectÃ¡ngulo con bordes redondeados usando las medidas exactas del cliente
     draw.rounded_rectangle([left, top, left + width, top + height], radius=r, fill=bg_rgba)
 
     # El inicio Y se centra verticalmente dentro del alto exacto de la caja
@@ -250,7 +259,7 @@ def get_text_card_drawing(draw, style: Dict[str, Any], html_text: str, scale: fl
         else:
             x_curr = left + padding
 
-        # Dibujar carácter por carácter para soportar emojis correctamente
+        # Dibujar carÃ¡cter por carÃ¡cter para soportar emojis correctamente
         for char in line:
             use_emoji = is_emoji(char) and emoji_font is not None
             active_font = emoji_font if use_emoji else font
@@ -313,15 +322,15 @@ def generate_overlay_pil(data: Dict[str, Any], scale: float, width: int, height:
     img = Image.new("RGBA", (width, height), (0, 0, 0, 0))
     draw = ImageDraw.Draw(img)
 
-    # Nota: PIL no tiene un filtro directo de feDropShadow fácil, 
-    # pero podemos emular la sombra del video dibujando un rectángulo semi-transparente negro difuminado detrás o simplemente un borde suave
+    # Nota: PIL no tiene un filtro directo de feDropShadow fÃ¡cil, 
+    # pero podemos emular la sombra del video dibujando un rectÃ¡ngulo semi-transparente negro difuminado detrÃ¡s o simplemente un borde suave
     v_left = data.get("videoLeft", 0) * scale
     v_top = data.get("videoTop", 0) * scale
     v_width = data.get("videoWidth", 0) * scale
     v_height = data.get("videoHeight", 0) * scale
     r = parse_val(data.get("headerStyle", {}).get("borderRadius"), 12) * scale
 
-    # Emular sombra del video básica: Rectángulo de fondo un poco más grande con opacidad muy baja
+    # Emular sombra del video bÃ¡sica: RectÃ¡ngulo de fondo un poco mÃ¡s grande con opacidad muy baja
     shadow_offset = 6 * scale
     draw.rounded_rectangle(
         [v_left - shadow_offset, v_top - shadow_offset, v_left + v_width + shadow_offset, v_top + v_height + shadow_offset],
@@ -363,14 +372,14 @@ def generate_overlay_pil(data: Dict[str, Any], scale: float, width: int, height:
                 
             logo_img_resized = logo_img.resize((l_width, l_height), resample=resample_method)
             img.alpha_composite(logo_img_resized, dest=(l_left, l_top))
-            print("[Python Exportador] Logo flotante procesado con éxito.")
+            print("[Python Exportador] Logo flotante procesado con Ã©xito.")
         except Exception as e:
             print("[Python Exportador] Error al procesar logo flotante:", e)
 
     img.save(output_path, "PNG")
 
 def generate_mask_pil(dest_x: int, dest_y: int, dest_w: int, dest_h: int, r: int, width: int, height: int, output_path: str):
-    # Fondo negro y el área de recorte del video en blanco
+    # Fondo negro y el Ã¡rea de recorte del video en blanco
     img = Image.new("RGBA", (width, height), (0, 0, 0, 255))
     draw = ImageDraw.Draw(img)
     draw.rounded_rectangle([dest_x, dest_y, dest_x + dest_w, dest_y + dest_h], radius=r, fill=(255, 255, 255, 255))
@@ -403,16 +412,16 @@ async def export_video(request: Request):
             
         temp_output_video = os.path.join(CURRENT_DIR, "temp_output.mp4")
 
-        # Generar fondos y capas usando PIL de forma ultra rápida
+        # Generar fondos y capas usando PIL de forma ultra rÃ¡pida
         generate_background_pil(data.get("theme"), data.get("customColor"), 720, 1280, temp_bg_path)
         generate_overlay_pil(data, scale, 720, 1280, temp_overlay_path)
         generate_mask_pil(dest_x, dest_y, dest_w, dest_h, r, 720, 1280, temp_mask_path)
 
         if not os.path.exists(temp_input_video):
-            raise HTTPException(status_code=400, detail="No se ha subido ningún video.")
+            raise HTTPException(status_code=400, detail="No se ha subido ningÃºn video.")
 
-        # Comando FFmpeg ultra rápido usando hardware acceleration si está disponible, sino libx264 preset ultrafast
-        # -preset ultrafast es crucial para la velocidad máxima en CPU
+        # Comando FFmpeg ultra rÃ¡pido usando hardware acceleration si estÃ¡ disponible, sino libx264 preset ultrafast
+        # -preset ultrafast es crucial para la velocidad mÃ¡xima en CPU
         ffmpeg_cmd = (
             f'ffmpeg -y -loop 1 -i "{temp_bg_path}" -i "{temp_input_video}" '
             f'-loop 1 -i "{temp_overlay_path}" -loop 1 -i "{temp_mask_path}" '
@@ -424,7 +433,7 @@ async def export_video(request: Request):
             f'-map "[outv]" -map 1:a? -c:v libx264 -preset ultrafast -pix_fmt yuv420p -c:a aac -shortest "{temp_output_video}"'
         )
 
-        print("[Python Exportador] Ejecutando FFmpeg de forma ultra-rápida...")
+        print("[Python Exportador] Ejecutando FFmpeg de forma ultra-rÃ¡pida...")
         process = await asyncio.create_subprocess_shell(
             ffmpeg_cmd,
             stdout=asyncio.subprocess.PIPE,
@@ -432,7 +441,7 @@ async def export_video(request: Request):
         )
         stdout, stderr = await process.communicate()
 
-        # Limpieza de imágenes temporales
+        # Limpieza de imÃ¡genes temporales
         files_to_clean = [temp_bg_path, temp_overlay_path, temp_mask_path]
         if not is_persistent:
             files_to_clean.append(temp_input_video)
@@ -448,7 +457,7 @@ async def export_video(request: Request):
             print("[Python Exportador] Error en FFmpeg:", stderr.decode())
             raise HTTPException(status_code=500, detail=f"Error en FFmpeg: {stderr.decode()}")
 
-        print("[Python Exportador] Exportación finalizada con éxito.")
+        print("[Python Exportador] ExportaciÃ³n finalizada con Ã©xito.")
         if os.path.exists(temp_output_video):
             return FileResponse(
                 temp_output_video,
@@ -468,10 +477,22 @@ async def log_client(request: Request):
     print(f"[Client Reels Log] {body.decode()}")
     return {"success": True}
 
-# Servir archivos estáticos del editor de reels al final
+# Servir archivos estÃ¡ticos del editor de reels al final
 reels_dir = os.path.join(CURRENT_DIR, "plantilla-reels")
 if os.path.exists(reels_dir):
     app.mount("/", StaticFiles(directory=reels_dir, html=True), name="reels")
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=3002)
+    port = 3002
+    import socket
+    for p in range(3002, 3012):
+        with socket.socket() as s:
+            try:
+                s.bind(('0.0.0.0', p))
+                port = p
+                break
+            except OSError: pass
+    print(f"\n  === Servidor listo en: http://localhost:{port} ===\n")
+    uvicorn.run(app, host='0.0.0.0', port=port)
+
+

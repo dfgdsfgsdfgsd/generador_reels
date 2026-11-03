@@ -11,6 +11,40 @@
     <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="style.css">
+    <script>
+    // Auto-reparar datos de localStorage si tienen mojibake antiguo o texto residual
+    (function() {
+        try {
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key && key.startsWith("reels_project_")) {
+                    let raw = localStorage.getItem(key);
+                    if (raw && (raw.includes("ðŸ") || raw.includes("Ã") || raw.includes("Pegatinas") || raw.includes("DISE"))) {
+                        raw = raw
+                            .replace(/\/\/\s*Pegatinas[^\n<\\"]*/gi, "")
+                            .replace(/ðŸ”¥/g, "🔥")
+                            .replace(/ðŸ’¡/g, "💡")
+                            .replace(/ðŸ‘‡/g, "👇")
+                            .replace(/ðŸš€/g, "🚀")
+                            .replace(/DISE[ÃÂ‘'O\s]*O DE REEL/gi, "DISEÑO DE REEL")
+                            .replace(/DISE[ÃÂ‘'O\s]*O/g, "DISEÑO")
+                            .replace(/T[ÃÂ\w\W]*?TULO DE GANCHO/gi, "TÍTULO DE GANCHO")
+                            .replace(/S[ÃÂ\s]*guenos/gi, "Síguenos")
+                            .replace(/m[ÃÂ\s]*s consejos/gi, "más consejos")
+                            .replace(/volar[ÃÂ\s]*\s*la cabeza/gi, "volará la cabeza")
+                            .replace(/DISEÃ‘O/g, "DISEÑO")
+                            .replace(/DISEÃ'O/g, "DISEÑO")
+                            .replace(/SÃguenos/g, "Síguenos")
+                            .replace(/mÃ¡s/g, "más")
+                            .replace(/Â¡/g, "¡");
+                        localStorage.setItem(key, raw);
+                    }
+                }
+            }
+        } catch(e) {}
+    })();
+    </script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/emoji-picker-element@1.26.0/index.js"></script>
 </head>
 <body>
     <div class="app-container">
@@ -139,6 +173,34 @@
             <!-- Tipografía y Textos -->
             <div class="control-group">
                 <label class="control-label"><i class="fa-solid fa-font"></i> Estilo de Texto</label>
+                            <!-- Colección Completa Desplegable de Emojis -->
+            <div class="control-group" id="emoji-control-group" style="position: relative;">
+                <label class="control-label"><i class="fa-regular fa-face-smile"></i> Colección de Emojis</label>
+                
+                <!-- Fila de Últimos Usados -->
+                <div class="recent-emojis-wrap" style="margin-bottom: 8px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                        <span class="sub-label" style="font-size: 0.72rem; color: #8c93a0;">Últimos Usados:</span>
+                    </div>
+                    <div class="recent-emojis-bar" id="recent-emojis-bar">
+                        <!-- Generados dinámicamente -->
+                    </div>
+                </div>
+
+                <!-- Botón Desplegable para abrir la colección completa -->
+                <button type="button" id="toggle-emoji-picker-btn" class="action-btn text-btn" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 9px 12px; background: #232730; border-color: #3b4252; color: #e2e8f0; font-size: 0.85rem; font-weight: 600;">
+                    <i class="fa-solid fa-icons" style="color: var(--color-accent, #10b981);"></i> Colección Completa de Emojis <i class="fa-solid fa-chevron-down" id="emoji-chevron" style="font-size: 0.75rem; margin-left: auto;"></i>
+                </button>
+
+                <!-- Panel desplegable flotante con emoji-picker -->
+                <div id="emoji-picker-dropdown" class="emoji-dropdown-panel" style="display: none;">
+                    <div class="emoji-dropdown-header">
+                        <span><i class="fa-regular fa-face-smile"></i> Todos los Emojis</span>
+                        <button type="button" id="close-emoji-picker-btn" class="icon-btn-close">&times;</button>
+                    </div>
+                    <emoji-picker class="dark" locale="es"></emoji-picker>
+                </div>
+            </div>
                 <div class="row-flex" style="margin-bottom: 8px;">
                     <div style="flex: 1;">
                         <label class="sub-label">Letra Título</label>
@@ -243,7 +305,7 @@
                         <!-- Bloque de texto inferior -->
                         <div class="text-card drag-el" id="footer-card" style="bottom: 80px; width: 85%;">
                             <div class="text-content" contenteditable="true" id="footer-text">
-                                💡 <strong>Aprende el secreto hoy</strong><br>Síguenos para más consejos diarios 👇<br><span style="color: #dfb15b;">#cocina #consejos #tutorial</span>
+                                👇 <strong>Aprende el secreto hoy</strong><br>Síguenos para más consejos diarios 🚀<br><span style="color: #dfb15b;">#cocina #consejos #tutorial</span>
                             </div>
                         </div>
 

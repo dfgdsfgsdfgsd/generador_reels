@@ -1,12 +1,52 @@
 document.addEventListener("DOMContentLoaded", () => {
-    // ESTADO DE LA APLICACIÃ“N
-    let templatesList = [{ id: "default", name: "DiseÃ±o por Defecto" }];
+    // ESTADO DE LA APLICACIÓN
+    let templatesList = [{ id: "default", name: "Diseño por Defecto" }];
     let currentTemplateName = "default";
     let activeCardKey = null; // 'header', 'footer', 'media', o 'logo'
     let rawVideoFile = null;
     
-    // Proyecto activo en memoria (que contiene mÃºltiples pantallas)
-    // Utilidad para comprimir imgenes y evitar llenar el localStorage
+    // Proyecto activo en memoria (que contiene múltiples pantallas)
+    // Utilidad para comprimir imágenes y evitar llenar el localStorage
+    
+    
+    function cleanAllMojibakeAndComments(str) {
+        if (!str || typeof str !== 'string') return str;
+        let s = str;
+        s = s.replace(/\/\/\s*Pegatinas[^\n<]*/gi, '');
+        s = s.replace(/ðŸ”¥/g, '🔥')
+             .replace(/ðŸ’¡/g, '💡')
+             .replace(/ðŸ‘‡/g, '👇')
+             .replace(/ðŸš€/g, '🚀')
+             .replace(/ðŸ“±/g, '📱')
+             .replace(/ðŸŽµ/g, '🎵')
+             .replace(/ðŸ‘¤/g, '👤')
+             .replace(/DISE[ÃÂ‘'O\s]*O DE REEL/gi, 'DISEÑO DE REEL')
+             .replace(/DISE[ÃÂ‘'O\s]*O/g, 'DISEÑO')
+             .replace(/T[ÃÂ\w\W]*?TULO DE GANCHO/gi, 'TÍTULO DE GANCHO')
+             .replace(/S[ÃÂ\s]*guenos/gi, 'Síguenos')
+             .replace(/m[ÃÂ\s]*s consejos/gi, 'más consejos')
+             .replace(/volar[ÃÂ\s]*\s*la cabeza/gi, 'volará la cabeza')
+             .replace(/DISEÃ‘O/g, 'DISEÑO')
+             .replace(/DISEÃ'O/g, 'DISEÑO')
+             .replace(/SÃguenos/g, 'Síguenos')
+             .replace(/mÃ¡s/g, 'más')
+             .replace(/Â¡/g, '¡')
+             .trim();
+        return s;
+    }
+
+    function sanitizeMojibake(str) {
+        if (!str || typeof str !== 'string') return str;
+        return str
+            .replace(/ðŸ”¥|Y"|\?\?/g, '🔥')
+            .replace(/ðŸ‘‡|Y'|\?T/g, '👇')
+            .replace(/ðŸš€|\?~\?/g, '🚀')
+            .replace(/T[Ãǟ\s]*TULO DE GANCHO/g, 'TÍTULO DE GANCHO')
+            .replace(/[Â']*Este tip te volar[Ãǟ\s]* la cabeza!/g, '¡Este tip te volará la cabeza!')
+            .replace(/S[Ãǟ\s]*guenos para m[Ãǟ\s]*s consejos diarios/g, 'Síguenos para más consejos diarios')
+            .replace(/DISE[Ãǟ\s\?\~]*O/g, 'DISEÑO');
+    }
+
     function compressImage(src, maxWidth = 1000, quality = 0.8) {
         return new Promise((resolve) => {
             const img = new Image();
@@ -42,7 +82,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // Referencia a la pantalla activa (se actualiza al seleccionar)
     let currentTemplate = null;
 
-    // ELEMENTOS DINÃ MICOS DEL DOM (se actualizan al seleccionar pantalla)
+    // ELEMENTOS DINÁMICOS DEL DOM (se actualizan al seleccionar pantalla)
     let reelCanvas = null;
     let headerCard = null;
     let footerCard = null;
@@ -56,7 +96,7 @@ document.addEventListener("DOMContentLoaded", () => {
     let logoImgPreview = null;
     let instagramOverlay = null;
 
-    // ELEMENTOS ESTÃ TICOS DEL DOM DE LA BARRA LATERAL
+    // ELEMENTOS ESTÁTICOS DEL DOM DE LA BARRA LATERAL
     const simulatorPane = document.getElementById("simulator-pane");
     const projectSelect = document.getElementById("project-select");
     const newProjectBtn = document.getElementById("new-project-btn");
@@ -104,7 +144,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const toggleHeaderCard = document.getElementById("toggle-header-card");
     const toggleFooterCard = document.getElementById("toggle-footer-card");
 
-    // Botones de gestiÃ³n de pantallas
+    // Botones de gestión de pantallas
     const addPhoneBtn = document.getElementById("add-phone-btn");
     const duplicatePhoneBtn = document.getElementById("duplicate-phone-btn");
     const deletePhoneBtn = document.getElementById("delete-phone-btn");
@@ -144,7 +184,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 let top = startTop + dy;
                 let left = startLeft + dx;
                 
-                // LÃ­mites de la pantalla del telÃ©fono
+                // Límites de la pantalla del teléfono
                 top = Math.max(10, Math.min(canvas.offsetHeight - el.offsetHeight - 10, top));
                 if (key === 'media') {
                     left = 20; // Bloquear arrastre horizontal para media
@@ -167,7 +207,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     if (!screenData.positions) screenData.positions = {};
                     screenData.positions[key] = {
                         top: top + "px",
-                        left: top + "px" // Esto parece ser un error en el original, pero mantengo la lÃ³gica original
+                        left: top + "px" // Esto parece ser un error en el original, pero mantengo la lógica original
                     };
                 }
             }
@@ -329,7 +369,7 @@ document.addEventListener("DOMContentLoaded", () => {
     function selectCard(key) {
         activeCardKey = key;
         
-        // Limpiar estilos de selecciÃ³n
+        // Limpiar estilos de selección
         document.querySelectorAll(".text-card").forEach(c => c.classList.remove("card-selected-highlight"));
         document.querySelectorAll(".media-container").forEach(c => c.classList.remove("card-selected-highlight"));
         document.querySelectorAll(".logo-card").forEach(c => c.classList.remove("card-selected-highlight"));
@@ -337,7 +377,7 @@ document.addEventListener("DOMContentLoaded", () => {
         
         if (!key) {
             fontSizeSlider.disabled = true;
-            fontSizeLabel.textContent = "TamaÃ±o: Selecciona un bloque";
+            fontSizeLabel.textContent = "Tamaño: Selecciona un bloque";
             boxWidthSlider.disabled = true;
             boxWidthLabel.textContent = "Ancho de Caja: Selecciona un bloque";
             syncAdjustButtonsState();
@@ -372,7 +412,7 @@ document.addEventListener("DOMContentLoaded", () => {
         
         if (key === "media") {
             fontSizeSlider.disabled = true;
-            fontSizeLabel.textContent = "TamaÃ±o: Video/Imagen (Fijo 1:1)";
+            fontSizeLabel.textContent = "Tamaño: Video/Imagen (Fijo 1:1)";
             boxWidthSlider.disabled = true;
             boxWidthLabel.textContent = "Ancho de Caja: Fijo 1:1";
             if (mediaContainer) mediaContainer.classList.add("card-selected-highlight");
@@ -382,13 +422,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
         if (key === "logo") {
             fontSizeSlider.disabled = true;
-            fontSizeLabel.textContent = "TamaÃ±o: Logo Flotante";
+            fontSizeLabel.textContent = "Tamaño: Logo Flotante";
             boxWidthSlider.disabled = false;
             boxWidthSlider.min = 30;
             boxWidthSlider.max = 300;
             boxWidthSlider.value = currentTemplate.logoSize || 80;
             boxWidthVal.textContent = boxWidthSlider.value + "px";
-            boxWidthLabel.textContent = "TamaÃ±o Logo:";
+            boxWidthLabel.textContent = "Tamaño Logo:";
             if (logoCard) logoCard.classList.add("card-selected-highlight");
             syncAdjustButtonsState();
             return;
@@ -401,7 +441,7 @@ document.addEventListener("DOMContentLoaded", () => {
         
         // Habilitar controles del slider de fuentes
         fontSizeSlider.disabled = false;
-        fontSizeLabel.textContent = `TamaÃ±o: ${key === "header" ? "TÃ­tulo Superior" : "DescripciÃ³n Inferior"}`;
+        fontSizeLabel.textContent = `Tamaño: ${key === "header" ? "Título Superior" : "Descripción Inferior"}`;
         
         const currentSize = currentTemplate.fontSizes[key] || 100;
         fontSizeSlider.value = currentSize;
@@ -418,12 +458,12 @@ document.addEventListener("DOMContentLoaded", () => {
         boxWidthSlider.max = 100;
         boxWidthSlider.value = style.width;
         boxWidthVal.textContent = style.width + "%";
-        boxWidthLabel.textContent = `Ancho: ${key === "header" ? "TÃ­tulo Superior" : "DescripciÃ³n Inferior"}`;
+        boxWidthLabel.textContent = `Ancho: ${key === "header" ? "Título Superior" : "Descripción Inferior"}`;
         
         syncAdjustButtonsState();
     }
 
-    // ACTUALIZAR TAMAÃ‘O DE FUENTE
+    // ACTUALIZAR TAMAÑO DE FUENTE
     fontSizeSlider.addEventListener("input", (e) => {
         if (!activeCardKey) return;
         const val = e.target.value;
@@ -437,23 +477,70 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     // CARGA DE MULTIMEDIA (VIDEO / IMAGEN)
-    mediaInput.addEventListener("change", async (e) => {
-        const file = e.target.files[0];
+    
+    // Delegación global: Doble clic en cualquier contenedor de media o clic en placeholder abre explorador de archivos
+    document.addEventListener("dblclick", (e) => {
+        const mc = e.target.closest(".media-container");
+        if (mc) {
+            const match = mc.id.match(/media-container-(\d+)/);
+            if (match) {
+                const idx = parseInt(match[1], 10);
+                selectScreen(idx);
+                selectCard("media");
+            }
+            if (mediaInput) {
+                mediaInput.value = "";
+                mediaInput.click();
+            }
+        }
+    });
+
+    document.addEventListener("click", (e) => {
+        const ph = e.target.closest(".media-placeholder");
+        if (ph) {
+            const mc = ph.closest(".media-container");
+            if (mc) {
+                const match = mc.id.match(/media-container-(\d+)/);
+                if (match) {
+                    const idx = parseInt(match[1], 10);
+                    selectScreen(idx);
+                    selectCard("media");
+                }
+            }
+            if (mediaInput) {
+                mediaInput.value = "";
+                mediaInput.click();
+            }
+        }
+    });
+
+    
+    // Función unificada para cargar video o imagen en el contenedor 1:1 de una pantalla
+    async function loadMediaFile(file, screenIndex) {
         if (!file) return;
+        const targetIndex = (typeof screenIndex === 'number') ? screenIndex : currentProject.activeScreenIndex;
+        const targetScreen = currentProject.screens[targetIndex];
+        if (!targetScreen) return;
 
         try {
-            // Mostrar previsualizaciÃ³n temporal inmediata usando blob local
             const fileURL = URL.createObjectURL(file);
-            currentTemplate.mediaType = file.type.startsWith("video/") ? "video" : "image";
-            currentTemplate.mediaSrc = fileURL;
+            targetScreen.mediaType = file.type.startsWith("video/") ? "video" : "image";
+            targetScreen.mediaSrc = fileURL;
 
-            if (currentTemplate.mediaType === "video") {
-                rawVideoFile = file;
-            } else {
-                rawVideoFile = null;
+            if (targetIndex === currentProject.activeScreenIndex) {
+                currentTemplate = targetScreen;
+                rawVideoFile = targetScreen.mediaType === "video" ? file : null;
+                if (targetScreen.mediaType === "video") {
+                    playPauseBtn.disabled = false;
+                    muteBtn.disabled = false;
+                } else {
+                    playPauseBtn.disabled = true;
+                    muteBtn.disabled = true;
+                }
             }
 
-            applyScreenMedia(currentProject.activeScreenIndex);
+            applyScreenMedia(targetIndex);
+            saveTemplateQuietly();
 
             // Subir de forma persistente en segundo plano
             const uploadRes = await fetch('/api/upload-media', {
@@ -464,26 +551,48 @@ document.addEventListener("DOMContentLoaded", () => {
 
             if (uploadRes.ok) {
                 const resData = await uploadRes.json();
-                currentTemplate.mediaSrc = resData.url; // Guardar URL persistente
-                console.log("[Editor] Video guardado de forma persistente en servidor:", resData.url);
+                targetScreen.mediaSrc = resData.url;
+                console.log("[Editor] Video guardado de forma persistente:", resData.url);
+                applyScreenMedia(targetIndex);
                 saveTemplateQuietly();
-            } else {
-                console.warn("[Editor] FallÃ³ subida persistente, se usarÃ¡ sesiÃ³n temporal.");
             }
         } catch (err) {
-            console.error("[Editor] Error subiendo video persistentemente:", err);
+            console.error("[Editor] Error cargando media:", err);
         }
+    }
 
-        // Habilitar controles si es video
-        if (currentTemplate.mediaType === "video") {
-            playPauseBtn.disabled = false;
-            muteBtn.disabled = false;
-        } else {
-            playPauseBtn.disabled = true;
-            muteBtn.disabled = true;
+    // Soporte de Arrastrar y Soltar (Drag & Drop) sobre el contenedor central 1:1
+    document.addEventListener("dragover", (e) => {
+        const mc = e.target.closest(".media-container");
+        if (mc) {
+            e.preventDefault();
+            mc.style.outline = "3px dashed #10b981";
         }
-        saveTemplateQuietly();
     });
+
+    document.addEventListener("dragleave", (e) => {
+        const mc = e.target.closest(".media-container");
+        if (mc) {
+            mc.style.outline = "";
+        }
+    });
+
+    document.addEventListener("drop", (e) => {
+        const mc = e.target.closest(".media-container");
+        if (mc) {
+            e.preventDefault();
+            mc.style.outline = "";
+            const match = mc.id.match(/media-container-(\d+)/);
+            const idx = match ? parseInt(match[1], 10) : currentProject.activeScreenIndex;
+            selectScreen(idx);
+            selectCard("media");
+            if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]) {
+                loadMediaFile(e.dataTransfer.files[0], idx);
+            }
+        }
+    });
+
+    mediaInput.addEventListener("change", (e) => loadMediaFile(e.target.files[0]));
 
     // CARGA DE PEGATINAS / IMÁGENES FLOTANTES (botón unificado)
     stickerInput.addEventListener("change", (e) => {
@@ -527,7 +636,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const reader = new FileReader();
         reader.onload = async (event) => {
             currentTemplate.logoSrc = await compressImage(event.target.result, 400, 0.8);
-            // PosiciÃ³n por defecto
+            // Posición por defecto
             if (!currentTemplate.positions) currentTemplate.positions = {};
             if (!currentTemplate.positions.logo) {
                 currentTemplate.positions.logo = { top: "150px", left: "140px" };
@@ -546,7 +655,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // CONTROLES DE REPRODUCCIÃ“N DE VIDEO
+    // CONTROLES DE REPRODUCCIÓN DE VIDEO
     playPauseBtn.addEventListener("click", () => {
         if (!reelVideo) return;
         if (reelVideo.paused) {
@@ -675,7 +784,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // CENTRAR BLOQUE HORIZONTALMENTE
     centerBlockBtn.addEventListener("click", () => {
         if (!activeCardKey) {
-            alert("Selecciona primero el bloque de texto o multimedia haciendo clic sobre Ã©l.");
+            alert("Selecciona primero el bloque de texto o multimedia haciendo clic sobre él.");
             return;
         }
         
@@ -695,14 +804,14 @@ document.addEventListener("DOMContentLoaded", () => {
         saveTemplateQuietly();
     });
 
-    // EXPORTACIÃ“N A PDF (ImpresiÃ³n nativa)
+    // EXPORTACIÓN A PDF (Impresión nativa)
     exportBtn.addEventListener("click", () => {
         selectCard(null);
         syncDOMToState();
         window.print();
     });
 
-    // SISTEMA DE PROYECTOS / GESTIÃ“N DE PLANTILLAS
+    // SISTEMA DE PROYECTOS / GESTIÓN DE PLANTILLAS
     function initProjects() {
         const savedList = localStorage.getItem("reels_projects");
         if (savedList) {
@@ -713,7 +822,7 @@ document.addEventListener("DOMContentLoaded", () => {
         templatesList.forEach(p => {
             const opt = document.createElement("option");
             opt.value = p.id;
-            opt.textContent = p.name === "default" ? "DiseÃ±o por Defecto" : p.name;
+            opt.textContent = p.name === "default" ? "Diseño por Defecto" : p.name;
             projectSelect.appendChild(opt);
         });
     }
@@ -735,7 +844,7 @@ document.addEventListener("DOMContentLoaded", () => {
             saveStatus.textContent = "Guardando...";
             saveStatus.style.color = "#dfb15b";
             setTimeout(() => {
-                saveStatus.textContent = "Autoguardado";
+                saveStatus.textContent = "Autoguíardado";
                 saveStatus.style.color = "#10b981";
             }, 500);
         }
@@ -744,7 +853,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // Guardado manual
     saveBtn.addEventListener("click", () => {
         saveTemplateQuietly();
-        alert(`Â¡Plantilla "${currentTemplateName === "default" ? "por Defecto" : currentTemplateName}" guardada con Ã©xito!`);
+        alert(`¡Plantilla "${currentTemplateName === "default" ? "por Defecto" : currentTemplateName}" guíardada con éxito!`);
     });
 
     // Crear nuevo proyecto
@@ -781,7 +890,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Guardar copia
     saveProjectAsBtn.addEventListener("click", () => {
-        const name = prompt("Guardar diseÃ±o actual como (nombre nuevo):");
+        const name = prompt("Guardar diseño actual como (nombre nuevo):");
         if (!name) return;
         const cleanName = name.replace(/[^\w-]/g, '').trim();
         if (!cleanName) return;
@@ -799,20 +908,20 @@ document.addEventListener("DOMContentLoaded", () => {
         currentTemplateName = cleanName;
         currentProject.name = cleanName;
         saveTemplateQuietly();
-        alert(`Copia guardada como "${cleanName}".`);
+        alert(`Copia guíardada como "${cleanName}".`);
     });
 
     // Cargar plantilla al cambiar selector
     projectSelect.addEventListener("change", (e) => {
         const selected = e.target.value;
-        if (confirm(`Â¿Quieres cargar la plantilla "${selected === "default" ? "por defecto" : selected}"?`)) {
+        if (confirm(`¿Quieres cargar la plantilla "${selected === "default" ? "por defecto" : selected}"?`)) {
             loadTemplateData(selected);
         } else {
             projectSelect.value = currentTemplateName;
         }
     });
 
-        // Crear diseÃ±o de pantalla por defecto
+        // Crear diseño de pantalla por defecto
     function createDefaultScreen(index = 0) {
         return {
             name: `Pantalla ${index + 1}`,
@@ -824,10 +933,10 @@ document.addEventListener("DOMContentLoaded", () => {
             showHeaderCard: true,
             showFooterCard: true,
             showInstagramOverlay: false,
-            headerText: index === 0 
-                ? "ðŸ”¥ <strong>TÃ TULO DE GANCHO</strong><br>Â¡Este tip te volarÃ¡ la cabeza!"
-                : `ðŸ”¥ <strong>DISEÃ‘O DE REEL ${index + 1}</strong><br>Edita este texto para tu gancho.`,
-            footerText: "ðŸ’¡ <strong>Aprende el secreto hoy</strong><br>SÃ­guenos para mÃ¡s consejos diarios ðŸ‘‡<br><span style='color: #dfb15b;'>#cocina #consejos #tutorial</span>",
+            headerText: index === 0
+                ? "🔥 <strong>TÍTULO DE GANCHO</strong><br>¡Este tip te volará la cabeza!"
+                : `🔥 <strong>DISEÑO DE REEL ${index + 1}</strong><br>Edita este texto para tu gancho.`,
+            footerText: "👇 <strong>Aprende el secreto hoy</strong><br>Síguenos para más consejos diarios 🚀<br><span style='color: #dfb15b;'>#cocina #consejos #tutorial</span>",
             fontSizes: {
                 header: 115,
                 footer: 95
@@ -862,8 +971,21 @@ document.addEventListener("DOMContentLoaded", () => {
         if (parsed) {
             if (parsed.screens && Array.isArray(parsed.screens)) {
                 currentProject = parsed;
+        if (currentProject && Array.isArray(currentProject.screens)) {
+            currentProject.screens.forEach(s => {
+                if (s.headerText) s.headerText = cleanAllMojibakeAndComments(s.headerText);
+                if (s.footerText) s.footerText = cleanAllMojibakeAndComments(s.footerText);
+            });
+            saveTemplateQuietly();
+        }
+        if (currentProject && Array.isArray(currentProject.screens)) {
+            currentProject.screens.forEach(s => {
+                if (s.headerText) s.headerText = sanitizeMojibake(s.headerText);
+                if (s.footerText) s.footerText = sanitizeMojibake(s.footerText);
+            });
+        }
             } else {
-                // MigraciÃ³n para proyectos antiguos de pantalla Ãºnica
+                // Migración para proyectos antiguos de pantalla única
                 if (parsed.positions && parsed.positions.footer && parsed.positions.footer.top === "auto") {
                     parsed.positions.footer.top = "490px";
                 }
@@ -890,6 +1012,8 @@ document.addEventListener("DOMContentLoaded", () => {
         simulatorPane.innerHTML = "";
         
         currentProject.screens.forEach((screenData, index) => {
+            if (screenData.headerText) screenData.headerText = cleanAllMojibakeAndComments(screenData.headerText);
+            if (screenData.footerText) screenData.footerText = cleanAllMojibakeAndComments(screenData.footerText);
             const wrapper = document.createElement("div");
             wrapper.className = "phone-wrapper";
             wrapper.dataset.index = index;
@@ -918,7 +1042,7 @@ document.addEventListener("DOMContentLoaded", () => {
                             <!-- Bloque central de video 1:1 -->
                             <div class="media-container" id="media-container-${index}" style="top: ${screenData.positions?.media?.top || '160px'}; left: 20px;">
                                 <video id="reel-video-${index}" loop muted playsinline style="display: none;"></video>
-                                <img id="reel-img-${index}" src="" alt="PrevisualizaciÃ³n" style="display: none;">
+                                <img id="reel-img-${index}" src="" alt="Previsualización" style="display: none;">
                                 <div class="media-placeholder" id="media-placeholder-${index}">
                                     <i class="fa-solid fa-video"></i>
                                     <span>Carga un video/imagen 1:1</span>
@@ -945,7 +1069,6 @@ document.addEventListener("DOMContentLoaded", () => {
                                 <div class="resize-handle resize-se" data-key="logo" data-index="${index}"></div>
                             </div>
 
-                            // Pegatinas dinÃ¡micas
                             ${(screenData.stickers || []).map((sticker, sIdx) => `
                                 <div class="sticker-card drag-el" id="sticker-card-${index}-${sIdx}" data-sticker-index="${sIdx}" style="top: ${sticker.top}; left: ${sticker.left}; width: ${sticker.width}; height: ${sticker.height}; position: absolute; z-index: 120;">
                                     <img src="${sticker.src}" alt="Pegatina" style="width: 100%; height: auto; display: block; pointer-events: none;">
@@ -954,14 +1077,14 @@ document.addEventListener("DOMContentLoaded", () => {
                                 </div>
                             `).join('')}
 
-                            <!-- SimulaciÃ³n de interfaz de Instagram Reels -->
+                            <!-- Simulación de interfaz de Instagram Reels -->
                             <div class="instagram-overlay" id="instagram-overlay-${index}" style="display: none;">
                                 <div class="ig-actions">
                                     <div class="ig-action"><i class="fa-solid fa-heart"></i><span>12.4K</span></div>
                                     <div class="ig-action"><i class="fa-solid fa-comment"></i><span>382</span></div>
                                     <div class="ig-action"><i class="fa-solid fa-paper-plane"></i><span>95</span></div>
                                     <div class="ig-action"><i class="fa-solid fa-ellipsis-vertical"></i></div>
-                                    <div class="ig-audio-disc">ðŸŽµ</div>
+                                    <div class="ig-audio-disc">🎵</div>
                                 </div>
                                 <div class="ig-profile-info">
                                     <div class="ig-user">
@@ -969,8 +1092,8 @@ document.addEventListener("DOMContentLoaded", () => {
                                         <span>chef_recetas</span>
                                         <button class="ig-follow-btn">Seguir</button>
                                     </div>
-                                    <div class="ig-caption">Â¡Aprende esta increÃ­ble receta en pocos pasos! ... <span class="ig-more">mÃ¡s</span></div>
-                                    <div class="ig-music-name">ðŸŽµ Audio original â€¢ chef_recetas</div>
+                                    <div class="ig-caption">¡Aprende esta increíble receta en pocos pasos! ... <span class="ig-more">más</span></div>
+                                    <div class="ig-music-name">🎵 Audio original â€¢ chef_recetas</div>
                                 </div>
                             </div>
 
@@ -982,7 +1105,7 @@ document.addEventListener("DOMContentLoaded", () => {
             
             simulatorPane.appendChild(wrapper);
             
-            // Aplicar configuraciones guardadas
+            // Aplicar configuraciones guíardadas
             applyScreenStyles(index);
             applyScreenMedia(index);
             applyScreenLogo(index);
@@ -997,13 +1120,37 @@ document.addEventListener("DOMContentLoaded", () => {
             setupDraggable(hCard, "header", index);
             setupDraggable(fCard, "footer", index);
             setupDraggable(mCont, "media", index);
+            if (mCont) {
+                mCont.addEventListener("dblclick", (e) => {
+                    e.stopPropagation();
+                    selectScreen(index);
+                    selectCard("media");
+                    if (mediaInput) {
+                        mediaInput.value = "";
+                        mediaInput.click();
+                    }
+                });
+                const placeholder = mCont.querySelector(".media-placeholder");
+                if (placeholder) {
+                    placeholder.style.cursor = "pointer";
+                    placeholder.addEventListener("click", (e) => {
+                        e.stopPropagation();
+                        selectScreen(index);
+                        selectCard("media");
+                        if (mediaInput) {
+                            mediaInput.value = "";
+                            mediaInput.click();
+                        }
+                    });
+                }
+            }
             setupDraggable(lCard, "logo", index);
             
             setupResizable(hCard, "header", index);
             setupResizable(fCard, "footer", index);
             setupResizable(lCard, "logo", index);
 
-            // Pegatinas dinÃ¡micas
+            // Pegatinas dinámicas
             (screenData.stickers || []).forEach((_, sIdx) => {
                 const sCard = document.getElementById(`sticker-card-${index}-${sIdx}`);
                 if(sCard) {
@@ -1040,7 +1187,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
             });
             
-            // Manejadores de eventos para arrastrar y soltar telÃ©fonos (Mesa de trabajo)
+            // Manejadores de eventos para arrastrar y soltar teléfonos (Mesa de trabajo)
             let dragAllowed = false;
             
             wrapper.addEventListener("mousedown", (e) => {
@@ -1088,7 +1235,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     const [movedScreen] = currentProject.screens.splice(fromIndex, 1);
                     currentProject.screens.splice(toIndex, 0, movedScreen);
                     
-                    // Actualizar el Ã­ndice de la pantalla activa
+                    // Actualizar el índice de la pantalla activa
                     if (currentProject.activeScreenIndex === fromIndex) {
                         currentProject.activeScreenIndex = toIndex;
                     } else if (currentProject.activeScreenIndex > fromIndex && currentProject.activeScreenIndex <= toIndex) {
@@ -1171,7 +1318,7 @@ document.addEventListener("DOMContentLoaded", () => {
         currentProject.activeScreenIndex = index;
         currentTemplate = currentProject.screens[index];
         
-        // Actualizar visualmente la selecciÃ³n en la UI
+        // Actualizar visualmente la selección en la UI
         document.querySelectorAll(".phone-mockup").forEach(mock => {
             mock.classList.remove("selected-phone");
         });
@@ -1181,7 +1328,7 @@ document.addEventListener("DOMContentLoaded", () => {
             selectedMock.classList.add("selected-phone");
         }
         
-        // Vincular referencias a los elementos dinÃ¡micos
+        // Vincular referencias a los elementos dinámicos
         reelCanvas = document.getElementById(`reel-canvas-${index}`);
         headerCard = document.getElementById(`header-card-${index}`);
         footerCard = document.getElementById(`footer-card-${index}`);
@@ -1250,7 +1397,7 @@ document.addEventListener("DOMContentLoaded", () => {
             if (editMediaBtn) editMediaBtn.disabled = true;
         }
 
-        // Pausar todos los videos de otras pantallas y reproducir el del telÃ©fono seleccionado
+        // Pausar todos los videos de otras pantallas y reproducir el del teléfono seleccionado
         currentProject.screens.forEach((_, idx) => {
             const vid = document.getElementById(`reel-video-${idx}`);
             if (vid) {
@@ -1260,7 +1407,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     }
                 } else {
                     vid.pause();
-                    vid.muted = true; // Asegurar que los no activos estÃ©n silenciados
+                    vid.muted = true; // Asegurar que los no activos estén silenciados
                     if (vid.currentTime === 0) {
                         vid.currentTime = 0.1; // Forzar render del primer fotograma en inactivos
                     }
@@ -1268,7 +1415,7 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         });
 
-        // Sincronizar tarjeta si habÃ­a una seleccionada
+        // Sincronizar tarjeta si había una seleccionada
         if (activeCardKey) {
             selectCard(activeCardKey);
         } else {
@@ -1319,23 +1466,23 @@ document.addEventListener("DOMContentLoaded", () => {
             img.style.display = "none";
             video.style.display = "block";
             placeholder.style.display = "none";
+            placeholder.style.visibility = "hidden";
             video.src = screenData.mediaSrc;
-            video.muted = true; // Asegurar silencio inicial
+            video.muted = true;
             if (index === currentProject.activeScreenIndex) {
                 video.play().catch(() => console.log("Video auto-play blocked."));
                 const editMediaBtn = document.getElementById('edit-media-btn');
-                if (editMediaBtn) editMediaBtn.disabled = true; // El editor es solo para imagenes
+                if (editMediaBtn) editMediaBtn.disabled = true;
             } else {
                 video.pause();
-                if (video.currentTime === 0) {
-                    video.currentTime = 0.1; // Forzar render del primer fotograma en inactivos
-                }
+                if (video.currentTime === 0) video.currentTime = 0.1;
             }
         } else if (screenData.mediaType === "image" && screenData.mediaSrc) {
             video.style.display = "none";
             video.pause();
             img.style.display = "block";
             placeholder.style.display = "none";
+            placeholder.style.visibility = "hidden";
             img.src = screenData.mediaSrc;
             if (index === currentProject.activeScreenIndex) {
                 const editMediaBtn = document.getElementById('edit-media-btn');
@@ -1343,8 +1490,10 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         } else {
             video.style.display = "none";
+            video.pause();
             img.style.display = "none";
             placeholder.style.display = "flex";
+            placeholder.style.visibility = "visible";
             if (index === currentProject.activeScreenIndex) {
                 const editMediaBtn = document.getElementById('edit-media-btn');
                 if (editMediaBtn) editMediaBtn.disabled = true;
@@ -1386,7 +1535,7 @@ document.addEventListener("DOMContentLoaded", () => {
         overlay.style.display = screenData.showInstagramOverlay ? "block" : "none";
     }
 
-    // LISTENER DE GESTIÃ“N DE PANTALLAS (AÃ‘ADIR, DUPLICAR, ELIMINAR)
+    // LISTENER DE GESTIÓN DE PANTALLAS (AÑADIR, DUPLICAR, ELIMINAR)
     addPhoneBtn.addEventListener("click", () => {
         const newScreen = createDefaultScreen(currentProject.screens.length);
         currentProject.screens.push(newScreen);
@@ -1415,16 +1564,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
     deletePhoneBtn.addEventListener("click", () => {
         if (currentProject.screens.length <= 1) {
-            alert("Debes tener al menos una pantalla de telÃ©fono en tu mesa de trabajo.");
+            alert("Debes tener al menos una pantalla de teléfono en tu mesa de trabajo.");
             return;
         }
         
-        if (!confirm("Â¿Seguro que deseas eliminar la pantalla de telÃ©fono seleccionada?")) return;
+        if (!confirm("¿Seguro que deseas eliminar la pantalla de teléfono seleccionada?")) return;
         
         const activeIdx = currentProject.activeScreenIndex;
         currentProject.screens.splice(activeIdx, 1);
         
-        // Ajustar el Ã­ndice activo
+        // Ajustar el índice activo
         currentProject.activeScreenIndex = Math.max(0, activeIdx - 1);
         
         renderScreens();
@@ -1432,12 +1581,12 @@ document.addEventListener("DOMContentLoaded", () => {
         saveTemplateQuietly();
     });
 
-    // Auto-guardado cada 30 segundos
+    // Auto-guíardado cada 30 segundos
     setInterval(() => {
         saveTemplateQuietly();
     }, 30000);
 
-    // SISTEMA DE EXPORTACIÃ“N DE VIDEO EN SERVIDOR (MP4)
+    // SISTEMA DE EXPORTACIÓN DE VIDEO EN SERVIDOR (MP4)
     function logToServer(msg) {
         console.log(msg);
         fetch("/api/log", {
@@ -1449,7 +1598,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     recordVideoBtn.addEventListener("click", async () => {
         const hasPersistentVideo = currentTemplate.mediaSrc && currentTemplate.mediaSrc.startsWith("/uploads/");
-        logToServer(`[Grabador] Click en botÃ³n de exportaciÃ³n. mediaType=${currentTemplate.mediaType}, tieneFile=${!!rawVideoFile}, tienePersistencia=${hasPersistentVideo}`);
+        logToServer(`[Grabador] Click en botón de exportación. mediaType=${currentTemplate.mediaType}, tieneFile=${!!rawVideoFile}, tienePersistencia=${hasPersistentVideo}`);
 
         if (currentTemplate.mediaType !== "video") {
             alert("Por favor, selecciona un video (.mp4) en el simulador antes de exportar.");
@@ -1466,7 +1615,7 @@ document.addEventListener("DOMContentLoaded", () => {
             recordVideoBtn.disabled = true;
             recordVideoBtn.classList.add("recording");
 
-            // Solo subir el archivo si es un archivo nuevo seleccionado en esta sesiÃ³n
+            // Solo subir el archivo si es un archivo nuevo seleccionado en esta sesión
             if (rawVideoFile) {
                 recordVideoBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Subiendo video...';
                 logToServer("[Grabador] Subiendo video bruto al servidor...");
@@ -1480,7 +1629,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (!uploadRes.ok) {
                     throw new Error("No se pudo subir el archivo de video al servidor.");
                 }
-                logToServer("[Grabador] Video subido con Ã©xito.");
+                logToServer("[Grabador] Video subido con éxito.");
             }
 
             logToServer("[Grabador] Solicitando procesamiento FFmpeg...");
@@ -1548,7 +1697,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 throw new Error(errData.error || "Error durante el procesamiento del video en el servidor.");
             }
 
-            logToServer("[Grabador] Video procesado con Ã©xito. Descargando MP4 final...");
+            logToServer("[Grabador] Video procesado con éxito. Descargando MP4 final...");
             recordVideoBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Descargando...';
 
             const blob = await exportRes.blob();
@@ -1562,7 +1711,7 @@ document.addEventListener("DOMContentLoaded", () => {
             logToServer("[Grabador] Descarga final completada.");
 
         } catch (err) {
-            logToServer(`[Grabador] Error crÃ­tico al exportar: ${err.message}`);
+            logToServer(`[Grabador] Error crítico al exportar: ${err.message}`);
             alert(`Error al exportar video: ${err.message}`);
         } finally {
             recordVideoBtn.disabled = false;
@@ -1627,15 +1776,21 @@ document.addEventListener("DOMContentLoaded", () => {
                 try {
                     const parsed = JSON.parse(event.target.result);
 
-                    // Validar estructura bÃ¡sica
+                    // Validar estructura básica
                     if (!parsed.screens || !Array.isArray(parsed.screens)) {
-                        throw new Error("El archivo no tiene el formato de proyecto vÃ¡lido de Reels.");
+                        throw new Error("El archivo no tiene el formato de proyecto válido de Reels.");
                     }
 
                     // Forzar nombre y persistencia
                     const importedName = parsed.name || "importado_" + Date.now();
                     currentTemplateName = importedName;
                     currentProject = parsed;
+        if (currentProject && Array.isArray(currentProject.screens)) {
+            currentProject.screens.forEach(s => {
+                if (s.headerText) s.headerText = sanitizeMojibake(s.headerText);
+                if (s.footerText) s.footerText = sanitizeMojibake(s.footerText);
+            });
+        }
                     currentProject.name = importedName;
 
                     // Agregar a la lista si no existe
@@ -1649,7 +1804,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     saveTemplateQuietly();
                     renderScreens();
                     selectScreen(currentProject.activeScreenIndex || 0);
-                    alert(`Â¡Proyecto "${importedName}" importado con Ã©xito!`);
+                    alert(`¡Proyecto "${importedName}" importado con éxito!`);
                 } catch (err) {
                     alert("Error al importar el archivo JSON: " + err.message);
                 }
@@ -1660,7 +1815,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // ==========================================
-    // SISTEMA DE EXPORTACIÃ“N EN LOTE (MODAL)
+    // SISTEMA DE EXPORTACIÓN EN LOTE (MODAL)
     // ==========================================
     const bulkExportBtn = document.getElementById("bulk-export-btn");
     const bulkModal = document.getElementById("bulk-modal");
@@ -1692,7 +1847,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         cancelBulkBtn.addEventListener("click", () => {
             if (isBulkExportRunning) {
-                if (confirm("Â¿Deseas cancelar el procesamiento en lote actual? (Se detendrÃ¡ en el video actual)")) {
+                if (confirm("¿Deseas cancelar el procesamiento en lote actual? (Se detendrá en el video actual)")) {
                     shouldCancelBulkExport = true;
                 }
                 return;
@@ -1801,16 +1956,16 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
             if (shouldCancelBulkExport) {
-                updateBulkProgress(completedCount, totalCount, "Â¡ExportaciÃ³n en lote cancelada!");
+                updateBulkProgress(completedCount, totalCount, "¡Exportación en lote cancelada!");
             } else {
-                updateBulkProgress(totalCount, totalCount, "Â¡ExportaciÃ³n en lote finalizada!");
+                updateBulkProgress(totalCount, totalCount, "¡Exportación en lote finalizada!");
             }
             isBulkExportRunning = false;
             shouldCancelBulkExport = false;
             disableBulkModalControls(false);
             
             setTimeout(() => {
-                alert(`ExportaciÃ³n en lote terminada. Se procesaron ${completedCount} de ${totalCount} videos con Ã©xito.`);
+                alert(`Exportación en lote terminada. Se procesaron ${completedCount} de ${totalCount} videos con éxito.`);
             }, 500);
         });
     }
@@ -1934,7 +2089,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function disableBulkModalControls(disable) {
         closeBulkModal.style.pointerEvents = disable ? "none" : "auto";
-        cancelBulkBtn.disabled = false; // El botÃ³n de Cancelar siempre queda habilitado
+        cancelBulkBtn.disabled = false; // El botón de Cancelar siempre queda habilitado
         startBulkExportBtn.disabled = disable;
         bulkSelectAll.disabled = disable;
         bulkDeselectAll.disabled = disable;
@@ -2550,7 +2705,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const newSrc = canvas.toDataURL('image/png');
             editingImg.src = newSrc;
             
-            // Determinar si era media, logo o sticker para guardarlo en los datos persistentes de la pantalla
+            // Determinar si era media, logo o sticker para guíardarlo en los datos persistentes de la pantalla
             if (editingImg.id.startsWith('reel-img-')) {
                 const idx = editingImg.id.replace('reel-img-', '');
                 currentProject.screens[idx].mediaSrc = newSrc;
@@ -2597,7 +2752,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (reelImg && reelImg.src && reelImg.style.display !== 'none') {
                     window.openEraserEditor(reelImg);
                 } else {
-                    alert('El editor mÃ¡gico solo funciona con imÃ¡genes, no con videos.');
+                    alert('El editor mágico solo funciona con imágenes, no con videos.');
                 }
             });
         }
@@ -2632,7 +2787,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 const stickerImgEl = document.querySelector(`#sticker-card-${idx}-${targetStickerIdx} img`);
                 if (stickerImgEl) {
-                    // Al confirmar, guardar de vuelta en el sticker correspondiente
+                    // Al confirmar, guíardar de vuelta en el sticker correspondiente
                     window._editingStickerScreenIdx = idx;
                     window._editingStickerIdx = targetStickerIdx;
                     window.openEraserEditor(stickerImgEl);
@@ -2691,5 +2846,33 @@ document.addEventListener("DOMContentLoaded", () => {
             if (reelVideo) reelVideo.style.transform = `scale(1)`;
         };
     })();
+
+
+    
+    // --- GESTIÓN COMPLETA DE EMOJIS (DESPLEGABLE + ÚLTIMOS USADOS) ---
+    const RECENT_EMOJIS_KEY = 'reels_recent_emojis_list';
+    const DEFAULT_RECENTS = ['🔥', '💡', '👇', '🚀', '😱', '🤯', '🎯', '⚡', '✨', '🎬'];
+
+    function getRecentEmojis() {
+        try {
+            const saved = localStorage.getItem(RECENT_EMOJIS_KEY);
+            if (saved) {
+                const parsed = JSON.parse(saved);
+                if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+            }
+        } catch(e) {}
+        return DEFAULT_RECENTS;
+    }
+
+    function addRecentEmoji(emoji) {
+        if (!emoji) return;
+        let list = getRecentEmojis().filter(e => e !== emoji);
+        list.unshift(emoji);
+        if (list.length > 12) list = list.slice(0, 12);
+        try {
+            localStorage.setItem(RECENT_EMOJIS_KEY, JSON.stringify(list));
+        } catch(e) {}
+        renderRecentEmojis();
+    }
 
 });
