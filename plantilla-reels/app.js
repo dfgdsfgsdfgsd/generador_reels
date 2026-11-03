@@ -110,6 +110,18 @@ document.addEventListener("DOMContentLoaded", () => {
     const playPauseBtn = document.getElementById("play-pause-btn");
     const muteBtn = document.getElementById("mute-btn");
     
+    // Controles de Línea de Tiempo y Pausa de Video (Rama 1)
+    const videoTimelineControls = document.getElementById("video-timeline-controls");
+    const videoTimeDisplay = document.getElementById("video-time-display");
+    const videoScrubber = document.getElementById("video-scrubber");
+    const stepBackBtn = document.getElementById("step-back-btn");
+    const stepForwardBtn = document.getElementById("step-forward-btn");
+    const freezeFrameBtn = document.getElementById("freeze-frame-btn");
+    const unfreezeFrameBtn = document.getElementById("unfreeze-frame-btn");
+    const freezeStatusBadge = document.getElementById("freeze-status-badge");
+    const freezeTimeText = document.getElementById("freeze-time-text");
+    let isScrubbing = false;
+    
     const themeSelect = document.getElementById("theme-select");
     const customColorWrapper = document.getElementById("custom-color-wrapper");
     const bgColorPicker = document.getElementById("bg-color-picker");
@@ -175,8 +187,14 @@ document.addEventListener("DOMContentLoaded", () => {
             
             // Escala del simulador para corregir la velocidad del cursor
             const scale = 0.75;
+            let hasMoved = false;
             
             function onMouseMove(moveEvent) {
+                const dyRaw = Math.abs(moveEvent.clientY - startY);
+                const dxRaw = Math.abs(moveEvent.clientX - startX);
+                if (dyRaw > 3 || dxRaw > 3) {
+                    hasMoved = true;
+                }
                 const dy = (moveEvent.clientY - startY) / scale;
                 const dx = (moveEvent.clientX - startX) / scale;
                 
@@ -212,10 +230,19 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
             }
             
-            function onMouseUp() {
+            function onMouseUp(upEvent) {
                 document.removeEventListener("mousemove", onMouseMove);
                 document.removeEventListener("mouseup", onMouseUp);
                 saveTemplateQuietly();
+                
+                // Si fue un clic simple en el video (sin arrastrar y no sobre placeholder)
+                if (!hasMoved && key === 'media') {
+                    const isPlaceholder = upEvent && upEvent.target && upEvent.target.closest('.media-placeholder');
+                    const targetScreen = currentProject.screens[index];
+                    if (!isPlaceholder && targetScreen && targetScreen.mediaType === 'video' && targetScreen.mediaSrc) {
+                        togglePlayPause();
+                    }
+                }
             }
             
             document.addEventListener("mousemove", onMouseMove);
@@ -526,6 +553,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const fileURL = URL.createObjectURL(file);
             targetScreen.mediaType = file.type.startsWith("video/") ? "video" : "image";
             targetScreen.mediaSrc = fileURL;
+            targetScreen.fixedFrameTime = null;
 
             if (targetIndex === currentProject.activeScreenIndex) {
                 currentTemplate = targetScreen;
@@ -655,16 +683,95 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // CONTROLES DE REPRODUCCIÓN DE VIDEO
-    playPauseBtn.addEventListener("click", () => {
-        if (!reelVideo) return;
+    // =========================================================
+    // RAMA 1: CONTROLES DE REPRODUCCIÓN, LÍNEA DE TIEMPO Y PAUSA
+    // =========================================================
+
+    function formatVideoTime(seconds) {
+        if (isNaN(seconds) || seconds < 0) return "00:00.0";
+        const mins = Math.floor(seconds / 60);
+        const secs = Math.floor(seconds % 60);
+        const dec = Math.floor((seconds % 1) * 10);
+        return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}.${dec}`;
+    }
+
+    function showVideoIndicator(type) {
+        const activeIndex = currentProject.activeScreenIndex;
+        const indicator = document.getElementById(`video-indicator-${activeIndex}`);
+        if (!indicator) return;
+        indicator.innerHTML = type === "play" 
+            ? '<i class="fa-solid fa-play"></i>' 
+            : '<i class="fa-solid fa-pause"></i>';
+        indicator.classList.remove("active");
+        void indicator.offsetWidth;
+        indicator.classList.add("active");
+        clearTimeout(indicator._timer);
+        indicator._timer = setTimeout(() => {
+            indicator.classList.remove("active");
+        }, 600);
+    }
+
+    function updatePlayPauseUI() {
+        if (!reelVideo || !playPauseBtn) return;
         if (reelVideo.paused) {
-            reelVideo.play();
+            playPauseBtn.innerHTML = '<i class="fa-solid fa-play"></i> Reproducir';
+        } else {
             playPauseBtn.innerHTML = '<i class="fa-solid fa-pause"></i> Pausar';
+        }
+    }
+
+    function togglePlayPause() {
+        if (!reelVideo || !currentTemplate || currentTemplate.mediaType !== "video") return;
+        if (reelVideo.paused) {
+            if (currentTemplate.fixedFrameTime !== undefined && currentTemplate.fixedFrameTime !== null) {
+                currentTemplate.fixedFrameTime = null;
+                saveTemplateQuietly();
+                syncTimelineControls();
+            }
+            reelVideo.play().then(() => {
+                showVideoIndicator("play");
+                updatePlayPauseUI();
+            }).catch(err => console.log("Play blocked / interrupted:", err));
         } else {
             reelVideo.pause();
-            playPauseBtn.innerHTML = '<i class="fa-solid fa-play"></i> Reproducir';
+            showVideoIndicator("pause");
+            updatePlayPauseUI();
         }
+    }
+
+    function syncTimelineControls() {
+        if (!videoTimelineControls) return;
+        if (currentTemplate && currentTemplate.mediaType === "video" && currentTemplate.mediaSrc) {
+            videoTimelineControls.style.display = "block";
+            if (reelVideo) {
+                const dur = reelVideo.duration || 0;
+                if (videoScrubber) {
+                    videoScrubber.max = dur > 0 ? dur : 100;
+                    if (!isScrubbing) {
+                        videoScrubber.value = reelVideo.currentTime || 0;
+                    }
+                }
+                if (videoTimeDisplay) {
+                    videoTimeDisplay.textContent = `${formatVideoTime(reelVideo.currentTime)} / ${formatVideoTime(dur)}`;
+                }
+            }
+            if (currentTemplate.fixedFrameTime !== undefined && currentTemplate.fixedFrameTime !== null) {
+                if (freezeStatusBadge) freezeStatusBadge.style.display = "block";
+                if (freezeTimeText) freezeTimeText.textContent = formatVideoTime(currentTemplate.fixedFrameTime);
+                if (unfreezeFrameBtn) unfreezeFrameBtn.style.display = "inline-flex";
+                if (freezeFrameBtn) freezeFrameBtn.style.display = "none";
+            } else {
+                if (freezeStatusBadge) freezeStatusBadge.style.display = "none";
+                if (unfreezeFrameBtn) unfreezeFrameBtn.style.display = "none";
+                if (freezeFrameBtn) freezeFrameBtn.style.display = "inline-flex";
+            }
+        } else {
+            videoTimelineControls.style.display = "none";
+        }
+    }
+
+    playPauseBtn.addEventListener("click", () => {
+        togglePlayPause();
     });
 
     muteBtn.addEventListener("click", () => {
@@ -673,6 +780,83 @@ document.addEventListener("DOMContentLoaded", () => {
         muteBtn.innerHTML = reelVideo.muted 
             ? '<i class="fa-solid fa-volume-xmark"></i> Silenciar' 
             : '<i class="fa-solid fa-volume-high"></i> Sonido';
+    });
+
+    if (videoScrubber) {
+        videoScrubber.addEventListener("input", (e) => {
+            isScrubbing = true;
+            if (!reelVideo) return;
+            const targetTime = parseFloat(e.target.value);
+            reelVideo.currentTime = targetTime;
+            if (videoTimeDisplay) {
+                videoTimeDisplay.textContent = `${formatVideoTime(targetTime)} / ${formatVideoTime(reelVideo.duration || 0)}`;
+            }
+        });
+        const stopScrub = () => { isScrubbing = false; };
+        videoScrubber.addEventListener("change", stopScrub);
+        videoScrubber.addEventListener("mouseup", stopScrub);
+        videoScrubber.addEventListener("touchend", stopScrub);
+    }
+
+    if (stepBackBtn) {
+        stepBackBtn.addEventListener("click", () => {
+            if (!reelVideo) return;
+            reelVideo.currentTime = Math.max(0, reelVideo.currentTime - 1);
+            syncTimelineControls();
+        });
+    }
+
+    if (stepForwardBtn) {
+        stepForwardBtn.addEventListener("click", () => {
+            if (!reelVideo) return;
+            const maxTime = reelVideo.duration || 9999;
+            reelVideo.currentTime = Math.min(maxTime, reelVideo.currentTime + 1);
+            syncTimelineControls();
+        });
+    }
+
+    if (freezeFrameBtn) {
+        freezeFrameBtn.addEventListener("click", () => {
+            if (!reelVideo || !currentTemplate) return;
+            reelVideo.pause();
+            currentTemplate.fixedFrameTime = reelVideo.currentTime;
+            saveTemplateQuietly();
+            syncTimelineControls();
+            updatePlayPauseUI();
+            showVideoIndicator("pause");
+        });
+    }
+
+    if (unfreezeFrameBtn) {
+        unfreezeFrameBtn.addEventListener("click", () => {
+            if (!reelVideo || !currentTemplate) return;
+            currentTemplate.fixedFrameTime = null;
+            saveTemplateQuietly();
+            syncTimelineControls();
+            reelVideo.play().catch(() => {});
+            updatePlayPauseUI();
+            showVideoIndicator("play");
+        });
+    }
+
+    // Atajo de teclado: Barra espaciadora para reproducir/pausar
+    document.addEventListener("keydown", (e) => {
+        if (e.code === "Space" || e.key === " ") {
+            const active = document.activeElement;
+            const isEditable = active && (
+                active.tagName === "INPUT" || 
+                active.tagName === "TEXTAREA" || 
+                active.tagName === "SELECT" || 
+                active.isContentEditable || 
+                active.closest("[contenteditable='true']")
+            );
+            if (isEditable) return;
+            
+            if (currentTemplate && currentTemplate.mediaType === "video" && reelVideo && reelVideo.src) {
+                e.preventDefault();
+                togglePlayPause();
+            }
+        }
     });
 
     // TEMAS Y COLORES DE FONDO
@@ -1047,6 +1231,7 @@ document.addEventListener("DOMContentLoaded", () => {
                                     <i class="fa-solid fa-video"></i>
                                     <span>Carga un video/imagen 1:1</span>
                                 </div>
+                                <div class="video-play-indicator" id="video-indicator-${index}"><i class="fa-solid fa-play"></i></div>
                             </div>
 
                             <!-- Bloque de texto inferior -->
@@ -1120,6 +1305,25 @@ document.addEventListener("DOMContentLoaded", () => {
             setupDraggable(hCard, "header", index);
             setupDraggable(fCard, "footer", index);
             setupDraggable(mCont, "media", index);
+            const screenVid = document.getElementById(`reel-video-${index}`);
+            if (screenVid) {
+                screenVid.addEventListener("play", () => {
+                    if (index === currentProject.activeScreenIndex) updatePlayPauseUI();
+                });
+                screenVid.addEventListener("pause", () => {
+                    if (index === currentProject.activeScreenIndex) updatePlayPauseUI();
+                });
+                screenVid.addEventListener("timeupdate", () => {
+                    if (index === currentProject.activeScreenIndex && !isScrubbing) {
+                        syncTimelineControls();
+                    }
+                });
+                screenVid.addEventListener("loadedmetadata", () => {
+                    if (index === currentProject.activeScreenIndex) {
+                        syncTimelineControls();
+                    }
+                });
+            }
             if (mCont) {
                 mCont.addEventListener("dblclick", (e) => {
                     e.stopPropagation();
@@ -1360,16 +1564,15 @@ document.addEventListener("DOMContentLoaded", () => {
         if (currentTemplate.mediaType === "video") {
             playPauseBtn.disabled = false;
             muteBtn.disabled = false;
-            playPauseBtn.innerHTML = reelVideo.paused 
-                ? '<i class="fa-solid fa-play"></i> Reproducir' 
-                : '<i class="fa-solid fa-pause"></i> Pausar';
-            muteBtn.innerHTML = reelVideo.muted 
+            updatePlayPauseUI();
+            muteBtn.innerHTML = (reelVideo && reelVideo.muted) 
                 ? '<i class="fa-solid fa-volume-xmark"></i> Silenciar' 
                 : '<i class="fa-solid fa-volume-high"></i> Sonido';
         } else {
             playPauseBtn.disabled = true;
             muteBtn.disabled = true;
         }
+        syncTimelineControls();
 
         // Sincronizar botones de logo y media
         if (currentTemplate.logoSrc) {
@@ -1403,7 +1606,12 @@ document.addEventListener("DOMContentLoaded", () => {
             if (vid) {
                 if (idx === index) {
                     if (currentTemplate.mediaType === "video") {
-                        vid.play().catch(() => {});
+                        if (currentTemplate.fixedFrameTime !== undefined && currentTemplate.fixedFrameTime !== null) {
+                            vid.currentTime = currentTemplate.fixedFrameTime;
+                            vid.pause();
+                        } else {
+                            vid.play().catch(() => {});
+                        }
                     }
                 } else {
                     vid.pause();
@@ -1470,12 +1678,22 @@ document.addEventListener("DOMContentLoaded", () => {
             video.src = screenData.mediaSrc;
             video.muted = true;
             if (index === currentProject.activeScreenIndex) {
-                video.play().catch(() => console.log("Video auto-play blocked."));
+                if (screenData.fixedFrameTime !== undefined && screenData.fixedFrameTime !== null) {
+                    video.currentTime = screenData.fixedFrameTime;
+                    video.pause();
+                } else {
+                    video.play().catch(() => console.log("Video auto-play blocked."));
+                }
                 const editMediaBtn = document.getElementById('edit-media-btn');
                 if (editMediaBtn) editMediaBtn.disabled = true;
+                syncTimelineControls();
             } else {
                 video.pause();
-                if (video.currentTime === 0) video.currentTime = 0.1;
+                if (screenData.fixedFrameTime !== undefined && screenData.fixedFrameTime !== null) {
+                    video.currentTime = screenData.fixedFrameTime;
+                } else if (video.currentTime === 0) {
+                    video.currentTime = 0.1;
+                }
             }
         } else if (screenData.mediaType === "image" && screenData.mediaSrc) {
             video.style.display = "none";
