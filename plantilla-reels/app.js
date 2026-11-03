@@ -122,6 +122,19 @@ document.addEventListener("DOMContentLoaded", () => {
     const freezeTimeText = document.getElementById("freeze-time-text");
     let isScrubbing = false;
     
+    // Barra Flotante de Reproducción Inferior (Debajo de los teléfonos)
+    const bottomPlayerDock = document.getElementById("bottom-player-dock");
+    const bottomPlayBtn = document.getElementById("bottom-play-btn");
+    const bottomStepBackBtn = document.getElementById("bottom-step-back-btn");
+    const bottomStepFwdBtn = document.getElementById("bottom-step-fwd-btn");
+    const bottomTimeDisplay = document.getElementById("bottom-time-display");
+    const bottomScrubber = document.getElementById("bottom-scrubber");
+    const bottomMuteBtn = document.getElementById("bottom-mute-btn");
+    const bottomFreezeBtn = document.getElementById("bottom-freeze-btn");
+    const bottomUnfreezeBtn = document.getElementById("bottom-unfreeze-btn");
+    const bottomFreezeBadge = document.getElementById("bottom-freeze-badge");
+    const bottomFreezeTimeText = document.getElementById("bottom-freeze-time-text");
+    
     const themeSelect = document.getElementById("theme-select");
     const customColorWrapper = document.getElementById("custom-color-wrapper");
     const bgColorPicker = document.getElementById("bg-color-picker");
@@ -712,11 +725,22 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function updatePlayPauseUI() {
-        if (!reelVideo || !playPauseBtn) return;
-        if (reelVideo.paused) {
-            playPauseBtn.innerHTML = '<i class="fa-solid fa-play"></i> Reproducir';
-        } else {
-            playPauseBtn.innerHTML = '<i class="fa-solid fa-pause"></i> Pausar';
+        if (!reelVideo) return;
+        const isPaused = reelVideo.paused;
+        if (playPauseBtn) {
+            playPauseBtn.innerHTML = isPaused 
+                ? '<i class="fa-solid fa-play"></i> Reproducir' 
+                : '<i class="fa-solid fa-pause"></i> Pausar';
+        }
+        if (bottomPlayBtn) {
+            bottomPlayBtn.innerHTML = isPaused 
+                ? '<i class="fa-solid fa-play"></i>' 
+                : '<i class="fa-solid fa-pause"></i>';
+        }
+        if (bottomMuteBtn) {
+            bottomMuteBtn.innerHTML = reelVideo.muted 
+                ? '<i class="fa-solid fa-volume-xmark"></i>' 
+                : '<i class="fa-solid fa-volume-high"></i>';
         }
     }
 
@@ -740,33 +764,65 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function syncTimelineControls() {
-        if (!videoTimelineControls) return;
-        if (currentTemplate && currentTemplate.mediaType === "video" && currentTemplate.mediaSrc) {
-            videoTimelineControls.style.display = "block";
-            if (reelVideo) {
-                const dur = reelVideo.duration || 0;
-                if (videoScrubber) {
-                    videoScrubber.max = dur > 0 ? dur : 100;
-                    if (!isScrubbing) {
-                        videoScrubber.value = reelVideo.currentTime || 0;
-                    }
-                }
-                if (videoTimeDisplay) {
-                    videoTimeDisplay.textContent = `${formatVideoTime(reelVideo.currentTime)} / ${formatVideoTime(dur)}`;
+        const hasVideo = currentTemplate && currentTemplate.mediaType === "video" && currentTemplate.mediaSrc;
+        
+        if (videoTimelineControls) {
+            videoTimelineControls.style.display = hasVideo ? "block" : "none";
+        }
+        if (bottomPlayerDock) {
+            bottomPlayerDock.style.display = hasVideo ? "flex" : "none";
+        }
+
+        if (hasVideo && reelVideo) {
+            const dur = reelVideo.duration || 0;
+            const curTime = reelVideo.currentTime || 0;
+            const timeStr = `${formatVideoTime(curTime)} / ${formatVideoTime(dur)}`;
+
+            if (bottomScrubber) {
+                bottomScrubber.max = dur > 0 ? dur : 100;
+                if (!isScrubbing) {
+                    bottomScrubber.value = curTime;
                 }
             }
-            if (currentTemplate.fixedFrameTime !== undefined && currentTemplate.fixedFrameTime !== null) {
-                if (freezeStatusBadge) freezeStatusBadge.style.display = "block";
-                if (freezeTimeText) freezeTimeText.textContent = formatVideoTime(currentTemplate.fixedFrameTime);
+            if (bottomTimeDisplay) {
+                bottomTimeDisplay.textContent = timeStr;
+            }
+
+            if (videoScrubber) {
+                videoScrubber.max = dur > 0 ? dur : 100;
+                if (!isScrubbing) videoScrubber.value = curTime;
+            }
+            if (videoTimeDisplay) {
+                videoTimeDisplay.textContent = timeStr;
+            }
+
+            const isFrozen = currentTemplate.fixedFrameTime !== undefined && currentTemplate.fixedFrameTime !== null;
+            if (isFrozen) {
+                const frozenText = formatVideoTime(currentTemplate.fixedFrameTime);
+                if (bottomFreezeBadge) {
+                    bottomFreezeBadge.style.display = "inline-flex";
+                    if (bottomFreezeTimeText) bottomFreezeTimeText.textContent = frozenText;
+                }
+                if (bottomUnfreezeBtn) bottomUnfreezeBtn.style.display = "inline-flex";
+                if (bottomFreezeBtn) bottomFreezeBtn.style.display = "none";
+
+                if (freezeStatusBadge) {
+                    freezeStatusBadge.style.display = "block";
+                    if (freezeTimeText) freezeTimeText.textContent = frozenText;
+                }
                 if (unfreezeFrameBtn) unfreezeFrameBtn.style.display = "inline-flex";
                 if (freezeFrameBtn) freezeFrameBtn.style.display = "none";
             } else {
+                if (bottomFreezeBadge) bottomFreezeBadge.style.display = "none";
+                if (bottomUnfreezeBtn) bottomUnfreezeBtn.style.display = "none";
+                if (bottomFreezeBtn) bottomFreezeBtn.style.display = "inline-flex";
+
                 if (freezeStatusBadge) freezeStatusBadge.style.display = "none";
                 if (unfreezeFrameBtn) unfreezeFrameBtn.style.display = "none";
                 if (freezeFrameBtn) freezeFrameBtn.style.display = "inline-flex";
             }
-        } else {
-            videoTimelineControls.style.display = "none";
+
+            updatePlayPauseUI();
         }
     }
 
@@ -858,6 +914,84 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         }
     });
+
+    // Listeners para la barra flotante de reproducción inferior
+    if (bottomPlayBtn) {
+        bottomPlayBtn.addEventListener("click", () => {
+            togglePlayPause();
+        });
+    }
+
+    if (bottomStepBackBtn) {
+        bottomStepBackBtn.addEventListener("click", () => {
+            if (!reelVideo) return;
+            reelVideo.currentTime = Math.max(0, reelVideo.currentTime - 1);
+            syncTimelineControls();
+        });
+    }
+
+    if (bottomStepFwdBtn) {
+        bottomStepFwdBtn.addEventListener("click", () => {
+            if (!reelVideo) return;
+            const maxTime = reelVideo.duration || 9999;
+            reelVideo.currentTime = Math.min(maxTime, reelVideo.currentTime + 1);
+            syncTimelineControls();
+        });
+    }
+
+    if (bottomMuteBtn) {
+        bottomMuteBtn.addEventListener("click", () => {
+            if (!reelVideo) return;
+            reelVideo.muted = !reelVideo.muted;
+            if (muteBtn) {
+                muteBtn.innerHTML = reelVideo.muted 
+                    ? '<i class="fa-solid fa-volume-xmark"></i> Silenciar' 
+                    : '<i class="fa-solid fa-volume-high"></i> Sonido';
+            }
+            updatePlayPauseUI();
+        });
+    }
+
+    if (bottomScrubber) {
+        bottomScrubber.addEventListener("input", (e) => {
+            isScrubbing = true;
+            if (!reelVideo) return;
+            const targetTime = parseFloat(e.target.value);
+            reelVideo.currentTime = targetTime;
+            if (bottomTimeDisplay) {
+                bottomTimeDisplay.textContent = `${formatVideoTime(targetTime)} / ${formatVideoTime(reelVideo.duration || 0)}`;
+            }
+        });
+        const stopScrub = () => { isScrubbing = false; };
+        bottomScrubber.addEventListener("change", stopScrub);
+        bottomScrubber.addEventListener("mouseup", stopScrub);
+        bottomScrubber.addEventListener("touchend", stopScrub);
+    }
+
+    if (bottomFreezeBtn) {
+        bottomFreezeBtn.addEventListener("click", () => {
+            if (!reelVideo || !currentTemplate) return;
+            reelVideo.pause();
+            currentTemplate.fixedFrameTime = reelVideo.currentTime;
+            saveTemplateQuietly();
+            syncTimelineControls();
+            updatePlayPauseUI();
+            showVideoIndicator("pause");
+        });
+    }
+
+    if (bottomUnfreezeBtn) {
+        bottomUnfreezeBtn.addEventListener("click", () => {
+            if (!reelVideo || !currentTemplate) return;
+            currentTemplate.fixedFrameTime = null;
+            saveTemplateQuietly();
+            syncTimelineControls();
+            reelVideo.play().catch(() => {});
+            updatePlayPauseUI();
+            showVideoIndicator("play");
+        });
+    }
+
 
     // TEMAS Y COLORES DE FONDO
     themeSelect.addEventListener("change", (e) => {

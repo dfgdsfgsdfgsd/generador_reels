@@ -8,6 +8,12 @@ from fastapi.responses import FileResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 import uvicorn
+
+try:
+    import imageio_ffmpeg
+    FFMPEG_EXE = imageio_ffmpeg.get_ffmpeg_exe()
+except Exception:
+    FFMPEG_EXE = "ffmpeg" 
 from PIL import Image, ImageDraw, ImageFont
 
 app = FastAPI()
@@ -423,7 +429,7 @@ async def export_video(request: Request):
         # Comando FFmpeg ultra rÃ¡pido usando hardware acceleration si estÃ¡ disponible, sino libx264 preset ultrafast
         # -preset ultrafast es crucial para la velocidad mÃ¡xima en CPU
         ffmpeg_cmd = (
-            f'ffmpeg -y -loop 1 -i "{temp_bg_path}" -i "{temp_input_video}" '
+            f'"{FFMPEG_EXE}" -y -loop 1 -i "{temp_bg_path}" -i "{temp_input_video}" '
             f'-loop 1 -i "{temp_overlay_path}" -loop 1 -i "{temp_mask_path}" '
             f'-filter_complex "[1:v]scale=w=\'if(gte(iw/ih,{dest_w}/{dest_h}),-1,{dest_w})\':h=\'if(gte(iw/ih,{dest_w}/{dest_h}),{dest_h},-1)\',crop={dest_w}:{dest_h}[scaled_vid];'
             f'[scaled_vid]pad=720:1280:{dest_x}:{dest_y}:color=black[padded_vid];'

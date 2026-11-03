@@ -36,7 +36,12 @@
                             .replace(/DISEÃ'O/g, "DISEÑO")
                             .replace(/SÃguenos/g, "Síguenos")
                             .replace(/mÃ¡s/g, "más")
-                            .replace(/Â¡/g, "¡");
+                            .replace(/Â¡/g, "¡")
+                    .replace(/ðŸ\s*³/g, "👨‍🍳")
+                    .replace(/ðŸ‘©â€\s*ðŸ\s*³/g, "👩‍🍳")
+                    .replace(/â€¢/g, "•")
+                    .replace(/SÃguenos/g, "Síguenos")
+                    .replace(/SÃ\s*guenos/g, "Síguenos");
                         localStorage.setItem(key, raw);
                     }
                 }
@@ -102,33 +107,6 @@
                     <button id="play-pause-btn" class="action-btn text-btn" disabled><i class="fa-solid fa-play"></i> Reproducir</button>
                     <button id="mute-btn" class="action-btn text-btn" disabled><i class="fa-solid fa-volume-xmark"></i> Silenciar</button>
                     <button id="edit-media-btn" class="action-btn text-btn" style="color: var(--color-accent); border-color: var(--color-accent);" disabled><i class="fa-solid fa-wand-magic-sparkles"></i> Editar</button>
-                </div>
-
-                <!-- Control de Línea de Tiempo y Pausa de Video (Rama 1) -->
-                <div id="video-timeline-controls" class="video-timeline-wrapper" style="display: none; margin-top: 10px;">
-                    <div class="timeline-row">
-                        <button type="button" id="step-back-btn" class="action-btn icon-btn" title="Retroceder 1s" style="padding: 4px 8px; font-size: 0.8rem;">
-                            <i class="fa-solid fa-backward-step"></i> -1s
-                        </button>
-                        <span id="video-time-display" class="video-time-label">00:00.0 / 00:00.0</span>
-                        <button type="button" id="step-forward-btn" class="action-btn icon-btn" title="Avanzar 1s" style="padding: 4px 8px; font-size: 0.8rem;">
-                            +1s <i class="fa-solid fa-forward-step"></i>
-                        </button>
-                    </div>
-                    <div style="margin-top: 8px;">
-                        <input type="range" id="video-scrubber" class="video-scrubber-slider" min="0" max="100" value="0" step="0.05">
-                    </div>
-                    <div style="margin-top: 8px; display: flex; gap: 6px;">
-                        <button type="button" id="freeze-frame-btn" class="action-btn text-btn" style="flex: 1; font-size: 0.8rem;" title="Fijar este fotograma para pausar la pantalla aquí">
-                            <i class="fa-solid fa-thumbtack"></i> Fijar Fotograma
-                        </button>
-                        <button type="button" id="unfreeze-frame-btn" class="action-btn text-btn" style="flex: 1; font-size: 0.8rem; display: none; color: #4ade80; border-color: #4ade80;" title="Reanudar reproducción normal">
-                            <i class="fa-solid fa-play"></i> Descongelar
-                        </button>
-                    </div>
-                    <div id="freeze-status-badge" style="display: none; font-size: 0.75rem; color: #4ade80; margin-top: 6px; text-align: center;">
-                        <i class="fa-solid fa-circle-check"></i> Fotograma fijado en <strong id="freeze-time-text">00:00.0</strong>
-                    </div>
                 </div>
             </div>
 
@@ -368,6 +346,51 @@
                 <div class="phone-home-indicator"></div>
             </div>
         </main>
+
+        <!-- Barra Flotante de Reproducción Inferior (Debajo de los teléfonos) -->
+        <div id="bottom-player-dock" class="bottom-player-dock" style="display: none;">
+            <!-- Botón Play / Pausa Principal -->
+            <button type="button" id="bottom-play-btn" class="dock-btn dock-btn-play" title="Reproducir / Pausar (Espacio)">
+                <i class="fa-solid fa-play"></i>
+            </button>
+
+            <!-- Botón Retroceder 1s -->
+            <button type="button" id="bottom-step-back-btn" class="dock-btn dock-btn-icon" title="Retroceder 1s (-1s)">
+                <i class="fa-solid fa-backward-step"></i>
+            </button>
+
+            <!-- Botón Avanzar 1s -->
+            <button type="button" id="bottom-step-fwd-btn" class="dock-btn dock-btn-icon" title="Avanzar 1s (+1s)">
+                <i class="fa-solid fa-forward-step"></i>
+            </button>
+
+            <!-- Contador de Tiempo -->
+            <span id="bottom-time-display" class="dock-time-text">00:00.0 / 00:00.0</span>
+
+            <!-- Barra Deslizante (Scrubber) -->
+            <div class="dock-scrubber-wrapper">
+                <input type="range" id="bottom-scrubber" class="dock-scrubber-slider" min="0" max="100" value="0" step="0.05">
+            </div>
+
+            <!-- Botón Silenciar / Sonido -->
+            <button type="button" id="bottom-mute-btn" class="dock-btn dock-btn-icon" title="Silenciar / Activar sonido">
+                <i class="fa-solid fa-volume-xmark"></i>
+            </button>
+
+            <!-- Botón Fijar Fotograma -->
+            <button type="button" id="bottom-freeze-btn" class="dock-btn dock-btn-freeze" title="Fijar este fotograma para pausar aquí">
+                <i class="fa-solid fa-thumbtack"></i> <span>Fijar Fotograma</span>
+            </button>
+            <button type="button" id="bottom-unfreeze-btn" class="dock-btn dock-btn-unfreeze" style="display: none;" title="Quitar fotograma fijo">
+                <i class="fa-solid fa-play"></i> <span>Descongelar</span>
+            </button>
+
+            <!-- Badge si está congelado -->
+            <div id="bottom-freeze-badge" style="display: none; align-items: center; gap: 4px; font-size: 0.78rem; color: #4ade80; font-weight: 600; white-space: nowrap;">
+                <i class="fa-solid fa-lock"></i> <span id="bottom-freeze-time-text">00:00.0</span>
+            </div>
+        </div>
+
     </div>
 
     <!-- Modal de Exportación en Lote -->
