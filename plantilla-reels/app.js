@@ -1755,7 +1755,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 : `🔥 <strong>DISEÑO DE REEL ${index + 1}</strong><br>Edita este texto para tu gancho.`,
             footerText: "👇 <strong>Aprende el secreto hoy</strong><br>Síguenos para más consejos diarios 🚀<br><span style='color: #dfb15b;'>#cocina #consejos #tutorial</span>",
             fontSizes: {
-                header: 115,
+                header: 95,
                 footer: 95
             },
             positions: {
@@ -1815,6 +1815,13 @@ document.addEventListener("DOMContentLoaded", () => {
                     s.positions.footer = { top: minFooterTop + "px", left: "20px" };
                 } else {
                     s.positions.footer.left = "20px";
+                }
+
+                // Igualar el tamaño del título al de la descripción según la solicitud del usuario
+                if (!s.fontSizes) {
+                    s.fontSizes = { header: 95, footer: 95 };
+                } else if (s.fontSizes.header === 115 || s.fontSizes.header > (s.fontSizes.footer || 95)) {
+                    s.fontSizes.header = s.fontSizes.footer || 95;
                 }
             });
             saveTemplateQuietly();
