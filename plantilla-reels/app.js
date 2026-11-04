@@ -708,20 +708,37 @@ document.addEventListener("DOMContentLoaded", () => {
         return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}.${dec}`;
     }
 
-    function showVideoIndicator(type) {
-        const activeIndex = currentProject.activeScreenIndex;
-        const indicator = document.getElementById(`video-indicator-${activeIndex}`);
+    function updateVideoIndicator(index) {
+        const targetIndex = index !== undefined ? index : currentProject.activeScreenIndex;
+        const vid = document.getElementById(`reel-video-${targetIndex}`);
+        const indicator = document.getElementById(`video-indicator-${targetIndex}`);
         if (!indicator) return;
-        indicator.innerHTML = type === "play" 
-            ? '<i class="fa-solid fa-play"></i>' 
-            : '<i class="fa-solid fa-pause"></i>';
-        indicator.classList.remove("active");
+
+        const screenData = currentProject.screens[targetIndex];
+        const hasVideo = screenData && screenData.mediaType === "video" && screenData.mediaSrc;
+
+        if (hasVideo && vid && vid.paused && targetIndex === currentProject.activeScreenIndex) {
+            indicator.innerHTML = '<i class="fa-solid fa-pause"></i>';
+            indicator.classList.remove("play-flash");
+            indicator.classList.add("paused-visible");
+        } else {
+            indicator.classList.remove("paused-visible");
+        }
+    }
+
+    function showPlayFlash(index) {
+        const targetIndex = index !== undefined ? index : currentProject.activeScreenIndex;
+        const indicator = document.getElementById(`video-indicator-${targetIndex}`);
+        if (!indicator) return;
+        indicator.innerHTML = '<i class="fa-solid fa-play"></i>';
+        indicator.classList.remove("paused-visible");
+        indicator.classList.remove("play-flash");
         void indicator.offsetWidth;
-        indicator.classList.add("active");
+        indicator.classList.add("play-flash");
         clearTimeout(indicator._timer);
         indicator._timer = setTimeout(() => {
-            indicator.classList.remove("active");
-        }, 600);
+            indicator.classList.remove("play-flash");
+        }, 450);
     }
 
     function updatePlayPauseUI() {
@@ -742,6 +759,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 ? '<i class="fa-solid fa-volume-xmark"></i>' 
                 : '<i class="fa-solid fa-volume-high"></i>';
         }
+        updateVideoIndicator(currentProject.activeScreenIndex);
     }
 
     function togglePlayPause() {
@@ -753,12 +771,11 @@ document.addEventListener("DOMContentLoaded", () => {
                 syncTimelineControls();
             }
             reelVideo.play().then(() => {
-                showVideoIndicator("play");
+                showPlayFlash(currentProject.activeScreenIndex);
                 updatePlayPauseUI();
             }).catch(err => console.log("Play blocked / interrupted:", err));
         } else {
             reelVideo.pause();
-            showVideoIndicator("pause");
             updatePlayPauseUI();
         }
     }
@@ -879,7 +896,7 @@ document.addEventListener("DOMContentLoaded", () => {
             saveTemplateQuietly();
             syncTimelineControls();
             updatePlayPauseUI();
-            showVideoIndicator("pause");
+            updatePlayPauseUI();
         });
     }
 
@@ -891,7 +908,7 @@ document.addEventListener("DOMContentLoaded", () => {
             syncTimelineControls();
             reelVideo.play().catch(() => {});
             updatePlayPauseUI();
-            showVideoIndicator("play");
+            showPlayFlash();
         });
     }
 
@@ -976,7 +993,7 @@ document.addEventListener("DOMContentLoaded", () => {
             saveTemplateQuietly();
             syncTimelineControls();
             updatePlayPauseUI();
-            showVideoIndicator("pause");
+            updatePlayPauseUI();
         });
     }
 
@@ -988,7 +1005,7 @@ document.addEventListener("DOMContentLoaded", () => {
             syncTimelineControls();
             reelVideo.play().catch(() => {});
             updatePlayPauseUI();
-            showVideoIndicator("play");
+            showPlayFlash();
         });
     }
 
