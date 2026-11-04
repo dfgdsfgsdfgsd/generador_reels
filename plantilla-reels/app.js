@@ -1343,7 +1343,7 @@ document.addEventListener("DOMContentLoaded", () => {
             
             // Feedback visual temporal en el botón
             const originalHtml = saveBgColorBtn.innerHTML;
-            saveBgColorBtn.innerHTML = `<i class="fa-solid fa-check" style="color: #4ade80;"></i> ¡Guardado!`;
+            saveBgColorBtn.innerHTML = `<i class="fa-solid fa-check" style="color: #4ade80;"></i> Guardado`;
             setTimeout(() => {
                 saveBgColorBtn.innerHTML = originalHtml;
             }, 1200);
