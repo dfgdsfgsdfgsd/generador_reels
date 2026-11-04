@@ -887,19 +887,28 @@ input[type="color"] {
     font-size: 2.5rem;
 }
 
-/* TEXT CARDS */
+/* TEXT CARDS (Alineadas y centradas exactamente al ancho del contenedor de video) */
 .text-card {
     position: absolute;
+    left: 20px !important;
+    width: calc(100% - 40px) !important;
+    box-sizing: border-box !important;
     min-height: 50px;
     border-radius: 12px;
     padding: 14px 18px;
-    cursor: move;
+    cursor: ns-resize;
     z-index: 100;
     outline: 2px solid transparent;
     transition: outline-color 0.2s, box-shadow 0.2s;
     display: flex;
     flex-direction: column;
     justify-content: center;
+}
+
+/* Ocultar tiradores horizontales en tarjetas de texto (su ancho es fijo e idéntico al video) */
+.text-card .resize-handle.resize-r,
+.text-card .resize-handle.resize-se {
+    display: none !important;
 }
 
 .text-card:hover, .text-card.active-card {

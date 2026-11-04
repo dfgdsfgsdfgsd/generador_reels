@@ -295,7 +295,9 @@ document.addEventListener("DOMContentLoaded", () => {
                 
                 // Límites de la pantalla del teléfono
                 top = Math.max(10, Math.min(canvas.offsetHeight - el.offsetHeight - 10, top));
-                if (key === 'media') {
+                if (key === 'header' || key === 'footer') {
+                    left = 20; // Bloqueado al ancho y centrado del video
+                } else if (key === 'media') {
                     left = Math.max(10, Math.round((canvas.offsetWidth - el.offsetWidth) / 2)); // Centrado horizontal
                 } else {
                     left = Math.max(10, Math.min(canvas.offsetWidth - el.offsetWidth - 10, left));
@@ -316,7 +318,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     if (!screenData.positions) screenData.positions = {};
                     screenData.positions[key] = {
                         top: top + "px",
-                        left: top + "px" // Esto parece ser un error en el original, pero mantengo la lógica original
+                        left: (key === 'header' || key === 'footer') ? "20px" : left + "px"
                     };
                 }
             }
@@ -580,12 +582,9 @@ document.addEventListener("DOMContentLoaded", () => {
         colorBoxPicker.value = style.boxColor;
         boxOpacitySlider.value = style.opacity;
         
-        boxWidthSlider.disabled = false;
-        boxWidthSlider.min = 30;
-        boxWidthSlider.max = 100;
-        boxWidthSlider.value = style.width;
-        boxWidthVal.textContent = style.width + "%";
-        boxWidthLabel.textContent = `Ancho: ${key === "header" ? "Título Superior" : "Descripción Inferior"}`;
+        boxWidthSlider.disabled = true;
+        boxWidthLabel.textContent = `Ancho: Fijo (Alineado al Video)`;
+        boxWidthVal.textContent = "100%";
         
         syncAdjustButtonsState();
     }
@@ -1571,6 +1570,11 @@ document.addEventListener("DOMContentLoaded", () => {
             currentProject.screens.forEach(s => {
                 if (s.headerText) s.headerText = cleanAllMojibakeAndComments(s.headerText);
                 if (s.footerText) s.footerText = cleanAllMojibakeAndComments(s.footerText);
+                if (!s.positions) s.positions = {};
+                if (!s.positions.header) s.positions.header = { top: "40px", left: "20px" };
+                else s.positions.header.left = "20px";
+                if (!s.positions.footer) s.positions.footer = { top: "490px", left: "20px" };
+                else s.positions.footer.left = "20px";
             });
             saveTemplateQuietly();
         }
@@ -1659,7 +1663,7 @@ document.addEventListener("DOMContentLoaded", () => {
 }">
                             
                             <!-- Bloque de texto superior -->
-                            <div class="text-card drag-el" id="header-card-${index}" style="top: ${screenData.positions?.header?.top || '40px'}; left: ${screenData.positions?.header?.left || '28px'}; width: ${screenData.styles?.header?.width || 85}%; display: ${screenData.showHeaderCard ? 'flex' : 'none'}; height: ${screenData.styles?.header?.height ? screenData.styles.header.height + 'px' : 'auto'};">
+                            <div class="text-card drag-el" id="header-card-${index}" style="top: ${screenData.positions?.header?.top || '40px'}; left: 20px; width: calc(100% - 40px); display: ${screenData.showHeaderCard ? 'flex' : 'none'}; height: ${screenData.styles?.header?.height ? screenData.styles.header.height + 'px' : 'auto'};">
                                 <div class="text-content" contenteditable="true" id="header-text-${index}" data-placeholder="Escribe el título aquí...">
                                     ${screenData.headerText || ''}
                                 </div>
@@ -1681,7 +1685,7 @@ document.addEventListener("DOMContentLoaded", () => {
                             </div>
 
                             <!-- Bloque de texto inferior -->
-                            <div class="text-card drag-el" id="footer-card-${index}" style="top: ${screenData.positions?.footer?.top || '490px'}; left: ${screenData.positions?.footer?.left || '28px'}; width: ${screenData.styles?.footer?.width || 85}%; display: ${screenData.showFooterCard ? 'flex' : 'none'}; height: ${screenData.styles?.footer?.height ? screenData.styles.footer.height + 'px' : 'auto'};">
+                            <div class="text-card drag-el" id="footer-card-${index}" style="top: ${screenData.positions?.footer?.top || '490px'}; left: 20px; width: calc(100% - 40px); display: ${screenData.showFooterCard ? 'flex' : 'none'}; height: ${screenData.styles?.footer?.height ? screenData.styles.footer.height + 'px' : 'auto'};">
                                 <div class="text-content" contenteditable="true" id="footer-text-${index}" data-placeholder="Escribe la descripción aquí...">
                                     ${screenData.footerText || ''}
                                 </div>
@@ -2138,7 +2142,8 @@ document.addEventListener("DOMContentLoaded", () => {
             if (!style) return;
             
             card.style.color = style.color;
-            card.style.width = style.width + "%";
+            card.style.left = "20px";
+            card.style.width = "calc(100% - 40px)";
             card.style.height = style.height ? style.height + "px" : "auto";
             
             const hex = style.boxColor;
