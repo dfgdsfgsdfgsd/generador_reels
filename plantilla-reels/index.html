@@ -161,13 +161,7 @@
                         </div>
                     </div>
 
-                    <!-- Interfaz IG -->
-                    <div class="control-group">
-                        <label class="control-label" style="display: flex; align-items: center; gap: 8px; cursor: pointer; text-transform: none; font-size: 0.85rem; color: #ccc;">
-                            <input type="checkbox" id="toggle-ig-overlay" style="width: 16px; height: 16px; margin: 0; cursor: pointer;">
-                            <i class="fa-brands fa-instagram" style="font-size: 1.1rem; color: #e1306c;"></i> Ver Botones de Instagram
-                        </label>
-                    </div>
+
 
                 </div>
             </div>
@@ -344,8 +338,9 @@
                     </button>
                 </div>
 
-                <!-- Menú Desplegable de Proporción Multimedia Central -->
+                <!-- Controles Centrales: Formato y Preview -->
                 <div class="topbar-group topbar-center">
+                    <!-- Menú Desplegable de Formato -->
                     <div class="topbar-dropdown" id="aspect-dropdown">
                         <button type="button" class="topbar-btn topbar-btn-secondary" id="aspect-dropdown-trigger" title="Cambiar formato del video o imagen">
                             <i class="fa-solid fa-video" style="color: var(--color-accent, #818cf8);"></i>
@@ -365,6 +360,24 @@
                             <button type="button" class="topbar-dropdown-item aspect-btn" data-ratio="16:9" title="Horizontal (16:9)">
                                 <span class="ratio-item-left"><i class="fa-solid fa-display"></i> 16:9 &bull; Horizontal</span>
                             </button>
+                        </div>
+                    </div>
+
+                    <!-- Menú Desplegable de Preview -->
+                    <div class="topbar-dropdown" id="preview-dropdown">
+                        <button type="button" class="topbar-btn topbar-btn-secondary" id="preview-dropdown-trigger" title="Opciones de vista previa y simulación">
+                            <i class="fa-solid fa-eye" style="color: #38bdf8;"></i>
+                            <span>Preview</span>
+                            <i class="fa-solid fa-chevron-down" style="font-size: 0.68rem; margin-left: 3px;"></i>
+                        </button>
+                        <div class="topbar-dropdown-menu" id="preview-dropdown-menu" style="left: 0; right: auto; min-width: 220px; padding: 6px;">
+                            <label class="topbar-dropdown-item preview-toggle-item" style="cursor: pointer; display: flex; align-items: center; justify-content: space-between; margin-bottom: 0; user-select: none;">
+                                <span style="display: flex; align-items: center; gap: 8px;">
+                                    <i class="fa-brands fa-instagram" style="color: #e1306c; font-size: 1.05rem;"></i>
+                                    <span>Botones Instagram</span>
+                                </span>
+                                <input type="checkbox" id="toggle-ig-overlay" style="width: 16px; height: 16px; margin: 0; cursor: pointer; accent-color: var(--color-primary, #3b82f6);">
+                            </label>
                         </div>
                     </div>
                 </div>

@@ -2277,67 +2277,74 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // Control del menú desplegable de exportación
+    // Control de menús desplegables de la barra superior (Formato, Preview, Exportar)
     const aspectDropdownTrigger = document.getElementById("aspect-dropdown-trigger");
     const aspectDropdownMenu = document.getElementById("aspect-dropdown-menu");
+    const previewDropdownTrigger = document.getElementById("preview-dropdown-trigger");
+    const previewDropdownMenu = document.getElementById("preview-dropdown-menu");
+    const exportDropdownTrigger = document.getElementById("export-dropdown-trigger");
+    const exportDropdownMenu = document.getElementById("export-dropdown-menu");
+
+    function closeAllTopDropdowns() {
+        if (aspectDropdownMenu) aspectDropdownMenu.classList.remove("open");
+        if (aspectDropdownTrigger) aspectDropdownTrigger.classList.remove("open");
+        if (previewDropdownMenu) previewDropdownMenu.classList.remove("open");
+        if (previewDropdownTrigger) previewDropdownTrigger.classList.remove("open");
+        if (exportDropdownMenu) exportDropdownMenu.classList.remove("open");
+        if (exportDropdownTrigger) exportDropdownTrigger.classList.remove("open");
+    }
 
     if (aspectDropdownTrigger && aspectDropdownMenu) {
         aspectDropdownTrigger.addEventListener("click", (e) => {
             e.stopPropagation();
-            if (exportDropdownMenu) {
-                exportDropdownMenu.classList.remove("open");
-                if (exportDropdownTrigger) exportDropdownTrigger.classList.remove("open");
+            const wasOpen = aspectDropdownMenu.classList.contains("open");
+            closeAllTopDropdowns();
+            if (!wasOpen) {
+                aspectDropdownMenu.classList.add("open");
+                aspectDropdownTrigger.classList.add("open");
             }
-            const isOpen = aspectDropdownMenu.classList.toggle("open");
-            aspectDropdownTrigger.classList.toggle("open", isOpen);
         });
 
         aspectDropdownMenu.querySelectorAll(".topbar-dropdown-item").forEach(item => {
             item.addEventListener("click", () => {
-                aspectDropdownMenu.classList.remove("open");
-                aspectDropdownTrigger.classList.remove("open");
+                closeAllTopDropdowns();
             });
-        });
-
-        document.addEventListener("click", (e) => {
-            if (!aspectDropdownTrigger.contains(e.target) && !aspectDropdownMenu.contains(e.target)) {
-                aspectDropdownMenu.classList.remove("open");
-                aspectDropdownTrigger.classList.remove("open");
-            }
         });
     }
 
-    const exportDropdownTrigger = document.getElementById("export-dropdown-trigger");
-    const exportDropdownMenu = document.getElementById("export-dropdown-menu");
+    if (previewDropdownTrigger && previewDropdownMenu) {
+        previewDropdownTrigger.addEventListener("click", (e) => {
+            e.stopPropagation();
+            const wasOpen = previewDropdownMenu.classList.contains("open");
+            closeAllTopDropdowns();
+            if (!wasOpen) {
+                previewDropdownMenu.classList.add("open");
+                previewDropdownTrigger.classList.add("open");
+            }
+        });
+
+        previewDropdownMenu.addEventListener("click", (e) => {
+            e.stopPropagation(); // Permitir interactuar con el checkbox sin cerrar
+        });
+    }
 
     if (exportDropdownTrigger && exportDropdownMenu) {
         exportDropdownTrigger.addEventListener("click", (e) => {
             e.stopPropagation();
-            if (aspectDropdownMenu) {
-                aspectDropdownMenu.classList.remove("open");
-                if (aspectDropdownTrigger) aspectDropdownTrigger.classList.remove("open");
+            const wasOpen = exportDropdownMenu.classList.contains("open");
+            closeAllTopDropdowns();
+            if (!wasOpen) {
+                exportDropdownMenu.classList.add("open");
+                exportDropdownTrigger.classList.add("open");
             }
-            const isOpen = exportDropdownMenu.classList.toggle("open");
-            exportDropdownTrigger.classList.toggle("open", isOpen);
         });
 
-        // Cerrar al hacer clic en cualquiera de las opciones
         exportDropdownMenu.querySelectorAll(".topbar-dropdown-item").forEach(item => {
             item.addEventListener("click", () => {
-                exportDropdownMenu.classList.remove("open");
-                exportDropdownTrigger.classList.remove("open");
+                closeAllTopDropdowns();
             });
         });
 
-        // Cerrar al hacer clic fuera
-        document.addEventListener("click", (e) => {
-            if (!exportDropdownTrigger.contains(e.target) && !exportDropdownMenu.contains(e.target)) {
-                exportDropdownMenu.classList.remove("open");
-                exportDropdownTrigger.classList.remove("open");
-            }
-        });
-
-        // Reflejar estado de grabación en el botón principal
         if (recordVideoBtn) {
             const observer = new MutationObserver(() => {
                 if (recordVideoBtn.classList.contains("recording")) {
@@ -2351,6 +2358,10 @@ document.addEventListener("DOMContentLoaded", () => {
             observer.observe(recordVideoBtn, { attributes: true, attributeFilter: ["class"] });
         }
     }
+
+    document.addEventListener("click", () => {
+        closeAllTopDropdowns();
+    });
 
     // Listeners para botones de bloque (Título / Descripción) en el sidebar
     document.querySelectorAll(".card-target-btn").forEach(btn => {

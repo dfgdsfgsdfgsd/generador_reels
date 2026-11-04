@@ -2245,3 +2245,23 @@ emoji-picker.dark {
     box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25);
     background-color: #1e2227 !important;
 }
+
+/* Menú Desplegable de Preview */
+#preview-dropdown-trigger {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: #e2e8f0;
+    font-weight: 600;
+    padding: 6px 12px;
+}
+
+#preview-dropdown-trigger:hover,
+#preview-dropdown-trigger.open {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.22);
+    color: #ffffff;
+}
+
+.preview-toggle-item:hover {
+    background: rgba(255, 255, 255, 0.08);
+}
