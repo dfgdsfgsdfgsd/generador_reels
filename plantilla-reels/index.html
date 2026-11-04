@@ -244,35 +244,28 @@
                         </button>
                     </div>
 
-                    <!-- Visibilidad de Bloques de Texto -->
-                    <div class="control-group" style="margin-bottom: 12px; background: rgba(255, 255, 255, 0.03); padding: 8px 10px; border-radius: 6px; border: 1px solid rgba(255, 255, 255, 0.06);">
-                        <label class="control-label" style="margin-bottom: 6px;"><i class="fa-solid fa-eye"></i> Visibilidad de Bloques</label>
-                        <div style="display: flex; gap: 14px;">
-                            <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 0.8rem; color: #ccc;">
-                                <input type="checkbox" id="toggle-header-card" checked style="width: 15px; height: 15px; margin: 0; cursor: pointer;">
-                                Mostrar Título
-                            </label>
-                            <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 0.8rem; color: #ccc;">
-                                <input type="checkbox" id="toggle-footer-card" checked style="width: 15px; height: 15px; margin: 0; cursor: pointer;">
-                                Mostrar Descripción
-                            </label>
-                        </div>
-                    </div>
-
-                    <!-- Cajas de Entrada de Texto Directas (Título y Descripción) -->
+                    <!-- Cajas de Entrada de Texto Directas (Título y Descripción) con Control de Visibilidad Integrado -->
                     <div class="control-group" id="sidebar-text-inputs-group" style="margin-bottom: 12px; background: rgba(255, 255, 255, 0.02); padding: 10px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.06); display: flex; flex-direction: column; gap: 10px;">
                         <div id="sidebar-header-group">
-                            <div style="margin-bottom: 4px;">
+                            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
                                 <label for="sidebar-header-input" class="sub-label" style="display: flex; align-items: center; gap: 5px; margin-bottom: 0; font-weight: 600;">
                                     <i class="fa-solid fa-heading" style="color: var(--color-primary, #3b82f6);"></i> Texto del Título
+                                </label>
+                                <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 0.75rem; color: #94a3b8; user-select: none;">
+                                    <input type="checkbox" id="toggle-header-card" checked style="width: 14px; height: 14px; margin: 0; cursor: pointer;">
+                                    <span>Mostrar</span>
                                 </label>
                             </div>
                             <textarea id="sidebar-header-input" class="form-control sidebar-text-textarea" rows="2" placeholder="Escribe el título del reel..."></textarea>
                         </div>
                         <div id="sidebar-footer-group">
-                            <div style="margin-bottom: 4px;">
+                            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
                                 <label for="sidebar-footer-input" class="sub-label" style="display: flex; align-items: center; gap: 5px; margin-bottom: 0; font-weight: 600;">
                                     <i class="fa-solid fa-paragraph" style="color: var(--color-accent, #818cf8);"></i> Texto de la Descripción
+                                </label>
+                                <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 0.75rem; color: #94a3b8; user-select: none;">
+                                    <input type="checkbox" id="toggle-footer-card" checked style="width: 14px; height: 14px; margin: 0; cursor: pointer;">
+                                    <span>Mostrar</span>
                                 </label>
                             </div>
                             <textarea id="sidebar-footer-input" class="form-control sidebar-text-textarea" rows="3" placeholder="Escribe la descripción o gancho..."></textarea>

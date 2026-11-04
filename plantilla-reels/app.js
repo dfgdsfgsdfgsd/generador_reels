@@ -221,20 +221,25 @@ document.addEventListener("DOMContentLoaded", () => {
         const showHeader = currentTemplate.showHeaderCard !== false;
         const showFooter = currentTemplate.showFooterCard !== false;
 
-        const headerGroup = document.getElementById("sidebar-header-group");
-        const footerGroup = document.getElementById("sidebar-footer-group");
-        const inputsGroup = document.getElementById("sidebar-text-inputs-group");
+        const headerInput = document.getElementById("sidebar-header-input");
+        const footerInput = document.getElementById("sidebar-footer-input");
         const targetHeaderBtn = document.querySelector('.card-target-btn[data-target="header"]');
         const targetFooterBtn = document.querySelector('.card-target-btn[data-target="footer"]');
-        const targetSelector = document.querySelector('.card-target-selector');
 
-        if (headerGroup) headerGroup.style.display = showHeader ? "" : "none";
-        if (footerGroup) footerGroup.style.display = showFooter ? "" : "none";
-        if (inputsGroup) inputsGroup.style.display = (showHeader || showFooter) ? "" : "none";
+        if (headerInput) headerInput.style.display = showHeader ? "" : "none";
+        if (footerInput) footerInput.style.display = showFooter ? "" : "none";
 
-        if (targetHeaderBtn) targetHeaderBtn.style.display = showHeader ? "" : "none";
-        if (targetFooterBtn) targetFooterBtn.style.display = showFooter ? "" : "none";
-        if (targetSelector) targetSelector.style.display = (showHeader || showFooter) ? "" : "none";
+        if (toggleHeaderCard) toggleHeaderCard.checked = showHeader;
+        if (toggleFooterCard) toggleFooterCard.checked = showFooter;
+
+        if (targetHeaderBtn) {
+            targetHeaderBtn.style.opacity = showHeader ? "1" : "0.45";
+            targetHeaderBtn.title = showHeader ? "Título activo" : "Título oculto (haz clic para activarlo)";
+        }
+        if (targetFooterBtn) {
+            targetFooterBtn.style.opacity = showFooter ? "1" : "0.45";
+            targetFooterBtn.title = showFooter ? "Descripción activa" : "Descripción oculta (haz clic para activarla)";
+        }
 
         // Redirigir el bloque seleccionado si el actual se ocultó
         if (activeCardKey === "header" && !showHeader) {
@@ -2624,6 +2629,19 @@ document.addEventListener("DOMContentLoaded", () => {
         btn.addEventListener("click", () => {
             const target = btn.dataset.target;
             if (target) {
+                if (target === "header" && currentTemplate && currentTemplate.showHeaderCard === false) {
+                    currentTemplate.showHeaderCard = true;
+                    if (headerCard) headerCard.style.display = "flex";
+                    syncTextBlocksVisibilityUI();
+                    updateSidebarTextInputs();
+                    saveTemplateQuietly();
+                } else if (target === "footer" && currentTemplate && currentTemplate.showFooterCard === false) {
+                    currentTemplate.showFooterCard = true;
+                    if (footerCard) footerCard.style.display = "flex";
+                    syncTextBlocksVisibilityUI();
+                    updateSidebarTextInputs();
+                    saveTemplateQuietly();
+                }
                 selectCard(target);
             }
         });
