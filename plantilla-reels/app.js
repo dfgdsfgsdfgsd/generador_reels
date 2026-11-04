@@ -2276,10 +2276,10 @@ document.addEventListener("DOMContentLoaded", () => {
         updateBgImageUI();
         syncThemeDropdownUI(currentTemplate.theme);
         
-        fontTitleSelect.value = currentTemplate.fontTitle;
-        toggleHeaderCard.checked = currentTemplate.showHeaderCard;
-        toggleFooterCard.checked = currentTemplate.showFooterCard;
-        toggleIgOverlay.checked = currentTemplate.showInstagramOverlay || false;
+        if (fontTitleSelect) fontTitleSelect.value = currentTemplate.fontTitle;
+        if (toggleHeaderCard) toggleHeaderCard.checked = currentTemplate.showHeaderCard;
+        if (toggleFooterCard) toggleFooterCard.checked = currentTemplate.showFooterCard;
+        if (toggleIgOverlay) toggleIgOverlay.checked = currentTemplate.showInstagramOverlay || false;
         
         // Sincronizar controles multimedia si hay video
         if (currentTemplate.mediaType === "video") {
