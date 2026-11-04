@@ -1537,9 +1537,9 @@ document.addEventListener("DOMContentLoaded", () => {
                 footer: 95
             },
             positions: {
-                header: { top: "40px", left: "28px" },
+                header: { top: "40px", left: "20px" },
                 media: { top: "160px", left: "20px" },
-                footer: { top: "490px", left: "28px" },
+                footer: { top: "490px", left: "20px" },
                 logo: { top: "150px", left: "140px" }
             },
             styles: {
@@ -1571,10 +1571,29 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (s.headerText) s.headerText = cleanAllMojibakeAndComments(s.headerText);
                 if (s.footerText) s.footerText = cleanAllMojibakeAndComments(s.footerText);
                 if (!s.positions) s.positions = {};
-                if (!s.positions.header) s.positions.header = { top: "40px", left: "20px" };
-                else s.positions.header.left = "20px";
-                if (!s.positions.footer) s.positions.footer = { top: "490px", left: "20px" };
-                else s.positions.footer.left = "20px";
+                
+                // Alineación horizontal y vertical armónica estándar (sin superposiciones)
+                if (!s.positions.header || !s.positions.header.top) {
+                    s.positions.header = { top: "40px", left: "20px" };
+                } else {
+                    s.positions.header.left = "20px";
+                }
+                
+                // Si media estaba en 210px (valor desfasado anterior) o sin top, corregir a 160px
+                if (!s.positions.media || !s.positions.media.top || s.positions.media.top === "210px") {
+                    s.positions.media = { top: "160px", left: "20px" };
+                } else {
+                    s.positions.media.left = "20px";
+                }
+                
+                // El pie de página siempre debe quedar debajo del video (160 + 320 = 480px -> mínimo 490px)
+                const mediaTopVal = parseInt(s.positions.media.top) || 160;
+                const minFooterTop = mediaTopVal + 320 + 10;
+                if (!s.positions.footer || !s.positions.footer.top || parseInt(s.positions.footer.top) < (mediaTopVal + 320)) {
+                    s.positions.footer = { top: minFooterTop + "px", left: "20px" };
+                } else {
+                    s.positions.footer.left = "20px";
+                }
             });
             saveTemplateQuietly();
         }
@@ -2899,7 +2918,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
             // Generar el clon exacto del HTML del canvas para esta pantalla
             const headerHtml = screen.showHeaderCard && screen.styles?.header ? `
-                <div class="text-card" style="top: ${screen.positions?.header?.top || '40px'}; left: ${screen.positions?.header?.left || '28px'}; width: ${screen.styles?.header?.width || 85}%; font-family: ${screen.fontTitle}; font-size: ${(screen.fontSizes.header / 100)}rem; color: ${screen.styles.header.color}; background-color: rgba(${hexToRgb(screen.styles.header.boxColor)}, ${screen.styles.header.opacity / 100}); display: block;">
+                <div class="text-card" style="top: ${screen.positions?.header?.top || '40px'}; left: 20px; width: calc(100% - 40px); font-family: ${screen.fontTitle}; font-size: ${(screen.fontSizes.header / 100)}rem; color: ${screen.styles.header.color}; background-color: rgba(${hexToRgb(screen.styles.header.boxColor)}, ${screen.styles.header.opacity / 100}); display: block;">
                     <div class="text-content" style="font-size: 1.15em !important; line-height: 1.45 !important;">
                         ${screen.headerText}
                     </div>
@@ -2917,7 +2936,7 @@ document.addEventListener("DOMContentLoaded", () => {
             `;
             
             const footerHtml = screen.showFooterCard && screen.styles?.footer ? `
-                <div class="text-card" style="top: ${screen.positions?.footer?.top || '490px'}; left: ${screen.positions?.footer?.left || '28px'}; width: ${screen.styles?.footer?.width || 85}%; font-family: ${screen.fontTitle}; font-size: ${(screen.fontSizes.footer / 100)}rem; color: ${screen.styles.footer.color}; background-color: rgba(${hexToRgb(screen.styles.footer.boxColor)}, ${screen.styles.footer.opacity / 100}); display: block;">
+                <div class="text-card" style="top: ${screen.positions?.footer?.top || '490px'}; left: 20px; width: calc(100% - 40px); font-family: ${screen.fontTitle}; font-size: ${(screen.fontSizes.footer / 100)}rem; color: ${screen.styles.footer.color}; background-color: rgba(${hexToRgb(screen.styles.footer.boxColor)}, ${screen.styles.footer.opacity / 100}); display: block;">
                     <div class="text-content" style="font-size: 1.15em !important; line-height: 1.45 !important;">
                         ${screen.footerText}
                     </div>
