@@ -2010,6 +2010,48 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
+    // Control del menú desplegable de exportación
+    const exportDropdownTrigger = document.getElementById("export-dropdown-trigger");
+    const exportDropdownMenu = document.getElementById("export-dropdown-menu");
+
+    if (exportDropdownTrigger && exportDropdownMenu) {
+        exportDropdownTrigger.addEventListener("click", (e) => {
+            e.stopPropagation();
+            const isOpen = exportDropdownMenu.classList.toggle("open");
+            exportDropdownTrigger.classList.toggle("open", isOpen);
+        });
+
+        // Cerrar al hacer clic en cualquiera de las opciones
+        exportDropdownMenu.querySelectorAll(".topbar-dropdown-item").forEach(item => {
+            item.addEventListener("click", () => {
+                exportDropdownMenu.classList.remove("open");
+                exportDropdownTrigger.classList.remove("open");
+            });
+        });
+
+        // Cerrar al hacer clic fuera
+        document.addEventListener("click", (e) => {
+            if (!exportDropdownTrigger.contains(e.target) && !exportDropdownMenu.contains(e.target)) {
+                exportDropdownMenu.classList.remove("open");
+                exportDropdownTrigger.classList.remove("open");
+            }
+        });
+
+        // Reflejar estado de grabación en el botón principal
+        if (recordVideoBtn) {
+            const observer = new MutationObserver(() => {
+                if (recordVideoBtn.classList.contains("recording")) {
+                    exportDropdownTrigger.classList.add("recording");
+                    exportDropdownTrigger.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Exportando...';
+                } else {
+                    exportDropdownTrigger.classList.remove("recording");
+                    exportDropdownTrigger.innerHTML = '<i class="fa-solid fa-cloud-arrow-down"></i> Exportar <i class="fa-solid fa-chevron-down" style="font-size: 0.68rem; margin-left: 2px;"></i>';
+                }
+            });
+            observer.observe(recordVideoBtn, { attributes: true, attributeFilter: ["class"] });
+        }
+    }
+
     // Auto-guíardado cada 30 segundos
     setInterval(() => {
         saveTemplateQuietly();

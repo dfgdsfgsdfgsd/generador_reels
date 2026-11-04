@@ -282,15 +282,25 @@
                     <button type="button" id="save-btn" class="topbar-btn topbar-btn-primary" title="Guardar cambios de la plantilla">
                         <i class="fa-solid fa-floppy-disk"></i> Guardar
                     </button>
-                    <button type="button" id="export-btn" class="topbar-btn topbar-btn-pdf" title="Exportar imagen o PDF (Print)">
-                        <i class="fa-solid fa-file-pdf"></i> Imagen/PDF
-                    </button>
-                    <button type="button" id="record-video-btn" class="topbar-btn topbar-btn-record" title="Exportar video de pantalla activa (MP4)">
-                        <i class="fa-solid fa-circle-dot"></i> Exportar MP4
-                    </button>
-                    <button type="button" id="bulk-export-btn" class="topbar-btn topbar-btn-bulk" title="Exportar varias pantallas en lote">
-                        <i class="fa-solid fa-layer-group"></i> Lote
-                    </button>
+
+                    <!-- Menú Desplegable de Exportación -->
+                    <div class="topbar-dropdown" id="export-dropdown">
+                        <button type="button" class="topbar-btn topbar-btn-export-menu" id="export-dropdown-trigger" title="Opciones de exportación">
+                            <i class="fa-solid fa-cloud-arrow-down"></i> Exportar <i class="fa-solid fa-chevron-down" style="font-size: 0.68rem; margin-left: 2px;"></i>
+                        </button>
+                        <div class="topbar-dropdown-menu" id="export-dropdown-menu">
+                            <button type="button" id="record-video-btn" class="topbar-dropdown-item item-video" title="Exportar video de pantalla activa (MP4)">
+                                <i class="fa-solid fa-circle-dot"></i> <span>Exportar Video (MP4)</span>
+                            </button>
+                            <button type="button" id="bulk-export-btn" class="topbar-dropdown-item item-bulk" title="Exportar varias pantallas en lote">
+                                <i class="fa-solid fa-layer-group"></i> <span>Exportar en Lote</span>
+                            </button>
+                            <div class="topbar-dropdown-divider"></div>
+                            <button type="button" id="export-btn" class="topbar-dropdown-item item-pdf" title="Exportar imagen o PDF (Print)">
+                                <i class="fa-solid fa-file-pdf"></i> <span>Imagen / PDF (Print)</span>
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </header>
 
