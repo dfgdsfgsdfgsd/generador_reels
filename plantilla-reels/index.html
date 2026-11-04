@@ -60,35 +60,12 @@
             <!-- Selector de Proyecto -->
             <div class="control-group">
                 <label class="control-label">Plantilla Activa <span id="save-status" class="save-status"></span></label>
-                <div class="row-flex" style="margin-bottom: 8px;">
+                <div class="row-flex">
                     <select id="project-select" class="form-control" style="flex: 1;">
                         <option value="default">Diseño por Defecto</option>
                     </select>
                     <button id="new-project-btn" class="icon-btn success" title="Nueva plantilla"><i class="fa-solid fa-plus"></i></button>
                     <button id="save-project-as-btn" class="icon-btn accent" title="Guardar copia"><i class="fa-solid fa-copy"></i></button>
-                </div>
-                <div class="row-flex">
-                    <button id="export-json-btn" class="action-btn text-btn" style="flex: 1; font-size: 0.72rem; padding: 6px;"><i class="fa-solid fa-file-export"></i> Exportar JSON</button>
-                    <button id="import-json-btn" class="action-btn text-btn" style="flex: 1; font-size: 0.72rem; padding: 6px;"><i class="fa-solid fa-file-import"></i> Importar JSON</button>
-                    <input type="file" id="import-json-input" accept=".json" style="display: none;">
-                </div>
-            </div>
-
-            <!-- Gestión de Teléfonos / Pantallas -->
-            <div class="control-group">
-                <label class="control-label"><i class="fa-solid fa-mobile-screen-button"></i> Pantallas del Reel</label>
-                <div class="row-flex" style="margin-bottom: 8px;">
-                    <button id="add-phone-btn" class="action-btn success-btn" style="flex: 1; padding: 8px 10px; font-size: 0.8rem;">
-                        <i class="fa-solid fa-plus"></i> Añadir Teléfono
-                    </button>
-                </div>
-                <div class="row-flex">
-                    <button id="duplicate-phone-btn" class="action-btn accent-btn" style="flex: 1; padding: 8px 10px; font-size: 0.8rem;">
-                        <i class="fa-solid fa-copy"></i> Duplicar
-                    </button>
-                    <button id="delete-phone-btn" class="action-btn danger-btn" style="flex: 1; padding: 8px 10px; font-size: 0.8rem; background-color: var(--color-danger);">
-                        <i class="fa-solid fa-trash"></i> Eliminar
-                    </button>
                 </div>
             </div>
 
@@ -267,32 +244,61 @@
                 </div>
             </div>
 
-            <hr class="divider">
+            </aside>
 
-            <!-- Acciones Principales -->
-            <button id="center-block-btn" class="action-btn accent-btn" style="margin-bottom: 10px;">
-                <i class="fa-solid fa-align-center"></i> Centrar Bloque
-            </button>
+        <!-- Área Principal: Barra Superior + Simulador -->
+        <div class="main-content-area">
+            <!-- Barra Superior de Herramientas (Top Toolbar) -->
+            <header class="top-header-bar">
+                <div class="topbar-group topbar-left">
+                    <span class="topbar-badge"><i class="fa-solid fa-mobile-screen-button"></i> Pantallas</span>
+                    <button type="button" id="add-phone-btn" class="topbar-btn topbar-btn-success" title="Añadir nueva pantalla">
+                        <i class="fa-solid fa-plus"></i> Añadir
+                    </button>
+                    <button type="button" id="duplicate-phone-btn" class="topbar-btn topbar-btn-secondary" title="Duplicar pantalla activa">
+                        <i class="fa-solid fa-copy"></i> Duplicar
+                    </button>
+                    <button type="button" id="delete-phone-btn" class="topbar-btn topbar-btn-danger" title="Eliminar pantalla activa">
+                        <i class="fa-solid fa-trash"></i> Eliminar
+                    </button>
 
-            <button id="save-btn" class="action-btn primary-btn" style="margin-bottom: 10px;">
-                <i class="fa-solid fa-floppy-disk"></i> Guardar Cambios
-            </button>
+                    <div class="topbar-divider"></div>
 
-            <button id="export-btn" class="action-btn success-btn" style="margin-bottom: 10px;">
-                <i class="fa-solid fa-file-pdf"></i> Exportar Imagen/PDF (Print)
-            </button>
+                    <button type="button" id="center-block-btn" class="topbar-btn topbar-btn-accent" title="Centrar bloque seleccionado">
+                        <i class="fa-solid fa-align-center"></i> Centrar Bloque
+                    </button>
+                </div>
 
-            <button id="record-video-btn" class="action-btn danger-btn" style="margin-bottom: 10px;">
-                <i class="fa-solid fa-circle-dot"></i> Exportar Video Activo (MP4)
-            </button>
+                <div class="topbar-group topbar-right">
+                    <div class="topbar-subgroup">
+                        <button type="button" id="export-json-btn" class="topbar-btn topbar-btn-secondary" title="Exportar configuración a JSON">
+                            <i class="fa-solid fa-file-export"></i> Exp. JSON
+                        </button>
+                        <button type="button" id="import-json-btn" class="topbar-btn topbar-btn-secondary" title="Importar configuración desde JSON">
+                            <i class="fa-solid fa-file-import"></i> Imp. JSON
+                        </button>
+                        <input type="file" id="import-json-input" accept=".json" style="display: none;">
+                    </div>
 
-            <button id="bulk-export-btn" class="action-btn accent-btn">
-                <i class="fa-solid fa-layer-group"></i> Exportar Varios en Lote
-            </button>
-        </aside>
+                    <div class="topbar-divider"></div>
 
-        <!-- Área del simulador móvil -->
-        <main class="simulator-pane" id="simulator-pane">
+                    <button type="button" id="save-btn" class="topbar-btn topbar-btn-primary" title="Guardar cambios de la plantilla">
+                        <i class="fa-solid fa-floppy-disk"></i> Guardar
+                    </button>
+                    <button type="button" id="export-btn" class="topbar-btn topbar-btn-pdf" title="Exportar imagen o PDF (Print)">
+                        <i class="fa-solid fa-file-pdf"></i> Imagen/PDF
+                    </button>
+                    <button type="button" id="record-video-btn" class="topbar-btn topbar-btn-record" title="Exportar video de pantalla activa (MP4)">
+                        <i class="fa-solid fa-circle-dot"></i> Exportar MP4
+                    </button>
+                    <button type="button" id="bulk-export-btn" class="topbar-btn topbar-btn-bulk" title="Exportar varias pantallas en lote">
+                        <i class="fa-solid fa-layer-group"></i> Lote
+                    </button>
+                </div>
+            </header>
+
+            <!-- Área del simulador móvil -->
+            <main class="simulator-pane" id="simulator-pane">
             <div class="phone-mockup">
                 <div class="phone-screen">
                     <div class="reel-canvas theme-dark" id="reel-canvas">
@@ -353,6 +359,7 @@
                 <div class="phone-home-indicator"></div>
             </div>
         </main>
+        </div>
 
         <!-- Barra Flotante de Reproducción Inferior (Debajo de los teléfonos) -->
         <div id="bottom-player-dock" class="bottom-player-dock" style="display: none;">
