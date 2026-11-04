@@ -190,7 +190,10 @@ document.addEventListener("DOMContentLoaded", () => {
             if (e.target.closest("[contenteditable='true']")) return;
             
             e.preventDefault();
-            selectScreen(index);
+            const wasAlreadyActive = (currentProject.activeScreenIndex === index);
+            if (!wasAlreadyActive) {
+                selectScreen(index);
+            }
             selectCard(key);
             
             const startY = e.clientY;
@@ -253,7 +256,11 @@ document.addEventListener("DOMContentLoaded", () => {
                     const isPlaceholder = upEvent && upEvent.target && upEvent.target.closest('.media-placeholder');
                     const targetScreen = currentProject.screens[index];
                     if (!isPlaceholder && targetScreen && targetScreen.mediaType === 'video' && targetScreen.mediaSrc) {
-                        togglePlayPause();
+                        // Si ya era la pantalla activa, alternar pausa/reproducción
+                        // Si era una pantalla inactiva, selectScreen(index) ya la puso a reproducir
+                        if (wasAlreadyActive) {
+                            togglePlayPause();
+                        }
                     }
                 }
             }
@@ -572,11 +579,11 @@ document.addEventListener("DOMContentLoaded", () => {
                 currentTemplate = targetScreen;
                 rawVideoFile = targetScreen.mediaType === "video" ? file : null;
                 if (targetScreen.mediaType === "video") {
-                    playPauseBtn.disabled = false;
-                    muteBtn.disabled = false;
+                    if (playPauseBtn) playPauseBtn.disabled = false;
+                    if (muteBtn) muteBtn.disabled = false;
                 } else {
-                    playPauseBtn.disabled = true;
-                    muteBtn.disabled = true;
+                    if (playPauseBtn) playPauseBtn.disabled = true;
+                    if (muteBtn) muteBtn.disabled = true;
                 }
             }
 
@@ -826,9 +833,11 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-    playPauseBtn.addEventListener("click", () => {
-        togglePlayPause();
-    });
+    if (playPauseBtn) {
+        playPauseBtn.addEventListener("click", () => {
+            togglePlayPause();
+        });
+    }
 
     muteBtn.addEventListener("click", () => {
         if (!reelVideo) return;
@@ -1633,11 +1642,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 selectScreen(index);
                 selectCard("footer");
             });
-            mCont.addEventListener("click", (e) => {
-                e.stopPropagation();
-                selectScreen(index);
-                selectCard("media");
-            });
+            // mCont click y selección ya se manejan limpiamente en setupDraggable
             lCard.addEventListener("click", (e) => {
                 e.stopPropagation();
                 selectScreen(index);
@@ -1718,15 +1723,15 @@ document.addEventListener("DOMContentLoaded", () => {
         
         // Sincronizar controles multimedia si hay video
         if (currentTemplate.mediaType === "video") {
-            playPauseBtn.disabled = false;
-            muteBtn.disabled = false;
+            if (playPauseBtn) playPauseBtn.disabled = false;
+            if (muteBtn) muteBtn.disabled = false;
             updatePlayPauseUI();
             muteBtn.innerHTML = (reelVideo && reelVideo.muted) 
                 ? '<i class="fa-solid fa-volume-xmark"></i> Silenciar' 
                 : '<i class="fa-solid fa-volume-high"></i> Sonido';
         } else {
-            playPauseBtn.disabled = true;
-            muteBtn.disabled = true;
+            if (playPauseBtn) playPauseBtn.disabled = true;
+            if (muteBtn) muteBtn.disabled = true;
         }
         syncTimelineControls();
 
@@ -1757,23 +1762,27 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         // Pausar todos los videos de otras pantallas y reproducir el del teléfono seleccionado
-        currentProject.screens.forEach((_, idx) => {
+        currentProject.screens.forEach((scr, idx) => {
             const vid = document.getElementById(`reel-video-${idx}`);
             if (vid) {
                 if (idx === index) {
-                    if (currentTemplate.mediaType === "video") {
-                        if (currentTemplate.fixedFrameTime !== undefined && currentTemplate.fixedFrameTime !== null) {
-                            vid.currentTime = currentTemplate.fixedFrameTime;
+                    if (scr.mediaType === "video" && scr.mediaSrc) {
+                        if (scr.fixedFrameTime !== undefined && scr.fixedFrameTime !== null) {
+                            vid.currentTime = scr.fixedFrameTime;
                             vid.pause();
                         } else {
-                            vid.play().catch(() => {});
+                            vid.muted = true;
+                            const playPromise = vid.play();
+                            if (playPromise !== undefined) {
+                                playPromise.catch(() => {});
+                            }
                         }
                     }
                 } else {
                     vid.pause();
-                    vid.muted = true; // Asegurar que los no activos estén silenciados
+                    vid.muted = true; // Silenciar y pausar los no activos
                     if (vid.currentTime === 0) {
-                        vid.currentTime = 0.1; // Forzar render del primer fotograma en inactivos
+                        vid.currentTime = 0.1; // Renderizar primer fotograma en inactivos
                     }
                 }
             }
