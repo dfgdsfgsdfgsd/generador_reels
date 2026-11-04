@@ -2,7 +2,8 @@ document.addEventListener("DOMContentLoaded", () => {
     // ESTADO DE LA APLICACIÓN
     let templatesList = [{ id: "default", name: "Diseño por Defecto" }];
     let currentTemplateName = "default";
-    let activeCardKey = null; // 'header', 'footer', 'media', o 'logo'
+    let activeCardKey = null;
+    let currentUploadTarget = "top"; // "top" o "bottom" // 'header', 'footer', 'media', o 'logo'
     let rawVideoFile = null;
     
     // Proyecto activo en memoria (que contiene múltiples pantallas)
@@ -410,7 +411,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 top = Math.max(10, Math.min(canvas.offsetHeight - el.offsetHeight - 10, top));
                 if (key === 'header' || key === 'footer') {
                     left = 20; // Bloqueado al ancho y centrado del video
-                } else if (key === 'media') {
+                } else if (key === 'media' || key === 'mediaBottom') {
                     left = Math.max(10, Math.round((canvas.offsetWidth - el.offsetWidth) / 2)); // Centrado horizontal
                 } else {
                     left = Math.max(10, Math.min(canvas.offsetWidth - el.offsetWidth - 10, left));
@@ -658,12 +659,17 @@ document.addEventListener("DOMContentLoaded", () => {
             return;
         }
         
-        if (key === "media") {
+        if (key === "media" || key === "mediaBottom") {
             fontSizeSlider.disabled = true;
-            fontSizeLabel.textContent = "Tamaño: Video/Imagen (Fijo 1:1)";
+            fontSizeLabel.textContent = key === "media" ? "Tamaño: Video Superior (1:1)" : "Tamaño: Video Inferior (1:1)";
             boxWidthSlider.disabled = true;
             boxWidthLabel.textContent = "Ancho de Caja: Fijo 1:1";
-            if (mediaContainer) mediaContainer.classList.add("card-selected-highlight");
+            if (key === "media" && mediaContainer) {
+                mediaContainer.classList.add("card-selected-highlight");
+            } else if (key === "mediaBottom") {
+                const mBottom = document.getElementById(`media-container-bottom-${currentProject.activeScreenIndex}`);
+                if (mBottom) mBottom.classList.add("card-selected-highlight");
+            }
             syncAdjustButtonsState();
             return;
         }
@@ -727,11 +733,13 @@ document.addEventListener("DOMContentLoaded", () => {
     document.addEventListener("dblclick", (e) => {
         const mc = e.target.closest(".media-container");
         if (mc) {
-            const match = mc.id.match(/media-container-(\d+)/);
+            const isBottom = mc.id.includes("-bottom-") || mc.dataset.mediaTarget === "bottom";
+            currentUploadTarget = isBottom ? "bottom" : "top";
+            const match = mc.id.match(/media-container-(?:bottom-)?(\d+)/);
             if (match) {
                 const idx = parseInt(match[1], 10);
                 selectScreen(idx);
-                selectCard("media");
+                selectCard(isBottom ? "mediaBottom" : "media");
             }
             if (mediaInput) {
                 mediaInput.value = "";
@@ -745,11 +753,13 @@ document.addEventListener("DOMContentLoaded", () => {
         if (ph) {
             const mc = ph.closest(".media-container");
             if (mc) {
-                const match = mc.id.match(/media-container-(\d+)/);
+                const isBottom = mc.id.includes("-bottom-") || mc.dataset.mediaTarget === "bottom";
+                currentUploadTarget = isBottom ? "bottom" : "top";
+                const match = mc.id.match(/media-container-(?:bottom-)?(\d+)/);
                 if (match) {
                     const idx = parseInt(match[1], 10);
                     selectScreen(idx);
-                    selectCard("media");
+                    selectCard(isBottom ? "mediaBottom" : "media");
                 }
             }
             if (mediaInput) {
@@ -761,28 +771,32 @@ document.addEventListener("DOMContentLoaded", () => {
 
     
     // Función unificada para cargar video o imagen en el contenedor 1:1 de una pantalla
-    async function loadMediaFile(file, screenIndex) {
+    async function loadMediaFile(file, screenIndex, targetSlot) {
         if (!file) return;
         const targetIndex = (typeof screenIndex === 'number') ? screenIndex : currentProject.activeScreenIndex;
         const targetScreen = currentProject.screens[targetIndex];
         if (!targetScreen) return;
 
+        const slot = targetSlot || currentUploadTarget || "top";
+        const fileURL = URL.createObjectURL(file);
+        const isVideo = file.type.startsWith("video/");
+
         try {
-            const fileURL = URL.createObjectURL(file);
-            targetScreen.mediaType = file.type.startsWith("video/") ? "video" : "image";
-            targetScreen.mediaSrc = fileURL;
-            targetScreen.fixedFrameTime = null;
+            if (slot === "bottom") {
+                targetScreen.mediaBottomType = isVideo ? "video" : "image";
+                targetScreen.mediaBottomSrc = fileURL;
+            } else {
+                targetScreen.mediaType = isVideo ? "video" : "image";
+                targetScreen.mediaSrc = fileURL;
+                targetScreen.fixedFrameTime = null;
+            }
 
             if (targetIndex === currentProject.activeScreenIndex) {
                 currentTemplate = targetScreen;
-                rawVideoFile = targetScreen.mediaType === "video" ? file : null;
-                if (targetScreen.mediaType === "video") {
-                    if (playPauseBtn) playPauseBtn.disabled = false;
-                    if (muteBtn) muteBtn.disabled = false;
-                } else {
-                    if (playPauseBtn) playPauseBtn.disabled = true;
-                    if (muteBtn) muteBtn.disabled = true;
-                }
+                if (slot === "top") rawVideoFile = isVideo ? file : null;
+                const hasAnyVideo = targetScreen.mediaType === "video" || targetScreen.mediaBottomType === "video";
+                if (playPauseBtn) playPauseBtn.disabled = !hasAnyVideo;
+                if (muteBtn) muteBtn.disabled = !hasAnyVideo;
             }
 
             applyScreenMedia(targetIndex);
@@ -797,8 +811,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
             if (uploadRes.ok) {
                 const resData = await uploadRes.json();
-                targetScreen.mediaSrc = resData.url;
-                console.log("[Editor] Video guardado de forma persistente:", resData.url);
+                if (slot === "bottom") {
+                    targetScreen.mediaBottomSrc = resData.url;
+                } else {
+                    targetScreen.mediaSrc = resData.url;
+                }
+                console.log("[Editor] Media (" + slot + ") guardado de forma persistente:", resData.url);
                 applyScreenMedia(targetIndex);
                 saveTemplateQuietly();
             }
@@ -952,18 +970,32 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function togglePlayPause() {
-        if (!reelVideo || !currentTemplate || currentTemplate.mediaType !== "video") return;
-        if (reelVideo.paused) {
+        const hasTopVideo = reelVideo && currentTemplate && currentTemplate.mediaType === "video" && currentTemplate.mediaSrc;
+        const vidBottom = document.getElementById(`reel-video-bottom-${currentProject.activeScreenIndex}`);
+        const hasBottomVideo = vidBottom && currentTemplate && currentTemplate.mediaBottomType === "video" && currentTemplate.mediaBottomSrc;
+
+        if (!hasTopVideo && !hasBottomVideo) return;
+
+        const isPaused = (hasTopVideo ? reelVideo.paused : true) && (hasBottomVideo ? vidBottom.paused : true);
+
+        if (isPaused) {
             if (currentTemplate.fixedFrameTime !== undefined && currentTemplate.fixedFrameTime !== null) {
                 currentTemplate.fixedFrameTime = null;
                 saveTemplateQuietly();
                 syncTimelineControls();
             }
-            reelVideo.play().then(() => {
-                updatePlayPauseUI();
-            }).catch(err => console.log("Play blocked / interrupted:", err));
+            if (hasTopVideo) {
+                reelVideo.muted = true;
+                reelVideo.play().catch(err => console.log("Top play blocked:", err));
+            }
+            if (hasBottomVideo) {
+                vidBottom.muted = true;
+                vidBottom.play().catch(err => console.log("Bottom play blocked:", err));
+            }
+            updatePlayPauseUI();
         } else {
-            reelVideo.pause();
+            if (hasTopVideo) reelVideo.pause();
+            if (hasBottomVideo) vidBottom.pause();
             updatePlayPauseUI();
         }
     }
@@ -1150,6 +1182,8 @@ document.addEventListener("DOMContentLoaded", () => {
             targetEl = document.getElementById(`logo-card-${screenIdx}`) || logoCard;
         } else if (key === "media") {
             targetEl = document.getElementById(`media-container-${screenIdx}`) || mediaContainer;
+        } else if (key === "mediaBottom") {
+            targetEl = document.getElementById(`media-container-bottom-${screenIdx}`);
         } else if (key.startsWith("sticker_")) {
             const sIdx = parseInt(key.split('_')[1], 10);
             targetEl = document.getElementById(`sticker-card-${screenIdx}-${sIdx}`);
@@ -1179,7 +1213,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         if (key === 'header' || key === 'footer') {
             newLeft = 20; // Alineado y centrado fijo
-        } else if (key === 'media') {
+        } else if (key === 'media' || key === 'mediaBottom') {
             newLeft = Math.max(10, Math.round((canvas.offsetWidth - targetEl.offsetWidth) / 2));
         } else {
             newLeft = Math.max(10, Math.min(canvas.offsetWidth - targetEl.offsetWidth - 10, newLeft));
@@ -1779,12 +1813,21 @@ document.addEventListener("DOMContentLoaded", () => {
         if (savedList) {
             try { templatesList = JSON.parse(savedList); } catch (e) {}
         }
+        if (!templatesList.some(p => p.id === "default")) {
+            templatesList.unshift({ id: "default", name: "default" });
+        }
+        if (!templatesList.some(p => p.id === "doble_video")) {
+            templatesList.push({ id: "doble_video", name: "Diseño Doble Video (2 Videos)" });
+        }
         
         projectSelect.innerHTML = "";
         templatesList.forEach(p => {
             const opt = document.createElement("option");
             opt.value = p.id;
-            opt.textContent = p.name === "default" ? "Diseño por Defecto" : p.name;
+            let displayName = p.name;
+            if (p.name === "default" || p.id === "default") displayName = "Diseño por Defecto (1 Video)";
+            else if (p.name === "doble_video" || p.id === "doble_video") displayName = "Diseño Doble Video (2 Videos)";
+            opt.textContent = displayName;
             projectSelect.appendChild(opt);
         });
     }
@@ -1883,7 +1926,47 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-        // Crear diseño de pantalla por defecto
+        // Crear diseño de pantalla de Doble Video (Video Arriba, Texto al Medio, Video Abajo)
+    function createDualVideoScreen(index = 0) {
+        return {
+            name: `Pantalla ${index + 1}`,
+            layout: "split_dual",
+            theme: "dark",
+            customColor: "#141414",
+            bgImageSrc: null,
+            fontTitle: "'Montserrat', sans-serif",
+            mediaType: null,
+            mediaSrc: null,
+            mediaBottomType: null,
+            mediaBottomSrc: null,
+            showHeaderCard: true,
+            showFooterCard: false,
+            showInstagramOverlay: false,
+            headerText: index === 0
+                ? "🔥 <strong>COMPARATIVA / REACCIÓN</strong><br>Video 1 vs Video 2"
+                : `🔥 <strong>DISEÑO DOBLE ${index + 1}</strong>`,
+            footerText: "👇 <strong>Comenta aquí abajo</strong> 🚀",
+            fontSizes: {
+                header: 95,
+                footer: 95
+            },
+            positions: {
+                media: { top: "15px", left: "20px" },
+                header: { top: "345px", left: "20px" },
+                mediaBottom: { top: "415px", left: "20px" },
+                footer: { top: "580px", left: "20px" },
+                logo: { top: "150px", left: "140px" }
+            },
+            styles: {
+                header: { color: "#ffffff", boxColor: "#000000", opacity: 85, width: 85 },
+                footer: { color: "#ffffff", boxColor: "#000000", opacity: 85, width: 85 }
+            },
+            logoSrc: null,
+            logoSize: 80
+        };
+    }
+
+    // Crear diseño de pantalla por defecto
     function createDefaultScreen(index = 0) {
         return {
             name: `Pantalla ${index + 1}`,
@@ -1922,6 +2005,19 @@ document.addEventListener("DOMContentLoaded", () => {
     function loadTemplateData(name) {
         currentTemplateName = name;
         const savedData = localStorage.getItem(`reels_project_${name}`);
+        if (!savedData && name === "doble_video") {
+            currentProject = {
+                name: "doble_video",
+                activeScreenIndex: 0,
+                screens: [createDualVideoScreen(0)]
+            };
+            currentTemplate = currentProject.screens[0];
+            projectSelect.value = "doble_video";
+            renderScreens();
+            selectScreen(0);
+            saveTemplateQuietly();
+            return;
+        }
         let parsed = null;
         if (savedData) {
             try {
@@ -2067,16 +2163,29 @@ document.addEventListener("DOMContentLoaded", () => {
                                 <div class="resize-handle resize-se" data-key="header" data-index="${index}"></div>
                             </div>
 
-                            <!-- Bloque central de video 1:1 -->
-                            <div class="media-container" id="media-container-${index}" style="top: ${screenData.positions?.media?.top || '160px'}; left: 20px;">
+                            <!-- Bloque de video 1:1 (Superior) -->
+                            <div class="media-container" id="media-container-${index}" data-media-target="top" style="top: ${screenData.positions?.media?.top || (screenData.layout === 'split_dual' ? '15px' : '160px')}; left: ${screenData.positions?.media?.left || '20px'};">
                                 <video id="reel-video-${index}" loop muted playsinline style="display: none;"></video>
                                 <img id="reel-img-${index}" src="" alt="Previsualización" style="display: none;">
                                 <div class="media-placeholder" id="media-placeholder-${index}">
                                     <i class="fa-solid fa-video"></i>
-                                    <span>Carga un video/imagen 1:1</span>
+                                    <span>${screenData.layout === 'split_dual' ? 'Video Superior 1:1' : 'Carga un video/imagen 1:1'}</span>
                                 </div>
                                 <div class="video-play-indicator" id="video-indicator-${index}"><i class="fa-solid fa-play"></i></div>
                             </div>
+
+                            ${screenData.layout === 'split_dual' ? `
+                            <!-- Bloque de video 1:1 (Inferior) para segundo video -->
+                            <div class="media-container media-bottom-container" id="media-container-bottom-${index}" data-media-target="bottom" style="top: ${screenData.positions?.mediaBottom?.top || '415px'}; left: ${screenData.positions?.mediaBottom?.left || '20px'};">
+                                <video id="reel-video-bottom-${index}" loop muted playsinline style="display: none;"></video>
+                                <img id="reel-img-bottom-${index}" src="" alt="Previsualización" style="display: none;">
+                                <div class="media-placeholder" id="media-placeholder-bottom-${index}">
+                                    <i class="fa-solid fa-video"></i>
+                                    <span>Video Inferior 1:1</span>
+                                </div>
+                                <div class="video-play-indicator" id="video-indicator-bottom-${index}"><i class="fa-solid fa-play"></i></div>
+                            </div>
+                            ` : ''}
 
                             <!-- Bloque de texto inferior -->
                             <div class="text-card drag-el" id="footer-card-${index}" style="top: ${screenData.positions?.footer?.top || '490px'}; left: 20px; width: calc(100% - 40px); display: ${screenData.showFooterCard ? 'flex' : 'none'}; height: ${screenData.styles?.footer?.height ? screenData.styles.footer.height + 'px' : 'auto'};">
@@ -2149,6 +2258,15 @@ document.addEventListener("DOMContentLoaded", () => {
             setupDraggable(hCard, "header", index);
             setupDraggable(fCard, "footer", index);
             setupDraggable(mCont, "media", index);
+            const mContBottom = document.getElementById(`media-container-bottom-${index}`);
+            if (mContBottom) {
+                setupDraggable(mContBottom, "mediaBottom", index);
+                mContBottom.addEventListener("click", (e) => {
+                    e.stopPropagation();
+                    selectScreen(index);
+                    selectCard("mediaBottom");
+                });
+            }
             const screenVid = document.getElementById(`reel-video-${index}`);
             if (screenVid) {
                 screenVid.addEventListener("play", () => {
@@ -2639,6 +2757,39 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (editMediaBtn) editMediaBtn.disabled = true;
             }
         }
+
+        // Aplicar a segundo contenedor si existe (Diseño Doble Video)
+        const videoBottom = document.getElementById(`reel-video-bottom-${index}`);
+        const imgBottom = document.getElementById(`reel-img-bottom-${index}`);
+        const placeholderBottom = document.getElementById(`media-placeholder-bottom-${index}`);
+        if (videoBottom && imgBottom && placeholderBottom) {
+            if (screenData.mediaBottomType === "video" && screenData.mediaBottomSrc) {
+                imgBottom.style.display = "none";
+                videoBottom.style.display = "block";
+                placeholderBottom.style.display = "none";
+                placeholderBottom.style.visibility = "hidden";
+                videoBottom.src = screenData.mediaBottomSrc;
+                videoBottom.muted = true;
+                if (index === currentProject.activeScreenIndex) {
+                    videoBottom.play().catch(() => {});
+                } else {
+                    videoBottom.pause();
+                }
+            } else if (screenData.mediaBottomType === "image" && screenData.mediaBottomSrc) {
+                videoBottom.style.display = "none";
+                videoBottom.pause();
+                imgBottom.style.display = "block";
+                placeholderBottom.style.display = "none";
+                placeholderBottom.style.visibility = "hidden";
+                imgBottom.src = screenData.mediaBottomSrc;
+            } else {
+                videoBottom.style.display = "none";
+                videoBottom.pause();
+                imgBottom.style.display = "none";
+                placeholderBottom.style.display = "flex";
+                placeholderBottom.style.visibility = "visible";
+            }
+        }
     }
 
     function applyScreenLogo(index) {
@@ -2677,7 +2828,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // LISTENER DE GESTIÓN DE PANTALLAS (AÑADIR, DUPLICAR, ELIMINAR)
     addPhoneBtn.addEventListener("click", () => {
-        const newScreen = createDefaultScreen(currentProject.screens.length);
+        const isDual = currentProject.screens.some(s => s.layout === "split_dual");
+        const newScreen = isDual 
+            ? createDualVideoScreen(currentProject.screens.length) 
+            : createDefaultScreen(currentProject.screens.length);
         currentProject.screens.push(newScreen);
         currentProject.activeScreenIndex = currentProject.screens.length - 1;
         
