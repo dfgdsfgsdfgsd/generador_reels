@@ -141,11 +141,27 @@
 
                     <!-- Color Personalizado (Opción Independiente) -->
                     <div class="control-group" style="margin-top: 12px;">
-                        <label class="control-label"><i class="fa-solid fa-palette"></i> Color Personalizado</label>
+                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+                            <label class="control-label" style="margin-bottom: 0;"><i class="fa-solid fa-palette"></i> Color Personalizado</label>
+                            <button type="button" id="save-bg-color-btn" class="action-btn text-btn" style="font-size: 0.72rem; padding: 3px 8px; border-radius: 4px; border-color: rgba(255, 255, 255, 0.15); color: #93c5fd; display: flex; align-items: center; gap: 4px;" title="Guardar este color en tu paleta">
+                                <i class="fa-solid fa-bookmark"></i> Guardar Color
+                            </button>
+                        </div>
                         <div id="custom-color-wrapper" class="color-picker-wrapper" style="display: flex; align-items: center; justify-content: space-between; background: rgba(255, 255, 255, 0.03); padding: 8px 12px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.08);">
                             <span id="bg-color-hex" style="font-family: monospace; font-size: 0.8rem; color: #94a3b8; font-weight: 600;">#141414</span>
                             <div style="display: flex; align-items: center; gap: 8px;">
                                 <input type="color" id="bg-color-picker" value="#141414" style="cursor: pointer; width: 34px; height: 34px; border: none; border-radius: 6px; padding: 0; background: transparent;">
+                            </div>
+                        </div>
+
+                        <!-- Paleta de Colores Guardados -->
+                        <div id="saved-bg-colors-container" style="display: none; margin-top: 8px; background: rgba(0, 0, 0, 0.2); padding: 8px 10px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.05);">
+                            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+                                <span style="font-size: 0.7rem; color: #94a3b8; font-weight: 500;">Mis Colores Guardados:</span>
+                                <span style="font-size: 0.65rem; color: #64748b;">(clic derecho para eliminar)</span>
+                            </div>
+                            <div id="saved-bg-colors-list" style="display: flex; flex-wrap: wrap; gap: 6px; align-items: center;">
+                                <!-- Swatches generados dinámicamente -->
                             </div>
                         </div>
                     </div>

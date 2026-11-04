@@ -1256,6 +1256,102 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
+    // --- GESTIÓN DE COLORES DE FONDO GUARDADOS ---
+    const SAVED_BG_COLORS_KEY = 'reels_saved_bg_colors_list';
+    const saveBgColorBtn = document.getElementById('save-bg-color-btn');
+    const savedBgColorsContainer = document.getElementById('saved-bg-colors-container');
+    const savedBgColorsList = document.getElementById('saved-bg-colors-list');
+
+    function getSavedBgColors() {
+        try {
+            const saved = localStorage.getItem(SAVED_BG_COLORS_KEY);
+            if (saved) {
+                const parsed = JSON.parse(saved);
+                if (Array.isArray(parsed)) return parsed;
+            }
+        } catch (e) {}
+        return [];
+    }
+
+    function renderSavedBgColors() {
+        if (!savedBgColorsContainer || !savedBgColorsList) return;
+        const colors = getSavedBgColors();
+        if (colors.length === 0) {
+            savedBgColorsContainer.style.display = "none";
+            savedBgColorsList.innerHTML = "";
+            return;
+        }
+
+        savedBgColorsContainer.style.display = "block";
+        savedBgColorsList.innerHTML = "";
+
+        colors.forEach((hex, idx) => {
+            const swatch = document.createElement("button");
+            swatch.type = "button";
+            swatch.className = "saved-color-swatch";
+            swatch.style.cssText = `width: 24px; height: 24px; border-radius: 6px; background-color: ${hex}; border: 1.5px solid rgba(255,255,255,0.3); cursor: pointer; transition: transform 0.15s, border-color 0.15s; flex-shrink: 0; padding: 0; outline: none;`;
+            swatch.title = `${hex} (Clic para usar, clic derecho para eliminar)`;
+
+            swatch.addEventListener("mouseenter", () => {
+                swatch.style.transform = "scale(1.2)";
+                swatch.style.borderColor = "#ffffff";
+            });
+            swatch.addEventListener("mouseleave", () => {
+                swatch.style.transform = "scale(1)";
+                swatch.style.borderColor = "rgba(255,255,255,0.3)";
+            });
+
+            // Clic para aplicar el color
+            swatch.addEventListener("click", () => {
+                currentTemplate.theme = "custom";
+                currentTemplate.customColor = hex;
+                if (bgColorPicker) bgColorPicker.value = hex;
+                if (bgColorHex) bgColorHex.textContent = hex;
+                
+                reelCanvas.className = "reel-canvas";
+                reelCanvas.style.background = hex;
+                if (themeSelect) themeSelect.value = "custom";
+                saveTemplateQuietly();
+            });
+
+            // Clic derecho para eliminar color
+            swatch.addEventListener("contextmenu", (e) => {
+                e.preventDefault();
+                let updated = getSavedBgColors().filter((_, i) => i !== idx);
+                try {
+                    localStorage.setItem(SAVED_BG_COLORS_KEY, JSON.stringify(updated));
+                } catch (err) {}
+                renderSavedBgColors();
+            });
+
+            savedBgColorsList.appendChild(swatch);
+        });
+    }
+
+    if (saveBgColorBtn) {
+        saveBgColorBtn.addEventListener("click", () => {
+            const colorToSave = (bgColorPicker ? bgColorPicker.value : currentTemplate.customColor || "#141414").toLowerCase();
+            let colors = getSavedBgColors();
+            if (!colors.map(c => c.toLowerCase()).includes(colorToSave)) {
+                colors.unshift(colorToSave);
+                if (colors.length > 20) colors = colors.slice(0, 20);
+                try {
+                    localStorage.setItem(SAVED_BG_COLORS_KEY, JSON.stringify(colors));
+                } catch (e) {}
+                renderSavedBgColors();
+            }
+            
+            // Feedback visual temporal en el botón
+            const originalHtml = saveBgColorBtn.innerHTML;
+            saveBgColorBtn.innerHTML = `<i class="fa-solid fa-check" style="color: #4ade80;"></i> ¡Guardado!`;
+            setTimeout(() => {
+                saveBgColorBtn.innerHTML = originalHtml;
+            }, 1200);
+        });
+    }
+
+    renderSavedBgColors();
+
     // FUENTE Y COLORES DE TEXTO INDIVIDUALES
     fontTitleSelect.addEventListener("change", (e) => {
         currentTemplate.fontTitle = e.target.value;
