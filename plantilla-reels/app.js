@@ -182,12 +182,39 @@ document.addEventListener("DOMContentLoaded", () => {
         // Handled directly by CSS scale(0.75) within .phone-wrapper
     }
     
+    // Utilidad para posicionar el cursor al final del texto editable
+    function placeCaretAtEnd(el) {
+        if (!el) return;
+        el.focus();
+        if (typeof window.getSelection !== "undefined" && typeof document.createRange !== "undefined") {
+            try {
+                const range = document.createRange();
+                range.selectNodeContents(el);
+                range.collapse(false);
+                const sel = window.getSelection();
+                sel.removeAllRanges();
+                sel.addRange(range);
+            } catch (err) {}
+        }
+    }
+
+    function checkTextEmptyState(el) {
+        if (!el) return;
+        const text = el.textContent.trim();
+        if (!text || text === "") {
+            el.setAttribute("data-empty", "true");
+        } else {
+            el.removeAttribute("data-empty");
+        }
+    }
+
     // FUNCIONES DE ARRASTRE (DRAG & DROP)
     function setupDraggable(el, key, index) {
         if (!el) return;
         el.addEventListener("mousedown", (e) => {
-            // No arrastrar si se hace clic en texto editable
-            if (e.target.closest("[contenteditable='true']")) return;
+            // No arrastrar si se hace clic en texto editable o dentro de text-content
+            if (e.target.closest("[contenteditable='true']") || e.target.closest(".text-content")) return;
+            if (e.target.closest(".resize-handle")) return;
             
             e.preventDefault();
             const wasAlreadyActive = (currentProject.activeScreenIndex === index);
@@ -250,6 +277,14 @@ document.addEventListener("DOMContentLoaded", () => {
                 document.removeEventListener("mousemove", onMouseMove);
                 document.removeEventListener("mouseup", onMouseUp);
                 saveTemplateQuietly();
+
+                // Si fue un clic simple sin arrastrar en la tarjeta de texto, enfocar el texto
+                if (!hasMoved && (key === 'header' || key === 'footer')) {
+                    const textEl = el.querySelector(".text-content");
+                    if (textEl && !upEvent?.target?.closest(".resize-handle")) {
+                        placeCaretAtEnd(textEl);
+                    }
+                }
                 
                 // Si fue un clic simple en el video (sin arrastrar y no sobre placeholder)
                 if (!hasMoved && key === 'media') {
@@ -1409,8 +1444,8 @@ document.addEventListener("DOMContentLoaded", () => {
                             
                             <!-- Bloque de texto superior -->
                             <div class="text-card drag-el" id="header-card-${index}" style="top: ${screenData.positions?.header?.top || '40px'}; left: ${screenData.positions?.header?.left || '28px'}; width: ${screenData.styles?.header?.width || 85}%; display: ${screenData.showHeaderCard ? 'flex' : 'none'}; height: ${screenData.styles?.header?.height ? screenData.styles.header.height + 'px' : 'auto'};">
-                                <div class="text-content" contenteditable="true" id="header-text-${index}">
-                                    ${screenData.headerText}
+                                <div class="text-content" contenteditable="true" id="header-text-${index}" data-placeholder="Escribe el título aquí...">
+                                    ${screenData.headerText || ''}
                                 </div>
                                 <div class="resize-handle resize-t" data-key="header" data-index="${index}"></div>
                                 <div class="resize-handle resize-r" data-key="header" data-index="${index}"></div>
@@ -1431,8 +1466,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
                             <!-- Bloque de texto inferior -->
                             <div class="text-card drag-el" id="footer-card-${index}" style="top: ${screenData.positions?.footer?.top || '490px'}; left: ${screenData.positions?.footer?.left || '28px'}; width: ${screenData.styles?.footer?.width || 85}%; display: ${screenData.showFooterCard ? 'flex' : 'none'}; height: ${screenData.styles?.footer?.height ? screenData.styles.footer.height + 'px' : 'auto'};">
-                                <div class="text-content" contenteditable="true" id="footer-text-${index}">
-                                    ${screenData.footerText}
+                                <div class="text-content" contenteditable="true" id="footer-text-${index}" data-placeholder="Escribe la descripción aquí...">
+                                    ${screenData.footerText || ''}
                                 </div>
                                 <div class="resize-handle resize-t" data-key="footer" data-index="${index}"></div>
                                 <div class="resize-handle resize-r" data-key="footer" data-index="${index}"></div>
@@ -1670,11 +1705,19 @@ document.addEventListener("DOMContentLoaded", () => {
                 e.stopPropagation();
                 selectScreen(index);
                 selectCard("header");
+                if (!e.target.closest(".resize-handle")) {
+                    const txt = hCard.querySelector(".text-content");
+                    if (txt) placeCaretAtEnd(txt);
+                }
             });
             fCard.addEventListener("click", (e) => {
                 e.stopPropagation();
                 selectScreen(index);
                 selectCard("footer");
+                if (!e.target.closest(".resize-handle")) {
+                    const txt = fCard.querySelector(".text-content");
+                    if (txt) placeCaretAtEnd(txt);
+                }
             });
             // mCont click y selección ya se manejan limpiamente en setupDraggable
             lCard.addEventListener("click", (e) => {
@@ -1686,14 +1729,22 @@ document.addEventListener("DOMContentLoaded", () => {
             const hText = document.getElementById(`header-text-${index}`);
             const fText = document.getElementById(`footer-text-${index}`);
             
-            hText.addEventListener("input", () => {
-                currentProject.screens[index].headerText = hText.innerHTML;
-                saveTemplateQuietly();
-            });
-            fText.addEventListener("input", () => {
-                currentProject.screens[index].footerText = fText.innerHTML;
-                saveTemplateQuietly();
-            });
+            if (hText) {
+                checkTextEmptyState(hText);
+                hText.addEventListener("input", () => {
+                    checkTextEmptyState(hText);
+                    currentProject.screens[index].headerText = hText.innerHTML;
+                    saveTemplateQuietly();
+                });
+            }
+            if (fText) {
+                checkTextEmptyState(fText);
+                fText.addEventListener("input", () => {
+                    checkTextEmptyState(fText);
+                    currentProject.screens[index].footerText = fText.innerHTML;
+                    saveTemplateQuietly();
+                });
+            }
 
             // Botón eliminar pantalla en el encabezado
             const pDeleteBtn = wrapper.querySelector(".phone-delete-btn");

@@ -1004,8 +1004,22 @@ input[type="color"] {
     text-align: center;
     word-break: break-word;
     cursor: text;
-    display: inline-block;
-    max-width: 100%;
+    display: block;
+    width: 100%;
+    min-height: 1.45em;
+    min-width: 60px;
+    box-sizing: border-box;
+}
+
+/* Placeholder visible cuando el contenido está vacío */
+.text-content:empty::before,
+.text-content[data-empty="true"]::before {
+    content: attr(data-placeholder);
+    color: rgba(255, 255, 255, 0.45);
+    font-style: italic;
+    font-weight: normal;
+    pointer-events: none;
+    display: block;
 }
 
 .text-card {
