@@ -46,6 +46,42 @@ body {
     flex-shrink: 0;
 }
 
+/* SELECTOR DE BLOQUE EN SIDEBAR */
+.card-target-selector {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 12px;
+}
+
+.card-target-btn {
+    flex: 1;
+    border: 1px solid var(--color-border);
+    background: #1e2229;
+    color: #94a3b8;
+    padding: 7px 10px;
+    border-radius: 6px;
+    font-size: 0.76rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    transition: all 0.15s ease;
+}
+
+.card-target-btn:hover {
+    background: #282d37;
+    color: #f1f5f9;
+}
+
+.card-target-btn.active {
+    background: var(--color-primary);
+    color: #ffffff;
+    border-color: var(--color-primary);
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4);
+}
+
 /* SIDEBAR ACCORDION SECTIONS */
 .sidebar-section {
     border-top: 1px solid rgba(255, 255, 255, 0.08);

@@ -449,6 +449,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     function selectCard(key) {
+        if (!key) key = "header"; // Default seguro a header para que nunca quede inerte
         activeCardKey = key;
         
         // Limpiar estilos de selección
@@ -457,14 +458,10 @@ document.addEventListener("DOMContentLoaded", () => {
         document.querySelectorAll(".logo-card").forEach(c => c.classList.remove("card-selected-highlight"));
         document.querySelectorAll(".sticker-card").forEach(c => c.classList.remove("card-selected-highlight"));
         
-        if (!key) {
-            fontSizeSlider.disabled = true;
-            fontSizeLabel.textContent = "Tamaño: Selecciona un bloque";
-            boxWidthSlider.disabled = true;
-            boxWidthLabel.textContent = "Ancho de Caja: Selecciona un bloque";
-            syncAdjustButtonsState();
-            return;
-        }
+        // Sincronizar botones de bloque en el panel lateral
+        document.querySelectorAll(".card-target-btn").forEach(btn => {
+            btn.classList.toggle("active", btn.dataset.target === key);
+        });
 
         if (key.startsWith("sticker_")) {
             fontSizeSlider.disabled = true;
@@ -1093,22 +1090,68 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     colorTextPicker.addEventListener("input", (e) => {
-        if (!activeCardKey || activeCardKey === "media") return;
-        currentTemplate.styles[activeCardKey].color = e.target.value;
+        const key = (activeCardKey === "footer") ? "footer" : "header";
+        activeCardKey = key;
+        if (!currentTemplate.styles[key]) currentTemplate.styles[key] = {};
+        currentTemplate.styles[key].color = e.target.value;
+        
+        // Actualización directa e instantánea en el DOM
+        const activeCard = document.getElementById(`${key}-card-${currentProject.activeScreenIndex}`);
+        if (activeCard) {
+            activeCard.style.color = e.target.value;
+            const textContent = activeCard.querySelector(".text-content");
+            if (textContent) {
+                textContent.style.color = e.target.value;
+            }
+        }
+        
         applyScreenStyles(currentProject.activeScreenIndex);
         saveTemplateQuietly();
     });
 
     colorBoxPicker.addEventListener("input", (e) => {
-        if (!activeCardKey || activeCardKey === "media") return;
-        currentTemplate.styles[activeCardKey].boxColor = e.target.value;
+        const key = (activeCardKey === "footer") ? "footer" : "header";
+        activeCardKey = key;
+        if (!currentTemplate.styles[key]) currentTemplate.styles[key] = {};
+        currentTemplate.styles[key].boxColor = e.target.value;
+        
+        // Actualización directa e instantánea en el DOM
+        const hex = e.target.value;
+        const opacity = (currentTemplate.styles[key].opacity ?? 85) / 100;
+        const r = parseInt(hex.slice(1, 3), 16) || 0;
+        const g = parseInt(hex.slice(3, 5), 16) || 0;
+        const b = parseInt(hex.slice(5, 7), 16) || 0;
+        const rgba = `rgba(${r}, ${g}, ${b}, ${opacity})`;
+
+        const activeCard = document.getElementById(`${key}-card-${currentProject.activeScreenIndex}`);
+        if (activeCard) {
+            activeCard.style.backgroundColor = rgba;
+        }
+        
         applyScreenStyles(currentProject.activeScreenIndex);
         saveTemplateQuietly();
     });
 
     boxOpacitySlider.addEventListener("input", (e) => {
-        if (!activeCardKey || activeCardKey === "media") return;
-        currentTemplate.styles[activeCardKey].opacity = parseInt(e.target.value);
+        const key = (activeCardKey === "footer") ? "footer" : "header";
+        activeCardKey = key;
+        if (!currentTemplate.styles[key]) currentTemplate.styles[key] = {};
+        const opVal = parseInt(e.target.value);
+        currentTemplate.styles[key].opacity = opVal;
+        
+        // Actualización directa e instantánea en el DOM
+        const hex = currentTemplate.styles[key].boxColor || "#000000";
+        const opacity = opVal / 100;
+        const r = parseInt(hex.slice(1, 3), 16) || 0;
+        const g = parseInt(hex.slice(3, 5), 16) || 0;
+        const b = parseInt(hex.slice(5, 7), 16) || 0;
+        const rgba = `rgba(${r}, ${g}, ${b}, ${opacity})`;
+
+        const activeCard = document.getElementById(`${key}-card-${currentProject.activeScreenIndex}`);
+        if (activeCard) {
+            activeCard.style.backgroundColor = rgba;
+        }
+        
         applyScreenStyles(currentProject.activeScreenIndex);
         saveTemplateQuietly();
     });
@@ -1883,11 +1926,11 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         });
 
-        // Sincronizar tarjeta si había una seleccionada
-        if (activeCardKey) {
+        // Sincronizar tarjeta seleccionada (default a header si no hay una activa)
+        if (activeCardKey && (activeCardKey === "header" || activeCardKey === "footer")) {
             selectCard(activeCardKey);
         } else {
-            selectCard(null);
+            selectCard("header");
         }
     }
 
@@ -2102,6 +2145,16 @@ document.addEventListener("DOMContentLoaded", () => {
             observer.observe(recordVideoBtn, { attributes: true, attributeFilter: ["class"] });
         }
     }
+
+    // Listeners para botones de bloque (Título / Descripción) en el sidebar
+    document.querySelectorAll(".card-target-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+            const target = btn.dataset.target;
+            if (target) {
+                selectCard(target);
+            }
+        });
+    });
 
     // Control de acordeón en el panel lateral (secciones colapsables)
     const sidebar = document.querySelector(".sidebar");
