@@ -138,6 +138,13 @@ document.addEventListener("DOMContentLoaded", () => {
     const themeSelect = document.getElementById("theme-select");
     const customColorWrapper = document.getElementById("custom-color-wrapper");
     const bgColorPicker = document.getElementById("bg-color-picker");
+    const bgImageWrapper = document.getElementById("bg-image-wrapper");
+    const bgImageInput = document.getElementById("bg-image-input");
+    const bgImageBtnText = document.getElementById("bg-image-btn-text");
+    const bgImageActions = document.getElementById("bg-image-actions");
+    const bgImageThumb = document.getElementById("bg-image-thumb");
+    const changeBgImageBtn = document.getElementById("change-bg-image-btn");
+    const removeBgImageBtn = document.getElementById("remove-bg-image-btn");
     
     const fontTitleSelect = document.getElementById("font-title-select");
     const fontSizeSlider = document.getElementById("font-size-slider");
@@ -1057,6 +1064,23 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
     // TEMAS Y COLORES DE FONDO
+    function updateBgImageUI() {
+        if (!bgImageWrapper) return;
+        const currentScreen = currentProject.screens[currentProject.activeScreenIndex];
+        const hasBgImage = currentScreen && currentScreen.bgImageSrc;
+        
+        if (hasBgImage) {
+            if (bgImageBtnText) bgImageBtnText.textContent = "Cambiar Foto de Fondo";
+            if (bgImageActions) bgImageActions.style.display = "flex";
+            if (bgImageThumb) {
+                bgImageThumb.style.backgroundImage = `url("${currentScreen.bgImageSrc}")`;
+            }
+        } else {
+            if (bgImageBtnText) bgImageBtnText.textContent = "Subir Foto de Fondo";
+            if (bgImageActions) bgImageActions.style.display = "none";
+        }
+    }
+
     themeSelect.addEventListener("change", (e) => {
         const theme = e.target.value;
         currentTemplate.theme = theme;
@@ -1066,14 +1090,100 @@ document.addEventListener("DOMContentLoaded", () => {
         
         if (theme === "custom") {
             customColorWrapper.style.display = "block";
+            if (bgImageWrapper) bgImageWrapper.style.display = "none";
             reelCanvas.style.background = bgColorPicker.value;
+        } else if (theme === "image") {
+            customColorWrapper.style.display = "none";
+            if (bgImageWrapper) {
+                bgImageWrapper.style.display = "block";
+                updateBgImageUI();
+            }
+            if (currentTemplate.bgImageSrc) {
+                reelCanvas.style.background = `url("${currentTemplate.bgImageSrc}") center/cover no-repeat`;
+            } else {
+                reelCanvas.classList.add("theme-dark");
+                reelCanvas.style.background = "";
+            }
         } else {
             customColorWrapper.style.display = "none";
+            if (bgImageWrapper) bgImageWrapper.style.display = "none";
             reelCanvas.classList.add(`theme-${theme}`);
             reelCanvas.style.background = "";
         }
         saveTemplateQuietly();
     });
+
+    if (bgImageInput) {
+        bgImageInput.addEventListener("change", async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            try {
+                const targetIndex = currentProject.activeScreenIndex;
+                const targetScreen = currentProject.screens[targetIndex];
+
+                const reader = new FileReader();
+                reader.onload = async (event) => {
+                    const compressedBase64 = await compressImage(event.target.result, 1080, 0.85);
+                    targetScreen.theme = "image";
+                    targetScreen.bgImageSrc = compressedBase64;
+                    themeSelect.value = "image";
+                    
+                    const canvas = document.getElementById(`reel-canvas-${targetIndex}`);
+                    if (canvas) {
+                        canvas.className = "reel-canvas";
+                        canvas.style.background = `url("${compressedBase64}") center/cover no-repeat`;
+                    }
+                    updateBgImageUI();
+                    saveTemplateQuietly();
+                };
+                reader.readAsDataURL(file);
+
+                const uploadRes = await fetch('/api/upload-media', {
+                    method: 'POST',
+                    headers: { 'Content-Type': file.type },
+                    body: file
+                });
+
+                if (uploadRes.ok) {
+                    const resData = await uploadRes.json();
+                    targetScreen.bgImageSrc = resData.url;
+                    saveTemplateQuietly();
+                }
+            } catch (err) {
+                console.error("[Editor] Error cargando foto de fondo:", err);
+            }
+        });
+    }
+
+    if (removeBgImageBtn) {
+        removeBgImageBtn.addEventListener("click", () => {
+            const targetIndex = currentProject.activeScreenIndex;
+            const targetScreen = currentProject.screens[targetIndex];
+            targetScreen.bgImageSrc = null;
+            targetScreen.theme = "dark";
+            themeSelect.value = "dark";
+            if (customColorWrapper) customColorWrapper.style.display = "none";
+            if (bgImageWrapper) bgImageWrapper.style.display = "none";
+            
+            const canvas = document.getElementById(`reel-canvas-${targetIndex}`);
+            if (canvas) {
+                canvas.className = "reel-canvas theme-dark";
+                canvas.style.background = "";
+            }
+            updateBgImageUI();
+            saveTemplateQuietly();
+        });
+    }
+
+    if (changeBgImageBtn) {
+        changeBgImageBtn.addEventListener("click", () => {
+            if (bgImageInput) {
+                bgImageInput.value = "";
+                bgImageInput.click();
+            }
+        });
+    }
 
     bgColorPicker.addEventListener("input", (e) => {
         currentTemplate.customColor = e.target.value;
@@ -1354,6 +1464,7 @@ document.addEventListener("DOMContentLoaded", () => {
             name: `Pantalla ${index + 1}`,
             theme: "dark",
             customColor: "#141414",
+            bgImageSrc: null,
             fontTitle: "'Montserrat', sans-serif",
             mediaType: null,
             mediaSrc: null,
@@ -1483,7 +1594,11 @@ document.addEventListener("DOMContentLoaded", () => {
                 </div>
                 <div class="phone-mockup ${index === currentProject.activeScreenIndex ? 'selected-phone' : ''}" data-index="${index}">
                     <div class="phone-screen">
-                        <div class="reel-canvas theme-${screenData.theme}" id="reel-canvas-${index}" style="${screenData.theme === 'custom' ? 'background: ' + screenData.customColor : ''}">
+                        <div class="reel-canvas theme-${screenData.theme}" id="reel-canvas-${index}" style="${
+    screenData.theme === 'custom' 
+        ? 'background: ' + screenData.customColor 
+        : (screenData.theme === 'image' && screenData.bgImageSrc ? 'background: url(' + screenData.bgImageSrc + ') center/cover no-repeat;' : '')
+}">
                             
                             <!-- Bloque de texto superior -->
                             <div class="text-card drag-el" id="header-card-${index}" style="top: ${screenData.positions?.header?.top || '40px'}; left: ${screenData.positions?.header?.left || '28px'}; width: ${screenData.styles?.header?.width || 85}%; display: ${screenData.showHeaderCard ? 'flex' : 'none'}; height: ${screenData.styles?.header?.height ? screenData.styles.header.height + 'px' : 'auto'};">
@@ -1850,8 +1965,16 @@ document.addEventListener("DOMContentLoaded", () => {
         if (currentTemplate.theme === "custom") {
             customColorWrapper.style.display = "block";
             bgColorPicker.value = currentTemplate.customColor || "#141414";
+            if (bgImageWrapper) bgImageWrapper.style.display = "none";
+        } else if (currentTemplate.theme === "image") {
+            customColorWrapper.style.display = "none";
+            if (bgImageWrapper) {
+                bgImageWrapper.style.display = "block";
+                updateBgImageUI();
+            }
         } else {
             customColorWrapper.style.display = "none";
+            if (bgImageWrapper) bgImageWrapper.style.display = "none";
         }
         
         fontTitleSelect.value = currentTemplate.fontTitle;
@@ -2245,6 +2368,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const exportPayload = {
                 theme: themeSelect.value,
                 customColor: currentTemplate.customColor,
+                bgImageSrc: currentTemplate.bgImageSrc || null,
                 canvasWidth: reelCanvas.offsetWidth,
                 canvasHeight: reelCanvas.offsetHeight,
                 videoLeft: mediaContainer.offsetLeft,
@@ -2724,6 +2848,7 @@ document.addEventListener("DOMContentLoaded", () => {
         return {
             theme: screenData.theme,
             customColor: screenData.customColor,
+            bgImageSrc: screenData.bgImageSrc || null,
             canvasWidth: scrCanvas.offsetWidth,
             canvasHeight: scrCanvas.offsetHeight,
             videoLeft: mContainer.offsetLeft,

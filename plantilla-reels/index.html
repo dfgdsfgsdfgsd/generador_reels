@@ -147,10 +147,26 @@
                             <option value="gradient-sunset">Sunset Orange</option>
                             <option value="gradient-forest">Deep Forest</option>
                             <option value="custom">Personalizado (Color Liso)</option>
+                            <option value="image">Fotografía / Imagen de Fondo</option>
                         </select>
                         <div id="custom-color-wrapper" class="color-picker-wrapper" style="display: none; margin-top: 10px;">
                             <label for="bg-color-picker" style="font-size: 0.8rem; color: #ccc;">Elegir Color:</label>
                             <input type="color" id="bg-color-picker" value="#141414">
+                        </div>
+                        <div id="bg-image-wrapper" class="file-upload-wrapper" style="display: none; margin-top: 10px;">
+                            <label for="bg-image-input" class="upload-btn" style="border-color: var(--color-primary); color: #60a5fa; cursor: pointer; padding: 9px 12px; font-size: 0.8rem;">
+                                <i class="fa-solid fa-image"></i> <span id="bg-image-btn-text">Subir Foto de Fondo</span>
+                            </label>
+                            <input type="file" id="bg-image-input" accept="image/*" style="display: none;">
+                            <div id="bg-image-actions" class="row-flex" style="display: none; margin-top: 8px;">
+                                <span id="bg-image-thumb" style="width: 32px; height: 42px; border-radius: 4px; background-size: cover; background-position: center; border: 1px solid var(--color-border); display: inline-block; flex-shrink: 0;"></span>
+                                <button type="button" id="change-bg-image-btn" class="action-btn text-btn" style="flex: 1; font-size: 0.72rem; padding: 6px;">
+                                    <i class="fa-solid fa-arrows-rotate"></i> Cambiar
+                                </button>
+                                <button type="button" id="remove-bg-image-btn" class="action-btn text-btn" style="color: var(--color-danger); border-color: rgba(239, 68, 68, 0.4); font-size: 0.72rem; padding: 6px;">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            </div>
                         </div>
                     </div>
 

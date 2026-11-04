@@ -2,6 +2,8 @@
 import json
 import time
 import asyncio
+import io
+import base64
 from typing import Dict, Any, Optional
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.responses import FileResponse, JSONResponse
@@ -281,9 +283,42 @@ def get_text_card_drawing(draw, style: Dict[str, Any], html_text: str, scale: fl
                 w = size * 0.6
             x_curr += w
 
-def generate_background_pil(theme: str, custom_color: str, width: int, height: int, output_path: str):
+def generate_background_pil(theme: str, custom_color: str, width: int, height: int, output_path: str, bg_image_src: Optional[str] = None):
     img = Image.new("RGBA", (width, height), (0, 0, 0, 255))
     draw = ImageDraw.Draw(img)
+
+    # Imagen de fondo personalizada si el tema es 'image'
+    if theme == 'image' and bg_image_src:
+        try:
+            bg_pil = None
+            if bg_image_src.startswith('/uploads/'):
+                local_bg = os.path.join(uploads_dir, os.path.basename(bg_image_src))
+                if os.path.exists(local_bg):
+                    bg_pil = Image.open(local_bg).convert("RGBA")
+            elif bg_image_src.startswith('data:image'):
+                header, encoded = bg_image_src.split(',', 1)
+                img_data = base64.b64decode(encoded)
+                bg_pil = Image.open(io.BytesIO(img_data)).convert("RGBA")
+            elif os.path.exists(bg_image_src):
+                bg_pil = Image.open(bg_image_src).convert("RGBA")
+
+            if bg_pil:
+                bw, bh = bg_pil.size
+                scale_w = width / bw
+                scale_h = height / bh
+                scale_factor = max(scale_w, scale_h)
+                new_w = int(bw * scale_factor)
+                new_h = int(bh * scale_factor)
+                bg_resized = bg_pil.resize((new_w, new_h), Image.Resampling.LANCZOS)
+
+                left = (new_w - width) // 2
+                top = (new_h - height) // 2
+                img = bg_resized.crop((left, top, left + width, top + height))
+                img.save(output_path, "PNG")
+                print(f"[Python Exportador] Fondo de imagen generado con éxito: {output_path}")
+                return
+        except Exception as e:
+            print("[Python Exportador] Error procesando imagen de fondo:", e)
 
     # Simple fill
     if theme == 'custom':
@@ -419,7 +454,7 @@ async def export_video(request: Request):
         temp_output_video = os.path.join(CURRENT_DIR, "temp_output.mp4")
 
         # Generar fondos y capas usando PIL de forma ultra rÃ¡pida
-        generate_background_pil(data.get("theme"), data.get("customColor"), 720, 1280, temp_bg_path)
+        generate_background_pil(data.get("theme"), data.get("customColor"), 720, 1280, temp_bg_path, data.get("bgImageSrc"))
         generate_overlay_pil(data, scale, 720, 1280, temp_overlay_path)
         generate_mask_pil(dest_x, dest_y, dest_w, dest_h, r, 720, 1280, temp_mask_path)
 
