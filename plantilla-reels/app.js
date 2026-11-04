@@ -878,13 +878,15 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    muteBtn.addEventListener("click", () => {
-        if (!reelVideo) return;
-        reelVideo.muted = !reelVideo.muted;
-        muteBtn.innerHTML = reelVideo.muted 
-            ? '<i class="fa-solid fa-volume-xmark"></i> Silenciar' 
-            : '<i class="fa-solid fa-volume-high"></i> Sonido';
-    });
+    if (muteBtn) {
+        muteBtn.addEventListener("click", () => {
+            if (!reelVideo) return;
+            reelVideo.muted = !reelVideo.muted;
+            muteBtn.innerHTML = reelVideo.muted 
+                ? '<i class="fa-solid fa-volume-xmark"></i> Silenciar' 
+                : '<i class="fa-solid fa-volume-high"></i> Sonido';
+        });
+    }
 
     if (videoScrubber) {
         videoScrubber.addEventListener("input", (e) => {
@@ -1985,11 +1987,13 @@ document.addEventListener("DOMContentLoaded", () => {
         // Sincronizar controles multimedia si hay video
         if (currentTemplate.mediaType === "video") {
             if (playPauseBtn) playPauseBtn.disabled = false;
-            if (muteBtn) muteBtn.disabled = false;
+            if (muteBtn) {
+                muteBtn.disabled = false;
+                muteBtn.innerHTML = (reelVideo && reelVideo.muted) 
+                    ? '<i class="fa-solid fa-volume-xmark"></i> Silenciar' 
+                    : '<i class="fa-solid fa-volume-high"></i> Sonido';
+            }
             updatePlayPauseUI();
-            muteBtn.innerHTML = (reelVideo && reelVideo.muted) 
-                ? '<i class="fa-solid fa-volume-xmark"></i> Silenciar' 
-                : '<i class="fa-solid fa-volume-high"></i> Sonido';
         } else {
             if (playPauseBtn) playPauseBtn.disabled = true;
             if (muteBtn) muteBtn.disabled = true;
