@@ -1356,6 +1356,31 @@ document.addEventListener("DOMContentLoaded", () => {
         selectScreen(currentProject.activeScreenIndex);
     }
 
+    function deleteScreenByIndex(targetIndex) {
+        if (currentProject.screens.length <= 1) {
+            alert("Debes tener al menos una pantalla de teléfono en tu mesa de trabajo.");
+            return;
+        }
+
+        const idx = (typeof targetIndex === "number") ? targetIndex : currentProject.activeScreenIndex;
+        const screenName = currentProject.screens[idx]?.name || ("Pantalla " + (idx + 1));
+
+        if (!confirm("¿Seguro que deseas eliminar " + screenName + "?")) return;
+
+        currentProject.screens.splice(idx, 1);
+
+        // Ajustar el índice activo
+        if (currentProject.activeScreenIndex >= currentProject.screens.length) {
+            currentProject.activeScreenIndex = Math.max(0, currentProject.screens.length - 1);
+        } else if (idx < currentProject.activeScreenIndex) {
+            currentProject.activeScreenIndex = Math.max(0, currentProject.activeScreenIndex - 1);
+        }
+
+        renderScreens();
+        selectScreen(currentProject.activeScreenIndex);
+        saveTemplateQuietly();
+    }
+
     function renderScreens() {
         if (!simulatorPane) return;
         simulatorPane.innerHTML = "";
@@ -1371,7 +1396,12 @@ document.addEventListener("DOMContentLoaded", () => {
             wrapper.innerHTML = `
                 <div class="phone-header">
                     <span class="phone-title" contenteditable="true" id="phone-title-${index}" style="outline: none; cursor: text; display: inline-block; min-width: 80px; padding-right: 20px;">${screenData.name || 'Pantalla ' + (index + 1)}</span>
-                    <span class="drag-handle" title="Arrastra para reordenar"><i class="fa-solid fa-grip-vertical"></i></span>
+                    <div class="phone-header-actions">
+                        <button type="button" class="phone-delete-btn" data-index="${index}" title="Eliminar esta pantalla">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                        <span class="drag-handle" title="Arrastra para reordenar"><i class="fa-solid fa-grip-vertical"></i></span>
+                    </div>
                 </div>
                 <div class="phone-mockup ${index === currentProject.activeScreenIndex ? 'selected-phone' : ''}" data-index="${index}">
                     <div class="phone-screen">
@@ -1560,6 +1590,10 @@ document.addEventListener("DOMContentLoaded", () => {
             let dragAllowed = false;
             
             wrapper.addEventListener("mousedown", (e) => {
+                if (e.target.closest(".phone-delete-btn")) {
+                    dragAllowed = false;
+                    return;
+                }
                 if (e.target.closest(".phone-header") || e.target.closest(".drag-handle")) {
                     if (e.target.closest("[contenteditable='true']")) {
                         dragAllowed = false;
@@ -1660,6 +1694,16 @@ document.addEventListener("DOMContentLoaded", () => {
                 currentProject.screens[index].footerText = fText.innerHTML;
                 saveTemplateQuietly();
             });
+
+            // Botón eliminar pantalla en el encabezado
+            const pDeleteBtn = wrapper.querySelector(".phone-delete-btn");
+            if (pDeleteBtn) {
+                pDeleteBtn.addEventListener("click", (e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    deleteScreenByIndex(index);
+                });
+            }
 
             // Actualizar nombre de la pantalla
             const pTitle = document.getElementById(`phone-title-${index}`);
@@ -1961,22 +2005,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     deletePhoneBtn.addEventListener("click", () => {
-        if (currentProject.screens.length <= 1) {
-            alert("Debes tener al menos una pantalla de teléfono en tu mesa de trabajo.");
-            return;
-        }
-        
-        if (!confirm("¿Seguro que deseas eliminar la pantalla de teléfono seleccionada?")) return;
-        
-        const activeIdx = currentProject.activeScreenIndex;
-        currentProject.screens.splice(activeIdx, 1);
-        
-        // Ajustar el índice activo
-        currentProject.activeScreenIndex = Math.max(0, activeIdx - 1);
-        
-        renderScreens();
-        selectScreen(currentProject.activeScreenIndex);
-        saveTemplateQuietly();
+        deleteScreenByIndex(currentProject.activeScreenIndex);
     });
 
     // Auto-guíardado cada 30 segundos
