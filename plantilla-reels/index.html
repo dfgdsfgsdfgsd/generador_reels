@@ -79,15 +79,7 @@
 
                     <!-- Video o Imagen -->
                     <div class="control-group">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                            <label class="control-label" style="margin-bottom: 0;"><i class="fa-solid fa-video"></i> Video o Imagen</label>
-                            <div class="aspect-ratio-selector" id="aspect-ratio-selector">
-                                <button type="button" class="aspect-btn active" data-ratio="1:1" title="Cuadrado (1:1)">1:1</button>
-                                <button type="button" class="aspect-btn" data-ratio="4:5" title="Vertical Retrato (4:5)">4:5</button>
-                                <button type="button" class="aspect-btn" data-ratio="9:16" title="Vertical Completo (9:16)">9:16</button>
-                                <button type="button" class="aspect-btn" data-ratio="16:9" title="Horizontal (16:9)">16:9</button>
-                            </div>
-                        </div>
+                        <label class="control-label" style="margin-bottom: 6px;"><i class="fa-solid fa-video"></i> Video o Imagen</label>
                         <div class="file-upload-wrapper">
                             <label for="media-input" class="upload-btn">
                                 <i class="fa-solid fa-cloud-arrow-up"></i> Cargar Multimedia
@@ -328,6 +320,25 @@
                     <button type="button" id="center-block-btn" class="topbar-btn topbar-btn-accent" title="Centrar bloque seleccionado">
                         <i class="fa-solid fa-align-center"></i> Centrar Bloque
                     </button>
+                </div>
+
+                <!-- Selector de Proporción Multimedia Central -->
+                <div class="topbar-group topbar-center">
+                    <div class="topbar-aspect-wrapper">
+                        <span class="topbar-aspect-label">
+                            <i class="fa-solid fa-video"></i>
+                            <span class="topbar-aspect-text">
+                                <span>VIDEO O</span>
+                                <span>IMAGEN</span>
+                            </span>
+                        </span>
+                        <div class="aspect-ratio-selector" id="topbar-aspect-ratio-selector">
+                            <button type="button" class="aspect-btn active" data-ratio="1:1" title="Cuadrado (1:1)">1:1</button>
+                            <button type="button" class="aspect-btn" data-ratio="4:5" title="Vertical Retrato (4:5)">4:5</button>
+                            <button type="button" class="aspect-btn" data-ratio="9:16" title="Vertical Completo (9:16)">9:16</button>
+                            <button type="button" class="aspect-btn" data-ratio="16:9" title="Horizontal (16:9)">16:9</button>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="topbar-group topbar-right">

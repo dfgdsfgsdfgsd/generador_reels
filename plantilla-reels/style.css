@@ -2160,3 +2160,38 @@ emoji-picker.dark {
     aspect-ratio: 16 / 9 !important;
     width: calc(100% - 40px) !important;
 }
+
+/* Selector de Proporción Multimedia en Barra Superior */
+.topbar-center {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.topbar-aspect-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.topbar-aspect-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.65rem;
+    font-weight: 700;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+}
+
+.topbar-aspect-label i {
+    font-size: 0.85rem;
+    color: #cbd5e1;
+}
+
+.topbar-aspect-text {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.05;
+}
