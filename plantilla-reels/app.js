@@ -1121,16 +1121,27 @@ document.addEventListener("DOMContentLoaded", () => {
         if (!bgImageWrapper) return;
         const currentScreen = currentProject.screens[currentProject.activeScreenIndex];
         const hasBgImage = currentScreen && currentScreen.bgImageSrc;
+        const uploadLabel = bgImageWrapper.querySelector('label[for="bg-image-input"]');
+        const statusBadge = document.getElementById("bg-image-status-badge");
         
         if (hasBgImage) {
-            if (bgImageBtnText) bgImageBtnText.textContent = "Cambiar Foto de Fondo";
+            if (uploadLabel) uploadLabel.style.display = "none";
             if (bgImageActions) bgImageActions.style.display = "flex";
             if (bgImageThumb) {
                 bgImageThumb.style.backgroundImage = `url("${currentScreen.bgImageSrc}")`;
             }
+            if (statusBadge) {
+                statusBadge.textContent = "Activa";
+                statusBadge.style.color = "#10b981";
+            }
         } else {
+            if (uploadLabel) uploadLabel.style.display = "flex";
             if (bgImageBtnText) bgImageBtnText.textContent = "Subir Foto de Fondo";
             if (bgImageActions) bgImageActions.style.display = "none";
+            if (statusBadge) {
+                statusBadge.textContent = "(opcional)";
+                statusBadge.style.color = "#64748b";
+            }
         }
     }
 
@@ -1143,14 +1154,9 @@ document.addEventListener("DOMContentLoaded", () => {
         
         if (theme === "custom") {
             customColorWrapper.style.display = "block";
-            if (bgImageWrapper) bgImageWrapper.style.display = "none";
             reelCanvas.style.background = bgColorPicker.value;
         } else if (theme === "image") {
             customColorWrapper.style.display = "none";
-            if (bgImageWrapper) {
-                bgImageWrapper.style.display = "block";
-                updateBgImageUI();
-            }
             if (currentTemplate.bgImageSrc) {
                 reelCanvas.style.background = `url("${currentTemplate.bgImageSrc}") center/cover no-repeat`;
             } else {
@@ -1159,10 +1165,10 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         } else {
             customColorWrapper.style.display = "none";
-            if (bgImageWrapper) bgImageWrapper.style.display = "none";
             reelCanvas.classList.add(`theme-${theme}`);
             reelCanvas.style.background = "";
         }
+        updateBgImageUI();
         saveTemplateQuietly();
     });
 
@@ -1217,7 +1223,6 @@ document.addEventListener("DOMContentLoaded", () => {
             targetScreen.theme = "dark";
             themeSelect.value = "dark";
             if (customColorWrapper) customColorWrapper.style.display = "none";
-            if (bgImageWrapper) bgImageWrapper.style.display = "none";
             
             const canvas = document.getElementById(`reel-canvas-${targetIndex}`);
             if (canvas) {
@@ -2022,21 +2027,14 @@ document.addEventListener("DOMContentLoaded", () => {
         instagramOverlay = document.getElementById(`instagram-overlay-${index}`);
         
         // Sincronizar selectores del panel izquierdo
-        themeSelect.value = currentTemplate.theme;
+        themeSelect.value = currentTemplate.theme || "dark";
         if (currentTemplate.theme === "custom") {
             customColorWrapper.style.display = "block";
             bgColorPicker.value = currentTemplate.customColor || "#141414";
-            if (bgImageWrapper) bgImageWrapper.style.display = "none";
-        } else if (currentTemplate.theme === "image") {
-            customColorWrapper.style.display = "none";
-            if (bgImageWrapper) {
-                bgImageWrapper.style.display = "block";
-                updateBgImageUI();
-            }
         } else {
             customColorWrapper.style.display = "none";
-            if (bgImageWrapper) bgImageWrapper.style.display = "none";
         }
+        updateBgImageUI();
         
         fontTitleSelect.value = currentTemplate.fontTitle;
         toggleHeaderCard.checked = currentTemplate.showHeaderCard;
