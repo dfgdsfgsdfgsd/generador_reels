@@ -218,7 +218,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 // Límites de la pantalla del teléfono
                 top = Math.max(10, Math.min(canvas.offsetHeight - el.offsetHeight - 10, top));
                 if (key === 'media') {
-                    left = 20; // Bloquear arrastre horizontal para media
+                    left = Math.max(10, Math.round((canvas.offsetWidth - el.offsetWidth) / 2)); // Centrado horizontal
                 } else {
                     left = Math.max(10, Math.min(canvas.offsetWidth - el.offsetWidth - 10, left));
                 }
@@ -978,6 +978,30 @@ document.addEventListener("DOMContentLoaded", () => {
             updatePlayPauseUI();
         });
     }
+
+    
+    // Sincronizar botones de proporción de aspecto (1:1, 4:5, 9:16, 16:9)
+    function syncAspectRatioUI() {
+        const ratio = currentTemplate?.mediaRatio || "1:1";
+        document.querySelectorAll(".aspect-btn").forEach(btn => {
+            if (btn.dataset.ratio === ratio) {
+                btn.classList.add("active");
+            } else {
+                btn.classList.remove("active");
+            }
+        });
+    }
+
+    document.querySelectorAll(".aspect-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+            const ratio = btn.dataset.ratio;
+            if (!currentTemplate) return;
+            currentTemplate.mediaRatio = ratio;
+            applyScreenMedia(currentProject.activeScreenIndex);
+            syncAspectRatioUI();
+            saveTemplateQuietly();
+        });
+    });
 
     if (bottomUnfreezeBtn) {
         bottomUnfreezeBtn.addEventListener("click", () => {
@@ -1798,7 +1822,22 @@ document.addEventListener("DOMContentLoaded", () => {
         const video = document.getElementById(`reel-video-${index}`);
         const img = document.getElementById(`reel-img-${index}`);
         const placeholder = document.getElementById(`media-placeholder-${index}`);
+        const mCont = document.getElementById(`media-container-${index}`);
         if (!video || !img || !placeholder) return;
+
+        // Aplicar proporción seleccionada (1:1, 4:5, 9:16, 16:9)
+        if (mCont) {
+            const ratio = screenData.mediaRatio || "1:1";
+            mCont.classList.remove("ratio-1-1", "ratio-4-5", "ratio-9-16", "ratio-16-9");
+            const classMap = { "1:1": "ratio-1-1", "4:5": "ratio-4-5", "9:16": "ratio-9-16", "16:9": "ratio-16-9" };
+            mCont.classList.add(classMap[ratio] || "ratio-1-1");
+
+            const canvas = document.getElementById(`reel-canvas-${index}`);
+            if (canvas && mCont.offsetWidth > 0) {
+                const autoLeft = Math.max(10, Math.round((canvas.offsetWidth - mCont.offsetWidth) / 2));
+                mCont.style.left = autoLeft + "px";
+            }
+        }
         
         if (window.resetMediaZoom) window.resetMediaZoom(index);
 
@@ -3150,7 +3189,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // --- ZOOM LOGIC FOR MEDIA (Image/Video) ---
     (function setupMediaZoom() {
         const ZOOM_SPEED = 0.05;
-        const MIN_ZOOM = 0.5;
+        const MIN_ZOOM = 1.0; // Bloqueado a 1.0 para que el video nunca deje marcos negros vacíos
         const MAX_ZOOM = 3.0;
         
         // Guardar zooms temporalmente por indice
