@@ -1,4 +1,4 @@
-﻿:root {
+:root {
     --color-bg-app: #0f1012;
     --color-sidebar: #17191d;
     --color-border: #2c2f36;
@@ -2188,10 +2188,10 @@ emoji-picker.dark {
 }
 
 #aspect-dropdown-menu {
-    left: 50%;
+    left: 0;
     right: auto;
-    transform: translateX(-50%);
-    min-width: 200px;
+    min-width: 100%;
+    width: max-content;
 }
 
 .topbar-dropdown-item.aspect-btn {
