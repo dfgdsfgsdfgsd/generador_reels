@@ -719,26 +719,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
         if (hasVideo && vid && vid.paused && targetIndex === currentProject.activeScreenIndex) {
             indicator.innerHTML = '<i class="fa-solid fa-pause"></i>';
-            indicator.classList.remove("play-flash");
             indicator.classList.add("paused-visible");
         } else {
             indicator.classList.remove("paused-visible");
         }
-    }
-
-    function showPlayFlash(index) {
-        const targetIndex = index !== undefined ? index : currentProject.activeScreenIndex;
-        const indicator = document.getElementById(`video-indicator-${targetIndex}`);
-        if (!indicator) return;
-        indicator.innerHTML = '<i class="fa-solid fa-play"></i>';
-        indicator.classList.remove("paused-visible");
-        indicator.classList.remove("play-flash");
-        void indicator.offsetWidth;
-        indicator.classList.add("play-flash");
-        clearTimeout(indicator._timer);
-        indicator._timer = setTimeout(() => {
-            indicator.classList.remove("play-flash");
-        }, 450);
     }
 
     function updatePlayPauseUI() {
@@ -771,7 +755,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 syncTimelineControls();
             }
             reelVideo.play().then(() => {
-                showPlayFlash(currentProject.activeScreenIndex);
                 updatePlayPauseUI();
             }).catch(err => console.log("Play blocked / interrupted:", err));
         } else {
@@ -908,7 +891,6 @@ document.addEventListener("DOMContentLoaded", () => {
             syncTimelineControls();
             reelVideo.play().catch(() => {});
             updatePlayPauseUI();
-            showPlayFlash();
         });
     }
 
@@ -1005,7 +987,6 @@ document.addEventListener("DOMContentLoaded", () => {
             syncTimelineControls();
             reelVideo.play().catch(() => {});
             updatePlayPauseUI();
-            showPlayFlash();
         });
     }
 

@@ -1437,11 +1437,7 @@ emoji-picker.dark {
     transform: translate(-50%, -50%) scale(1);
 }
 
-/* Destello suave al reanudar */
-.video-play-indicator.play-flash {
-    opacity: 1;
-    transform: translate(-50%, -50%) scale(1.1);
-}
+
 
 /* Controles de línea de tiempo del sidebar */
 .video-timeline-wrapper {
