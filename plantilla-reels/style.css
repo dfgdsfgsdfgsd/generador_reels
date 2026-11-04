@@ -1054,6 +1054,8 @@ input[type="color"] {
     min-height: 1.45em;
     min-width: 60px;
     box-sizing: border-box;
+    user-select: text;
+    -webkit-user-select: text;
 }
 
 /* Placeholder visible cuando el contenido está vacío */

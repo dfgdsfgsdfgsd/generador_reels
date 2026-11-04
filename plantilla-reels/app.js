@@ -342,15 +342,19 @@ document.addEventListener("DOMContentLoaded", () => {
     // Utilidad para posicionar el cursor al final del texto editable
     function placeCaretAtEnd(el) {
         if (!el) return;
+        const sel = window.getSelection ? window.getSelection() : null;
+        if (sel && !sel.isCollapsed && sel.toString().length > 0) {
+            return; // Respetar la selección activa del usuario
+        }
         el.focus();
         if (typeof window.getSelection !== "undefined" && typeof document.createRange !== "undefined") {
             try {
                 const range = document.createRange();
                 range.selectNodeContents(el);
                 range.collapse(false);
-                const sel = window.getSelection();
-                sel.removeAllRanges();
-                sel.addRange(range);
+                const s = window.getSelection();
+                s.removeAllRanges();
+                s.addRange(range);
             } catch (err) {}
         }
     }
@@ -439,9 +443,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 // Si fue un clic simple sin arrastrar en la tarjeta de texto, enfocar el texto
                 if (!hasMoved && (key === 'header' || key === 'footer')) {
-                    const textEl = el.querySelector(".text-content");
-                    if (textEl && !upEvent?.target?.closest(".resize-handle")) {
-                        placeCaretAtEnd(textEl);
+                    const hasSelection = window.getSelection && !window.getSelection().isCollapsed && window.getSelection().toString().length > 0;
+                    if (!upEvent?.target?.closest(".resize-handle") && !upEvent?.target?.closest(".text-content") && !hasSelection) {
+                        const textEl = el.querySelector(".text-content");
+                        if (textEl) placeCaretAtEnd(textEl);
                     }
                 }
                 
@@ -2161,7 +2166,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 e.stopPropagation();
                 selectScreen(index);
                 selectCard("header");
-                if (!e.target.closest(".resize-handle")) {
+                const hasSelection = window.getSelection && !window.getSelection().isCollapsed && window.getSelection().toString().length > 0;
+                if (!e.target.closest(".resize-handle") && !e.target.closest(".text-content") && !hasSelection) {
                     const txt = hCard.querySelector(".text-content");
                     if (txt) placeCaretAtEnd(txt);
                 }
@@ -2170,7 +2176,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 e.stopPropagation();
                 selectScreen(index);
                 selectCard("footer");
-                if (!e.target.closest(".resize-handle")) {
+                const hasSelection = window.getSelection && !window.getSelection().isCollapsed && window.getSelection().toString().length > 0;
+                if (!e.target.closest(".resize-handle") && !e.target.closest(".text-content") && !hasSelection) {
                     const txt = fCard.querySelector(".text-content");
                     if (txt) placeCaretAtEnd(txt);
                 }
