@@ -2004,9 +2004,11 @@ document.addEventListener("DOMContentLoaded", () => {
         saveTemplateQuietly();
     });
 
-    deletePhoneBtn.addEventListener("click", () => {
-        deleteScreenByIndex(currentProject.activeScreenIndex);
-    });
+    if (deletePhoneBtn) {
+        deletePhoneBtn.addEventListener("click", () => {
+            deleteScreenByIndex(currentProject.activeScreenIndex);
+        });
+    }
 
     // Auto-guíardado cada 30 segundos
     setInterval(() => {
