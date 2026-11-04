@@ -175,6 +175,34 @@ document.addEventListener("DOMContentLoaded", () => {
     const toggleIgOverlay = document.getElementById("toggle-ig-overlay");
     const toggleHeaderCard = document.getElementById("toggle-header-card");
     const toggleFooterCard = document.getElementById("toggle-footer-card");
+    const sidebarHeaderInput = document.getElementById("sidebar-header-input");
+    const sidebarFooterInput = document.getElementById("sidebar-footer-input");
+
+    function htmlToPlainText(html) {
+        if (!html) return "";
+        let str = html.replace(/<br\s*[\/]?>/gi, "\n");
+        str = str.replace(/<\/div>/gi, "\n");
+        str = str.replace(/<\/p>/gi, "\n");
+        const doc = new DOMParser().parseFromString(str, "text/html");
+        return (doc.body.textContent || "").trim();
+    }
+
+    function plainTextToHtml(text) {
+        if (!text) return "";
+        const div = document.createElement("div");
+        div.textContent = text;
+        return div.innerHTML.replace(/\n/g, "<br>");
+    }
+
+    function updateSidebarTextInputs() {
+        if (!currentTemplate) return;
+        if (sidebarHeaderInput && document.activeElement !== sidebarHeaderInput) {
+            sidebarHeaderInput.value = htmlToPlainText(currentTemplate.headerText || "");
+        }
+        if (sidebarFooterInput && document.activeElement !== sidebarFooterInput) {
+            sidebarFooterInput.value = htmlToPlainText(currentTemplate.footerText || "");
+        }
+    }
 
     // Botones de gestión de pantallas
     const addPhoneBtn = document.getElementById("add-phone-btn");
@@ -1904,6 +1932,9 @@ document.addEventListener("DOMContentLoaded", () => {
                 hText.addEventListener("input", () => {
                     checkTextEmptyState(hText);
                     currentProject.screens[index].headerText = hText.innerHTML;
+                    if (index === currentProject.activeScreenIndex && sidebarHeaderInput && document.activeElement !== sidebarHeaderInput) {
+                        sidebarHeaderInput.value = htmlToPlainText(hText.innerHTML);
+                    }
                     saveTemplateQuietly();
                 });
             }
@@ -1912,6 +1943,9 @@ document.addEventListener("DOMContentLoaded", () => {
                 fText.addEventListener("input", () => {
                     checkTextEmptyState(fText);
                     currentProject.screens[index].footerText = fText.innerHTML;
+                    if (index === currentProject.activeScreenIndex && sidebarFooterInput && document.activeElement !== sidebarFooterInput) {
+                        sidebarFooterInput.value = htmlToPlainText(fText.innerHTML);
+                    }
                     saveTemplateQuietly();
                 });
             }
@@ -2070,6 +2104,7 @@ document.addEventListener("DOMContentLoaded", () => {
             selectCard("header");
         }
         syncAspectRatioUI();
+        updateSidebarTextInputs();
     }
 
     function applyScreenStyles(index) {
@@ -2521,6 +2556,40 @@ document.addEventListener("DOMContentLoaded", () => {
         toggleFooterCard.addEventListener("change", (e) => {
             currentTemplate.showFooterCard = e.target.checked;
             footerCard.style.display = e.target.checked ? "flex" : "none";
+            saveTemplateQuietly();
+        });
+    }
+
+    if (sidebarHeaderInput) {
+        sidebarHeaderInput.addEventListener("focus", () => {
+            selectCard("header");
+        });
+        sidebarHeaderInput.addEventListener("input", () => {
+            if (!currentTemplate) return;
+            const val = sidebarHeaderInput.value;
+            const htmlVal = plainTextToHtml(val);
+            currentTemplate.headerText = htmlVal;
+            if (headerTextEl) {
+                headerTextEl.innerHTML = htmlVal;
+                checkTextEmptyState(headerTextEl);
+            }
+            saveTemplateQuietly();
+        });
+    }
+
+    if (sidebarFooterInput) {
+        sidebarFooterInput.addEventListener("focus", () => {
+            selectCard("footer");
+        });
+        sidebarFooterInput.addEventListener("input", () => {
+            if (!currentTemplate) return;
+            const val = sidebarFooterInput.value;
+            const htmlVal = plainTextToHtml(val);
+            currentTemplate.footerText = htmlVal;
+            if (footerTextEl) {
+                footerTextEl.innerHTML = htmlVal;
+                checkTextEmptyState(footerTextEl);
+            }
             saveTemplateQuietly();
         });
     }

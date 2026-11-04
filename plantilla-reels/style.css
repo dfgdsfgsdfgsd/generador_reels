@@ -2228,3 +2228,20 @@ emoji-picker.dark {
     align-items: center;
     gap: 8px;
 }
+
+/* Textareas de edición directa en barra lateral */
+.sidebar-text-textarea {
+    resize: vertical;
+    min-height: 52px;
+    line-height: 1.45;
+    cursor: text !important;
+    font-family: inherit;
+    font-size: 0.82rem;
+    transition: border-color 0.15s, box-shadow 0.15s, background-color 0.15s;
+}
+
+.sidebar-text-textarea:focus {
+    border-color: var(--color-primary, #3b82f6) !important;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25);
+    background-color: #1e2227 !important;
+}
