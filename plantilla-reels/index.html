@@ -57,7 +57,7 @@
         <aside class="sidebar">
             <h1 class="sidebar-logo"><i class="fa-solid fa-clapperboard"></i> Reels Editor</h1>
             
-            <!-- Selector de Proyecto -->
+            <!-- Selector de Proyecto (fijo, no colapsa) -->
             <div class="control-group">
                 <label class="control-label">Plantilla Activa <span id="save-status" class="save-status"></span></label>
                 <div class="row-flex">
@@ -69,178 +69,217 @@
                 </div>
             </div>
 
-            <hr class="divider">
+            <!-- ========== SECCIÓN 1: MULTIMEDIA (abierta por defecto) ========== -->
+            <div class="sidebar-section open" data-section="multimedia">
+                <div class="sidebar-section-header">
+                    <span><i class="fa-solid fa-photo-film"></i> Multimedia</span>
+                    <i class="fa-solid fa-chevron-right chevron"></i>
+                </div>
+                <div class="sidebar-section-body">
 
-            <!-- Carga de Multimedia -->
-            <div class="control-group">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                    <label class="control-label" style="margin-bottom: 0;"><i class="fa-solid fa-video"></i> Video o Imagen</label>
-                    <div class="aspect-ratio-selector" id="aspect-ratio-selector">
-                        <button type="button" class="aspect-btn active" data-ratio="1:1" title="Cuadrado (1:1)">1:1</button>
-                        <button type="button" class="aspect-btn" data-ratio="4:5" title="Vertical Retrato (4:5)">4:5</button>
-                        <button type="button" class="aspect-btn" data-ratio="9:16" title="Vertical Completo (9:16)">9:16</button>
-                        <button type="button" class="aspect-btn" data-ratio="16:9" title="Horizontal (16:9)">16:9</button>
+                    <!-- Video o Imagen -->
+                    <div class="control-group">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                            <label class="control-label" style="margin-bottom: 0;"><i class="fa-solid fa-video"></i> Video o Imagen</label>
+                            <div class="aspect-ratio-selector" id="aspect-ratio-selector">
+                                <button type="button" class="aspect-btn active" data-ratio="1:1" title="Cuadrado (1:1)">1:1</button>
+                                <button type="button" class="aspect-btn" data-ratio="4:5" title="Vertical Retrato (4:5)">4:5</button>
+                                <button type="button" class="aspect-btn" data-ratio="9:16" title="Vertical Completo (9:16)">9:16</button>
+                                <button type="button" class="aspect-btn" data-ratio="16:9" title="Horizontal (16:9)">16:9</button>
+                            </div>
+                        </div>
+                        <div class="file-upload-wrapper">
+                            <label for="media-input" class="upload-btn">
+                                <i class="fa-solid fa-cloud-arrow-up"></i> Cargar Multimedia
+                            </label>
+                            <input type="file" id="media-input" accept="video/*,image/*" style="display: none;">
+                        </div>
+                        <div class="row-flex" style="margin-top: 8px;">
+                            <button id="mute-btn" class="action-btn text-btn" disabled><i class="fa-solid fa-volume-xmark"></i> Silenciar</button>
+                            <button id="edit-media-btn" class="action-btn text-btn" style="color: var(--color-accent); border-color: var(--color-accent);" disabled><i class="fa-solid fa-wand-magic-sparkles"></i> Editar</button>
+                        </div>
                     </div>
-                </div>
-                <div class="file-upload-wrapper">
-                    <label for="media-input" class="upload-btn">
-                        <i class="fa-solid fa-cloud-arrow-up"></i> Cargar Multimedia
-                    </label>
-                    <input type="file" id="media-input" accept="video/*,image/*" style="display: none;">
-                </div>
-                <div class="row-flex" style="margin-top: 8px;">
-                    <button id="mute-btn" class="action-btn text-btn" disabled><i class="fa-solid fa-volume-xmark"></i> Silenciar</button>
-                    <button id="edit-media-btn" class="action-btn text-btn" style="color: var(--color-accent); border-color: var(--color-accent);" disabled><i class="fa-solid fa-wand-magic-sparkles"></i> Editar</button>
-                </div>
-            </div>
 
-            <!-- Carga Unificada: Imágenes Flotantes (Logo / Sticker) -->
-            <div class="control-group">
-                <label class="control-label"><i class="fa-solid fa-images"></i> Imágenes Flotantes</label>
-                <div class="file-upload-wrapper">
-                    <label for="sticker-input" class="upload-btn" style="border-color: var(--color-accent); color: var(--color-accent); cursor: pointer;">
-                        <i class="fa-solid fa-cloud-arrow-up"></i> Cargar Imagen / Logo / Sticker
-                    </label>
-                    <input type="file" id="sticker-input" accept="image/png,image/jpeg" style="display: none;">
-                    <!-- Mantener logo-input oculto para compatibilidad interna -->
-                    <input type="file" id="logo-input" accept="image/png,image/jpeg" style="display: none;">
-                </div>
-                <div class="row-flex" style="margin-top: 8px;">
-                    <button id="edit-last-sticker-btn" class="action-btn text-btn" style="color: var(--color-accent); border-color: var(--color-accent);" disabled>
-                        <i class="fa-solid fa-wand-magic-sparkles"></i> Editar Pegatina
-                    </button>
-                    <button id="remove-logo-btn" class="action-btn text-btn" style="color: var(--color-danger); border-color: var(--color-danger); display: none;" disabled>
-                        <i class="fa-solid fa-trash"></i> Quitar Logo
-                    </button>
-                    <button id="edit-logo-btn" class="action-btn text-btn" style="color: var(--color-accent); border-color: var(--color-accent); display: none;" disabled>
-                        <i class="fa-solid fa-wand-magic-sparkles"></i> Editar Logo
-                    </button>
-                </div>
-            </div>
+                    <hr class="divider" style="margin: 10px 0;">
 
-            <!-- Estilo y Fondo -->
-            <div class="control-group">
-                <label class="control-label"><i class="fa-solid fa-palette"></i> Fondo del Reel</label>
-                <select id="theme-select" class="form-control">
-                    <option value="dark">Negro Profundo</option>
-                    <option value="light">Blanco Minimalista</option>
-                    <option value="neon">Neón Cyberpunk</option>
-                    <option value="gradient-sunset">Sunset Orange</option>
-                    <option value="gradient-forest">Deep Forest</option>
-                    <option value="custom">Personalizado (Color Liso)</option>
-                </select>
-                
-                <div id="custom-color-wrapper" class="color-picker-wrapper" style="display: none; margin-top: 10px;">
-                    <label for="bg-color-picker" style="font-size: 0.8rem; color: #ccc;">Elegir Color:</label>
-                    <input type="color" id="bg-color-picker" value="#141414">
-                </div>
-            </div>
-
-            <!-- Previsualizar Interfaz IG -->
-            <div class="control-group">
-                <label class="control-label" style="display: flex; align-items: center; gap: 8px; cursor: pointer; text-transform: none; font-size: 0.85rem; color: #ccc;">
-                    <input type="checkbox" id="toggle-ig-overlay" style="width: 16px; height: 16px; margin: 0; cursor: pointer;">
-                    <i class="fa-brands fa-instagram" style="font-size: 1.1rem; color: #e1306c;"></i> Ver Botones de Instagram
-                </label>
-            </div>
-
-            <!-- Visibilidad de Textos -->
-            <div class="control-group">
-                <label class="control-label"><i class="fa-solid fa-eye"></i> Visibilidad de Bloques</label>
-                <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 8px;">
-                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.85rem; color: #ccc;">
-                        <input type="checkbox" id="toggle-header-card" checked style="width: 16px; height: 16px; margin: 0; cursor: pointer;">
-                        Mostrar Título Superior
-                    </label>
-                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.85rem; color: #ccc;">
-                        <input type="checkbox" id="toggle-footer-card" checked style="width: 16px; height: 16px; margin: 0; cursor: pointer;">
-                        Mostrar Descripción Inferior
-                    </label>
-                </div>
-            </div>
-
-            <!-- Tipografía y Textos -->
-            <div class="control-group">
-                <label class="control-label"><i class="fa-solid fa-font"></i> Estilo de Texto</label>
-                            <!-- Colección Completa Desplegable de Emojis -->
-            <div class="control-group" id="emoji-control-group" style="position: relative;">
-                <label class="control-label"><i class="fa-regular fa-face-smile"></i> Colección de Emojis</label>
-                
-                <!-- Fila de Últimos Usados -->
-                <div class="recent-emojis-wrap" style="margin-bottom: 8px;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-                        <span class="sub-label" style="font-size: 0.72rem; color: #8c93a0;">Últimos Usados:</span>
+                    <!-- Imágenes Flotantes (Logo / Sticker) -->
+                    <div class="control-group">
+                        <label class="control-label"><i class="fa-solid fa-images"></i> Imágenes Flotantes</label>
+                        <div class="file-upload-wrapper">
+                            <label for="sticker-input" class="upload-btn" style="border-color: var(--color-accent); color: var(--color-accent); cursor: pointer;">
+                                <i class="fa-solid fa-cloud-arrow-up"></i> Cargar Imagen / Logo / Sticker
+                            </label>
+                            <input type="file" id="sticker-input" accept="image/png,image/jpeg" style="display: none;">
+                            <!-- Mantener logo-input oculto para compatibilidad interna -->
+                            <input type="file" id="logo-input" accept="image/png,image/jpeg" style="display: none;">
+                        </div>
+                        <div class="row-flex" style="margin-top: 8px;">
+                            <button id="edit-last-sticker-btn" class="action-btn text-btn" style="color: var(--color-accent); border-color: var(--color-accent);" disabled>
+                                <i class="fa-solid fa-wand-magic-sparkles"></i> Editar Pegatina
+                            </button>
+                            <button id="remove-logo-btn" class="action-btn text-btn" style="color: var(--color-danger); border-color: var(--color-danger); display: none;" disabled>
+                                <i class="fa-solid fa-trash"></i> Quitar Logo
+                            </button>
+                            <button id="edit-logo-btn" class="action-btn text-btn" style="color: var(--color-accent); border-color: var(--color-accent); display: none;" disabled>
+                                <i class="fa-solid fa-wand-magic-sparkles"></i> Editar Logo
+                            </button>
+                        </div>
                     </div>
-                    <div class="recent-emojis-bar" id="recent-emojis-bar">
-                        <!-- Generados dinámicamente -->
-                    </div>
-                </div>
 
-                <!-- Botón Desplegable para abrir la colección completa -->
-                <button type="button" id="toggle-emoji-picker-btn" class="action-btn text-btn" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 9px 12px; background: #232730; border-color: #3b4252; color: #e2e8f0; font-size: 0.85rem; font-weight: 600;">
-                    <i class="fa-solid fa-icons" style="color: var(--color-accent, #10b981);"></i> Colección Completa de Emojis <i class="fa-solid fa-chevron-down" id="emoji-chevron" style="font-size: 0.75rem; margin-left: auto;"></i>
-                </button>
-
-                <!-- Panel desplegable flotante con emoji-picker -->
-                <div id="emoji-picker-dropdown" class="emoji-dropdown-panel" style="display: none;">
-                    <div class="emoji-dropdown-header">
-                        <span><i class="fa-regular fa-face-smile"></i> Todos los Emojis</span>
-                        <button type="button" id="close-emoji-picker-btn" class="icon-btn-close">&times;</button>
-                    </div>
-                    <emoji-picker class="dark" locale="es"></emoji-picker>
                 </div>
             </div>
-                <div class="row-flex" style="margin-bottom: 8px;">
-                    <div style="flex: 1;">
-                        <label class="sub-label">Letra Título</label>
-                        <select id="font-title-select" class="form-control">
-                            <option value="'Montserrat', sans-serif">Montserrat Black</option>
-                            <option value="'Anton', sans-serif">Anton Retro</option>
-                            <option value="'Fredoka', sans-serif">Fredoka Kids</option>
-                            <option value="'Playfair Display', serif">Playfair Serif</option>
-                            <option value="'Caveat', cursive">Caveat Script</option>
-                            <option value="'Inter', sans-serif">Inter Modern</option>
+
+            <!-- ========== SECCIÓN 2: APARIENCIA ========== -->
+            <div class="sidebar-section" data-section="apariencia">
+                <div class="sidebar-section-header">
+                    <span><i class="fa-solid fa-palette"></i> Apariencia</span>
+                    <i class="fa-solid fa-chevron-right chevron"></i>
+                </div>
+                <div class="sidebar-section-body">
+
+                    <!-- Fondo del Reel -->
+                    <div class="control-group">
+                        <label class="control-label"><i class="fa-solid fa-fill-drip"></i> Fondo del Reel</label>
+                        <select id="theme-select" class="form-control">
+                            <option value="dark">Negro Profundo</option>
+                            <option value="light">Blanco Minimalista</option>
+                            <option value="neon">Neón Cyberpunk</option>
+                            <option value="gradient-sunset">Sunset Orange</option>
+                            <option value="gradient-forest">Deep Forest</option>
+                            <option value="custom">Personalizado (Color Liso)</option>
                         </select>
-                    </div>
-                </div>
-                
-                <div class="row-flex" style="margin-bottom: 8px;">
-                    <div style="flex: 1; display: flex; flex-direction: column; gap: 4px;">
-                        <span id="font-size-label" class="sub-label">Tamaño: Selecciona un bloque</span>
-                        <div class="slider-container">
-                            <button id="font-dec-btn" class="adjust-btn" disabled>-</button>
-                            <input type="range" id="font-size-slider" min="30" max="250" value="100" disabled>
-                            <button id="font-inc-btn" class="adjust-btn" disabled>+</button>
-                            <span id="font-size-val">100%</span>
+                        <div id="custom-color-wrapper" class="color-picker-wrapper" style="display: none; margin-top: 10px;">
+                            <label for="bg-color-picker" style="font-size: 0.8rem; color: #ccc;">Elegir Color:</label>
+                            <input type="color" id="bg-color-picker" value="#141414">
                         </div>
                     </div>
-                </div>
 
-                <div class="row-flex" style="margin-bottom: 8px;">
-                    <div style="flex: 1; display: flex; flex-direction: column; gap: 4px;">
-                        <span id="box-width-label" class="sub-label">Ancho de Caja: Selecciona un bloque</span>
-                        <div class="slider-container">
-                            <button id="width-dec-btn" class="adjust-btn" disabled>-</button>
-                            <input type="range" id="box-width-slider" min="30" max="100" value="85" disabled>
-                            <button id="width-inc-btn" class="adjust-btn" disabled>+</button>
-                            <span id="box-width-val">85%</span>
+                    <!-- Interfaz IG -->
+                    <div class="control-group">
+                        <label class="control-label" style="display: flex; align-items: center; gap: 8px; cursor: pointer; text-transform: none; font-size: 0.85rem; color: #ccc;">
+                            <input type="checkbox" id="toggle-ig-overlay" style="width: 16px; height: 16px; margin: 0; cursor: pointer;">
+                            <i class="fa-brands fa-instagram" style="font-size: 1.1rem; color: #e1306c;"></i> Ver Botones de Instagram
+                        </label>
+                    </div>
+
+                    <!-- Visibilidad de Bloques -->
+                    <div class="control-group">
+                        <label class="control-label"><i class="fa-solid fa-eye"></i> Visibilidad de Bloques</label>
+                        <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 8px;">
+                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.85rem; color: #ccc;">
+                                <input type="checkbox" id="toggle-header-card" checked style="width: 16px; height: 16px; margin: 0; cursor: pointer;">
+                                Mostrar Título Superior
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.85rem; color: #ccc;">
+                                <input type="checkbox" id="toggle-footer-card" checked style="width: 16px; height: 16px; margin: 0; cursor: pointer;">
+                                Mostrar Descripción Inferior
+                            </label>
                         </div>
                     </div>
-                </div>
 
-                <div class="row-flex" style="align-items: center; justify-content: space-around; margin-top: 8px;">
-                    <div class="picker-item">
-                        <label for="color-text-picker" class="picker-label">Texto</label>
-                        <input type="color" id="color-text-picker" value="#ffffff">
+                </div>
+            </div>
+
+            <!-- ========== SECCIÓN 3: TEXTO Y TIPOGRAFÍA ========== -->
+            <div class="sidebar-section" data-section="texto">
+                <div class="sidebar-section-header">
+                    <span><i class="fa-solid fa-font"></i> Texto y Tipografía</span>
+                    <i class="fa-solid fa-chevron-right chevron"></i>
+                </div>
+                <div class="sidebar-section-body">
+
+                    <div class="control-group">
+                        <div class="row-flex" style="margin-bottom: 8px;">
+                            <div style="flex: 1;">
+                                <label class="sub-label">Letra Título</label>
+                                <select id="font-title-select" class="form-control">
+                                    <option value="'Montserrat', sans-serif">Montserrat Black</option>
+                                    <option value="'Anton', sans-serif">Anton Retro</option>
+                                    <option value="'Fredoka', sans-serif">Fredoka Kids</option>
+                                    <option value="'Playfair Display', serif">Playfair Serif</option>
+                                    <option value="'Caveat', cursive">Caveat Script</option>
+                                    <option value="'Inter', sans-serif">Inter Modern</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="row-flex" style="margin-bottom: 8px;">
+                            <div style="flex: 1; display: flex; flex-direction: column; gap: 4px;">
+                                <span id="font-size-label" class="sub-label">Tamaño: Selecciona un bloque</span>
+                                <div class="slider-container">
+                                    <button id="font-dec-btn" class="adjust-btn" disabled>-</button>
+                                    <input type="range" id="font-size-slider" min="30" max="250" value="100" disabled>
+                                    <button id="font-inc-btn" class="adjust-btn" disabled>+</button>
+                                    <span id="font-size-val">100%</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row-flex" style="margin-bottom: 8px;">
+                            <div style="flex: 1; display: flex; flex-direction: column; gap: 4px;">
+                                <span id="box-width-label" class="sub-label">Ancho de Caja: Selecciona un bloque</span>
+                                <div class="slider-container">
+                                    <button id="width-dec-btn" class="adjust-btn" disabled>-</button>
+                                    <input type="range" id="box-width-slider" min="30" max="100" value="85" disabled>
+                                    <button id="width-inc-btn" class="adjust-btn" disabled>+</button>
+                                    <span id="box-width-val">85%</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row-flex" style="align-items: center; justify-content: space-around; margin-top: 8px;">
+                            <div class="picker-item">
+                                <label for="color-text-picker" class="picker-label">Texto</label>
+                                <input type="color" id="color-text-picker" value="#ffffff">
+                            </div>
+                            <div class="picker-item">
+                                <label for="color-box-picker" class="picker-label">Caja</label>
+                                <input type="color" id="color-box-picker" value="#000000">
+                            </div>
+                            <div class="picker-item">
+                                <label for="box-opacity-slider" class="picker-label">Opacidad</label>
+                                <input type="range" id="box-opacity-slider" min="0" max="100" value="85" style="width: 50px;">
+                            </div>
+                        </div>
                     </div>
-                    <div class="picker-item">
-                        <label for="color-box-picker" class="picker-label">Caja</label>
-                        <input type="color" id="color-box-picker" value="#000000">
+
+                </div>
+            </div>
+
+            <!-- ========== SECCIÓN 4: EMOJIS ========== -->
+            <div class="sidebar-section" data-section="emojis">
+                <div class="sidebar-section-header">
+                    <span><i class="fa-regular fa-face-smile"></i> Emojis</span>
+                    <i class="fa-solid fa-chevron-right chevron"></i>
+                </div>
+                <div class="sidebar-section-body">
+
+                    <div class="control-group" id="emoji-control-group" style="position: relative;">
+                        <!-- Fila de Últimos Usados -->
+                        <div class="recent-emojis-wrap" style="margin-bottom: 8px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                                <span class="sub-label" style="font-size: 0.72rem; color: #8c93a0;">Últimos Usados:</span>
+                            </div>
+                            <div class="recent-emojis-bar" id="recent-emojis-bar">
+                                <!-- Generados dinámicamente -->
+                            </div>
+                        </div>
+
+                        <!-- Botón Desplegable para abrir la colección completa -->
+                        <button type="button" id="toggle-emoji-picker-btn" class="action-btn text-btn" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 9px 12px; background: #232730; border-color: #3b4252; color: #e2e8f0; font-size: 0.85rem; font-weight: 600;">
+                            <i class="fa-solid fa-icons" style="color: var(--color-accent, #10b981);"></i> Colección Completa de Emojis <i class="fa-solid fa-chevron-down" id="emoji-chevron" style="font-size: 0.75rem; margin-left: auto;"></i>
+                        </button>
+
+                        <!-- Panel desplegable flotante con emoji-picker -->
+                        <div id="emoji-picker-dropdown" class="emoji-dropdown-panel" style="display: none;">
+                            <div class="emoji-dropdown-header">
+                                <span><i class="fa-regular fa-face-smile"></i> Todos los Emojis</span>
+                                <button type="button" id="close-emoji-picker-btn" class="icon-btn-close">&times;</button>
+                            </div>
+                            <emoji-picker class="dark" locale="es"></emoji-picker>
+                        </div>
                     </div>
-                    <div class="picker-item">
-                        <label for="box-opacity-slider" class="picker-label">Opacidad</label>
-                        <input type="range" id="box-opacity-slider" min="0" max="100" value="85" style="width: 50px;">
-                    </div>
+
                 </div>
             </div>
 

@@ -2052,6 +2052,38 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
+    // Control de acordeón en el panel lateral (secciones colapsables)
+    const sidebar = document.querySelector(".sidebar");
+    if (sidebar) {
+        sidebar.addEventListener("click", (e) => {
+            const header = e.target.closest(".sidebar-section-header");
+            if (!header) return;
+            const section = header.closest(".sidebar-section");
+            if (!section) return;
+
+            const isOpen = section.classList.toggle("open");
+
+            // Persistir estado en localStorage
+            try {
+                const sectionName = section.dataset.section;
+                if (sectionName) {
+                    localStorage.setItem(`sidebar_section_${sectionName}`, isOpen ? "open" : "closed");
+                }
+            } catch (err) {}
+        });
+
+        // Restaurar estado guardado desde localStorage
+        try {
+            document.querySelectorAll(".sidebar-section").forEach(sec => {
+                const name = sec.dataset.section;
+                if (!name) return;
+                const saved = localStorage.getItem(`sidebar_section_${name}`);
+                if (saved === "open") sec.classList.add("open");
+                else if (saved === "closed") sec.classList.remove("open");
+            });
+        } catch (err) {}
+    }
+
     // Auto-guíardado cada 30 segundos
     setInterval(() => {
         saveTemplateQuietly();
