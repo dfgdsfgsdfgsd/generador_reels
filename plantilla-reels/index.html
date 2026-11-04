@@ -126,21 +126,27 @@
                 </div>
                 <div class="sidebar-section-body">
 
-                    <!-- Fondo del Reel -->
+                    <!-- Temas Preestablecidos -->
                     <div class="control-group">
-                        <label class="control-label"><i class="fa-solid fa-fill-drip"></i> Fondo del Reel</label>
+                        <label class="control-label"><i class="fa-solid fa-fill-drip"></i> Temas Preestablecidos</label>
                         <select id="theme-select" class="form-control">
                             <option value="dark">Negro Profundo</option>
                             <option value="light">Blanco Minimalista</option>
                             <option value="neon">Neón Cyberpunk</option>
                             <option value="gradient-sunset">Sunset Orange</option>
                             <option value="gradient-forest">Deep Forest</option>
-                            <option value="custom">Personalizado (Color Liso)</option>
-                            <option value="image">Fotografía / Imagen de Fondo</option>
+                            <option value="custom" style="display: none;">Personalizado (Color Liso)</option>
                         </select>
-                        <div id="custom-color-wrapper" class="color-picker-wrapper" style="display: none; margin-top: 10px;">
-                            <label for="bg-color-picker" style="font-size: 0.8rem; color: #ccc;">Elegir Color:</label>
-                            <input type="color" id="bg-color-picker" value="#141414">
+                    </div>
+
+                    <!-- Color Personalizado (Opción Independiente) -->
+                    <div class="control-group" style="margin-top: 12px;">
+                        <label class="control-label"><i class="fa-solid fa-palette"></i> Color Personalizado</label>
+                        <div id="custom-color-wrapper" class="color-picker-wrapper" style="display: flex; align-items: center; justify-content: space-between; background: rgba(255, 255, 255, 0.03); padding: 8px 12px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.08);">
+                            <span id="bg-color-hex" style="font-family: monospace; font-size: 0.8rem; color: #94a3b8; font-weight: 600;">#141414</span>
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <input type="color" id="bg-color-picker" value="#141414" style="cursor: pointer; width: 34px; height: 34px; border: none; border-radius: 6px; padding: 0; background: transparent;">
+                            </div>
                         </div>
                     </div>
 

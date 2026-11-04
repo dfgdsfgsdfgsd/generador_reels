@@ -138,6 +138,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const themeSelect = document.getElementById("theme-select");
     const customColorWrapper = document.getElementById("custom-color-wrapper");
     const bgColorPicker = document.getElementById("bg-color-picker");
+    const bgColorHex = document.getElementById("bg-color-hex");
     const bgImageWrapper = document.getElementById("bg-image-wrapper");
     const bgImageInput = document.getElementById("bg-image-input");
     const bgImageBtnText = document.getElementById("bg-image-btn-text");
@@ -1152,10 +1153,8 @@ document.addEventListener("DOMContentLoaded", () => {
         reelCanvas.className = "reel-canvas";
         
         if (theme === "custom") {
-            customColorWrapper.style.display = "block";
-            reelCanvas.style.background = bgColorPicker.value;
+            reelCanvas.style.background = bgColorPicker ? bgColorPicker.value : (currentTemplate.customColor || "#141414");
         } else if (theme === "image") {
-            customColorWrapper.style.display = "none";
             if (currentTemplate.bgImageSrc) {
                 reelCanvas.style.background = `url("${currentTemplate.bgImageSrc}") center/cover no-repeat`;
             } else {
@@ -1163,7 +1162,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 reelCanvas.style.background = "";
             }
         } else {
-            customColorWrapper.style.display = "none";
             reelCanvas.classList.add(`theme-${theme}`);
             reelCanvas.style.background = "";
         }
@@ -1242,11 +1240,21 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    bgColorPicker.addEventListener("input", (e) => {
-        currentTemplate.customColor = e.target.value;
-        reelCanvas.style.background = e.target.value;
-        saveTemplateQuietly();
-    });
+    if (bgColorPicker) {
+        bgColorPicker.addEventListener("input", (e) => {
+            const val = e.target.value;
+            currentTemplate.theme = "custom";
+            currentTemplate.customColor = val;
+            if (bgColorHex) bgColorHex.textContent = val;
+            
+            // Aplicar color liso y limpiar clases de tema preestablecido
+            reelCanvas.className = "reel-canvas";
+            reelCanvas.style.background = val;
+            
+            if (themeSelect) themeSelect.value = "custom";
+            saveTemplateQuietly();
+        });
+    }
 
     // FUENTE Y COLORES DE TEXTO INDIVIDUALES
     fontTitleSelect.addEventListener("change", (e) => {
@@ -2051,11 +2059,10 @@ document.addEventListener("DOMContentLoaded", () => {
         
         // Sincronizar selectores del panel izquierdo
         themeSelect.value = currentTemplate.theme || "dark";
-        if (currentTemplate.theme === "custom") {
-            customColorWrapper.style.display = "block";
-            bgColorPicker.value = currentTemplate.customColor || "#141414";
-        } else {
-            customColorWrapper.style.display = "none";
+        if (bgColorPicker) {
+            const hexColor = currentTemplate.customColor || "#141414";
+            bgColorPicker.value = hexColor;
+            if (bgColorHex) bgColorHex.textContent = hexColor;
         }
         updateBgImageUI();
         
