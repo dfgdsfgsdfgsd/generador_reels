@@ -2525,6 +2525,56 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
+
+    // Sincronización y alternancia de Disposición / Layout (Opción 2)
+    function syncLayoutButtonsUI() {
+        const screenData = currentProject.screens[currentProject.activeScreenIndex];
+        const isDual = screenData && screenData.layout === "split_dual";
+        const btnSingle = document.getElementById("layout-btn-single");
+        const btnDual = document.getElementById("layout-btn-dual");
+        const indicator = document.getElementById("layout-indicator");
+
+        if (btnSingle) btnSingle.classList.toggle("active", !isDual);
+        if (btnDual) btnDual.classList.toggle("active", isDual);
+        if (indicator) indicator.textContent = isDual ? "2 Videos (Doble)" : "1 Video (Estándar)";
+    }
+
+    function switchActiveScreenLayout(targetLayout) {
+        const screenData = currentProject.screens[currentProject.activeScreenIndex];
+        if (!screenData || screenData.layout === targetLayout) return;
+
+        screenData.layout = targetLayout;
+        if (!screenData.positions) screenData.positions = {};
+
+        if (targetLayout === "split_dual") {
+            screenData.positions.media = { top: "15px", left: "20px" };
+            screenData.positions.header = { top: "345px", left: "20px" };
+            screenData.positions.mediaBottom = { top: "415px", left: "20px" };
+            screenData.showHeaderCard = true;
+            screenData.showFooterCard = false;
+        } else {
+            screenData.positions.media = { top: "160px", left: "20px" };
+            screenData.positions.header = { top: "40px", left: "20px" };
+            screenData.positions.footer = { top: "490px", left: "20px" };
+            screenData.showHeaderCard = true;
+            screenData.showFooterCard = true;
+        }
+
+        renderScreens();
+        selectScreen(currentProject.activeScreenIndex);
+        syncLayoutButtonsUI();
+        saveTemplateQuietly();
+    }
+
+    const layoutBtnSingle = document.getElementById("layout-btn-single");
+    if (layoutBtnSingle) {
+        layoutBtnSingle.addEventListener("click", () => switchActiveScreenLayout("standard"));
+    }
+    const layoutBtnDual = document.getElementById("layout-btn-dual");
+    if (layoutBtnDual) {
+        layoutBtnDual.addEventListener("click", () => switchActiveScreenLayout("split_dual"));
+    }
+
     function selectScreen(index) {
         if (index < 0 || index >= currentProject.screens.length) return;
         currentProject.activeScreenIndex = index;

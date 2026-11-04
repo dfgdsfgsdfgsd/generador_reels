@@ -2298,3 +2298,42 @@ emoji-picker.dark {
     color: #60a5fa !important;
     font-weight: 600 !important;
 }
+
+/* SELECTOR DE DISPOSICIÓN (LAYOUT) OPCIÓN 2 */
+.layout-toggle-group {
+    display: flex;
+    gap: 6px;
+    background: #1e2229;
+    padding: 3px;
+    border-radius: 8px;
+    border: 1px solid var(--color-border);
+}
+
+.layout-btn {
+    flex: 1;
+    border: 1px solid transparent;
+    background: transparent;
+    color: #94a3b8;
+    padding: 7px 10px;
+    border-radius: 6px;
+    font-size: 0.76rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    transition: all 0.15s ease;
+}
+
+.layout-btn:hover {
+    color: #f1f5f9;
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.layout-btn.active {
+    background: var(--color-primary);
+    color: #ffffff;
+    border-color: var(--color-primary);
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4);
+}
