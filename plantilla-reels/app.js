@@ -441,12 +441,17 @@ document.addEventListener("DOMContentLoaded", () => {
                 document.removeEventListener("mouseup", onMouseUp);
                 saveTemplateQuietly();
 
-                // Si fue un clic simple sin arrastrar en la tarjeta de texto, enfocar el texto
+                // Si fue un clic simple sin arrastrar en la tarjeta de texto
                 if (!hasMoved && (key === 'header' || key === 'footer')) {
                     const hasSelection = window.getSelection && !window.getSelection().isCollapsed && window.getSelection().toString().length > 0;
                     if (!upEvent?.target?.closest(".resize-handle") && !upEvent?.target?.closest(".text-content") && !hasSelection) {
+                        if (document.activeElement && document.activeElement !== document.body) {
+                            document.activeElement.blur();
+                        }
                         const textEl = el.querySelector(".text-content");
-                        if (textEl) placeCaretAtEnd(textEl);
+                        if (textEl && (!textEl.textContent.trim() || textEl.getAttribute("data-empty") === "true")) {
+                            placeCaretAtEnd(textEl);
+                        }
                     }
                 }
                 
@@ -1116,6 +1121,147 @@ document.addEventListener("DOMContentLoaded", () => {
                 togglePlayPause();
             }
         }
+    });
+
+    // Función para desplazar la caja activa con precisión
+    function shiftActiveCard(dx, dy) {
+        const screenIdx = (currentProject && typeof currentProject.activeScreenIndex === "number") 
+            ? currentProject.activeScreenIndex 
+            : 0;
+        const screenData = currentProject?.screens?.[screenIdx] || currentTemplate;
+        if (!screenData) return;
+
+        let key = activeCardKey || "header";
+        // Si la caja seleccionada está oculta, reubicar a una visible
+        if (key === "header" && screenData.showHeaderCard === false) {
+            if (screenData.showFooterCard !== false) key = "footer";
+            else key = "media";
+        } else if (key === "footer" && screenData.showFooterCard === false) {
+            if (screenData.showHeaderCard !== false) key = "header";
+            else key = "media";
+        }
+
+        let targetEl = null;
+        if (key === "header") {
+            targetEl = document.getElementById(`header-card-${screenIdx}`) || headerCard;
+        } else if (key === "footer") {
+            targetEl = document.getElementById(`footer-card-${screenIdx}`) || footerCard;
+        } else if (key === "logo") {
+            targetEl = document.getElementById(`logo-card-${screenIdx}`) || logoCard;
+        } else if (key === "media") {
+            targetEl = document.getElementById(`media-container-${screenIdx}`) || mediaContainer;
+        } else if (key.startsWith("sticker_")) {
+            const sIdx = parseInt(key.split('_')[1], 10);
+            targetEl = document.getElementById(`sticker-card-${screenIdx}-${sIdx}`);
+        }
+
+        if (!targetEl || targetEl.style.display === "none") return;
+
+        const canvas = document.getElementById(`reel-canvas-${screenIdx}`) || reelCanvas;
+        if (!canvas) return;
+
+        // Asegurar que la caja tenga el borde visual de selección activo
+        if (!targetEl.classList.contains("card-selected-highlight")) {
+            selectCard(key);
+        }
+
+        let currentTop = parseFloat(targetEl.style.top);
+        if (isNaN(currentTop)) currentTop = targetEl.offsetTop;
+        
+        let currentLeft = parseFloat(targetEl.style.left);
+        if (isNaN(currentLeft)) currentLeft = targetEl.offsetLeft;
+
+        let newTop = currentTop + dy;
+        let newLeft = currentLeft + dx;
+
+        // Límites de la pantalla del teléfono
+        newTop = Math.max(10, Math.min(canvas.offsetHeight - targetEl.offsetHeight - 10, newTop));
+
+        if (key === 'header' || key === 'footer') {
+            newLeft = 20; // Alineado y centrado fijo
+        } else if (key === 'media') {
+            newLeft = Math.max(10, Math.round((canvas.offsetWidth - targetEl.offsetWidth) / 2));
+        } else {
+            newLeft = Math.max(10, Math.min(canvas.offsetWidth - targetEl.offsetWidth - 10, newLeft));
+        }
+
+        targetEl.style.top = Math.round(newTop) + "px";
+        targetEl.style.left = Math.round(newLeft) + "px";
+        targetEl.style.bottom = "auto";
+
+        if (key.startsWith('sticker_')) {
+            const sIdx = parseInt(key.split('_')[1], 10);
+            if (screenData.stickers && screenData.stickers[sIdx]) {
+                screenData.stickers[sIdx].top = Math.round(newTop) + "px";
+                screenData.stickers[sIdx].left = Math.round(newLeft) + "px";
+            }
+        } else {
+            if (!screenData.positions) screenData.positions = {};
+            screenData.positions[key] = {
+                top: Math.round(newTop) + "px",
+                left: (key === 'header' || key === 'footer') ? "20px" : Math.round(newLeft) + "px"
+            };
+        }
+
+        if (currentTemplate) {
+            if (!currentTemplate.positions) currentTemplate.positions = {};
+            currentTemplate.positions[key] = {
+                top: Math.round(newTop) + "px",
+                left: (key === 'header' || key === 'footer') ? "20px" : Math.round(newLeft) + "px"
+            };
+        }
+
+        saveTemplateQuietly();
+    }
+
+    // Tecla Escape para salir de edición de texto y habilitar movimiento con flechas
+    document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") {
+            if (document.activeElement && document.activeElement !== document.body) {
+                document.activeElement.blur();
+            }
+        }
+    });
+
+    // Atajo de teclado: Flechas de dirección para deslazar cajas activas (arriba, abajo, izq, der)
+    document.addEventListener("keydown", (e) => {
+        const arrowKeys = ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"];
+        if (!arrowKeys.includes(e.key)) return;
+
+        // No desplazar si hay un modal de edición de sticker activo
+        const stickerEditor = document.getElementById("sticker-editor-overlay");
+        if (stickerEditor && (stickerEditor.classList.contains("active") || stickerEditor.style.display === "flex")) {
+            return;
+        }
+
+        const active = document.activeElement;
+        const isEditable = active && (
+            active.tagName === "INPUT" || 
+            active.tagName === "TEXTAREA" || 
+            active.tagName === "SELECT" || 
+            active.isContentEditable || 
+            Boolean(active.closest && active.closest("[contenteditable='true']"))
+        );
+
+        // Si está escribiendo dentro del texto editable, no interferir con las flechas de escritura
+        // a menos que mantenga pulsado Alt (atajo intencional de posicionamiento)
+        if (isEditable && !e.altKey) return;
+
+        e.preventDefault(); // Prevenir scroll nativo del navegador
+
+        let step = 5; // Desplazamiento base suave
+        if (e.shiftKey) step = 15; // Desplazamiento rápido con Shift
+        else if (e.altKey && !isEditable) step = 1; // Micro-ajuste milimétrico con Alt
+
+        let dx = 0;
+        let dy = 0;
+
+        if (e.key === "ArrowUp") dy = -step;
+        else if (e.key === "ArrowDown") dy = step;
+        else if (e.key === "ArrowLeft") dx = -step;
+        else if (e.key === "ArrowRight") dx = step;
+
+        shiftActiveCard(dx, dy);
     });
 
     // Listeners para la barra flotante de reproducción inferior
@@ -2175,8 +2321,13 @@ document.addEventListener("DOMContentLoaded", () => {
                 selectCard("header");
                 const hasSelection = window.getSelection && !window.getSelection().isCollapsed && window.getSelection().toString().length > 0;
                 if (!e.target.closest(".resize-handle") && !e.target.closest(".text-content") && !hasSelection) {
+                    if (document.activeElement && document.activeElement !== document.body) {
+                        document.activeElement.blur();
+                    }
                     const txt = hCard.querySelector(".text-content");
-                    if (txt) placeCaretAtEnd(txt);
+                    if (txt && (!txt.textContent.trim() || txt.getAttribute("data-empty") === "true")) {
+                        placeCaretAtEnd(txt);
+                    }
                 }
             });
             fCard.addEventListener("click", (e) => {
@@ -2185,8 +2336,13 @@ document.addEventListener("DOMContentLoaded", () => {
                 selectCard("footer");
                 const hasSelection = window.getSelection && !window.getSelection().isCollapsed && window.getSelection().toString().length > 0;
                 if (!e.target.closest(".resize-handle") && !e.target.closest(".text-content") && !hasSelection) {
+                    if (document.activeElement && document.activeElement !== document.body) {
+                        document.activeElement.blur();
+                    }
                     const txt = fCard.querySelector(".text-content");
-                    if (txt) placeCaretAtEnd(txt);
+                    if (txt && (!txt.textContent.trim() || txt.getAttribute("data-empty") === "true")) {
+                        placeCaretAtEnd(txt);
+                    }
                 }
             });
             // mCont click y selección ya se manejan limpiamente en setupDraggable
