@@ -2229,10 +2229,12 @@ emoji-picker.dark {
     gap: 8px;
 }
 
-/* Textareas de edición directa en barra lateral */
+/* Textareas de edición directa en barra lateral con auto-expansión sin scroll */
 .sidebar-text-textarea {
-    resize: vertical;
-    min-height: 52px;
+    resize: none !important;
+    overflow-y: hidden !important;
+    box-sizing: border-box !important;
+    min-height: 44px;
     line-height: 1.45;
     cursor: text !important;
     font-family: inherit;

@@ -194,13 +194,24 @@ document.addEventListener("DOMContentLoaded", () => {
         return div.innerHTML.replace(/\n/g, "<br>");
     }
 
+    function autoResizeTextarea(el) {
+        if (!el) return;
+        el.style.height = "auto";
+        if (el.scrollHeight > 0) {
+            const border = el.offsetHeight - el.clientHeight;
+            el.style.height = Math.max(42, el.scrollHeight + border) + "px";
+        }
+    }
+
     function updateSidebarTextInputs() {
         if (!currentTemplate) return;
         if (sidebarHeaderInput && document.activeElement !== sidebarHeaderInput) {
             sidebarHeaderInput.value = htmlToPlainText(currentTemplate.headerText || "");
+            autoResizeTextarea(sidebarHeaderInput);
         }
         if (sidebarFooterInput && document.activeElement !== sidebarFooterInput) {
             sidebarFooterInput.value = htmlToPlainText(currentTemplate.footerText || "");
+            autoResizeTextarea(sidebarFooterInput);
         }
     }
 
@@ -212,6 +223,8 @@ document.addEventListener("DOMContentLoaded", () => {
     // CARGA INICIAL
     initProjects();
     loadTemplateData("default");
+    if (sidebarHeaderInput) autoResizeTextarea(sidebarHeaderInput);
+    if (sidebarFooterInput) autoResizeTextarea(sidebarFooterInput);
 
     function adjustMockupScale() {
         // Handled directly by CSS scale(0.75) within .phone-wrapper
@@ -1934,6 +1947,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     currentProject.screens[index].headerText = hText.innerHTML;
                     if (index === currentProject.activeScreenIndex && sidebarHeaderInput && document.activeElement !== sidebarHeaderInput) {
                         sidebarHeaderInput.value = htmlToPlainText(hText.innerHTML);
+                        autoResizeTextarea(sidebarHeaderInput);
                     }
                     saveTemplateQuietly();
                 });
@@ -1945,6 +1959,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     currentProject.screens[index].footerText = fText.innerHTML;
                     if (index === currentProject.activeScreenIndex && sidebarFooterInput && document.activeElement !== sidebarFooterInput) {
                         sidebarFooterInput.value = htmlToPlainText(fText.innerHTML);
+                        autoResizeTextarea(sidebarFooterInput);
                     }
                     saveTemplateQuietly();
                 });
@@ -2576,6 +2591,7 @@ document.addEventListener("DOMContentLoaded", () => {
             selectCard("header");
         });
         sidebarHeaderInput.addEventListener("input", () => {
+            autoResizeTextarea(sidebarHeaderInput);
             if (!currentTemplate) return;
             const val = sidebarHeaderInput.value;
             const htmlVal = plainTextToHtml(val);
@@ -2593,6 +2609,7 @@ document.addEventListener("DOMContentLoaded", () => {
             selectCard("footer");
         });
         sidebarFooterInput.addEventListener("input", () => {
+            autoResizeTextarea(sidebarFooterInput);
             if (!currentTemplate) return;
             const val = sidebarFooterInput.value;
             const htmlVal = plainTextToHtml(val);
