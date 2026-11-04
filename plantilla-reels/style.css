@@ -2276,3 +2276,19 @@ emoji-picker.dark {
 .preview-toggle-item:hover {
     background: rgba(255, 255, 255, 0.08);
 }
+
+/* Desplegable de Temas Preestablecidos con muestra de color */
+.theme-dropdown-item {
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.theme-dropdown-item:hover {
+    background-color: rgba(255, 255, 255, 0.08) !important;
+    color: #ffffff !important;
+}
+
+.theme-dropdown-item.active {
+    background-color: rgba(59, 130, 246, 0.2) !important;
+    color: #60a5fa !important;
+    font-weight: 600 !important;
+}

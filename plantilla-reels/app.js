@@ -1166,8 +1166,77 @@ document.addEventListener("DOMContentLoaded", () => {
             reelCanvas.style.background = "";
         }
         updateBgImageUI();
+        syncThemeDropdownUI(theme);
         saveTemplateQuietly();
     });
+
+    const PRESET_THEMES = {
+        "dark": { label: "Negro Profundo (#141619)", bg: "#141619" },
+        "light": { label: "Blanco Minimalista (#FAFAFA)", bg: "#fafafa" },
+        "neon": { label: "Neón Cyberpunk (Púrpura)", bg: "linear-gradient(135deg, #0b001a 0%, #1a0033 100%)" },
+        "gradient-sunset": { label: "Sunset Orange (Degradado)", bg: "linear-gradient(180deg, #ff5e62 0%, #ff9966 100%)" },
+        "gradient-forest": { label: "Deep Forest (Degradado)", bg: "linear-gradient(180deg, #11998e 0%, #38ef7d 100%)" },
+        "custom": { label: "Color Personalizado", bg: "#141414" },
+        "image": { label: "Foto de Fondo", bg: "#1a1d24" }
+    };
+
+    function syncThemeDropdownUI(theme) {
+        const triggerLabel = document.getElementById("theme-dropdown-current-label");
+        const triggerSwatch = document.getElementById("theme-dropdown-current-swatch");
+        if (!triggerLabel || !triggerSwatch) return;
+
+        if (theme === "custom") {
+            const hex = currentTemplate ? (currentTemplate.customColor || (bgColorPicker ? bgColorPicker.value : "#141414")) : "#141414";
+            triggerLabel.textContent = `Personalizado (${hex.toUpperCase()})`;
+            triggerSwatch.style.background = hex;
+        } else if (theme === "image") {
+            triggerLabel.textContent = "Foto de Fondo";
+            if (currentTemplate && currentTemplate.bgImageSrc) {
+                triggerSwatch.style.background = `url("${currentTemplate.bgImageSrc}") center/cover no-repeat`;
+            } else {
+                triggerSwatch.style.background = "#141619";
+            }
+        } else {
+            const preset = PRESET_THEMES[theme] || PRESET_THEMES["dark"];
+            triggerLabel.textContent = preset.label;
+            triggerSwatch.style.background = preset.bg;
+        }
+
+        document.querySelectorAll(".theme-dropdown-item").forEach(item => {
+            item.classList.toggle("active", item.dataset.value === theme);
+        });
+    }
+
+    const themeDropdown = document.getElementById("theme-dropdown");
+    const themeDropdownTrigger = document.getElementById("theme-dropdown-trigger");
+    const themeDropdownMenu = document.getElementById("theme-dropdown-menu");
+
+    if (themeDropdownTrigger && themeDropdownMenu) {
+        themeDropdownTrigger.addEventListener("click", (e) => {
+            e.stopPropagation();
+            const isOpen = themeDropdownMenu.style.display === "flex";
+            themeDropdownMenu.style.display = isOpen ? "none" : "flex";
+        });
+
+        document.querySelectorAll(".theme-dropdown-item").forEach(item => {
+            item.addEventListener("click", (e) => {
+                e.stopPropagation();
+                const val = item.dataset.value;
+                themeDropdownMenu.style.display = "none";
+                if (themeSelect) {
+                    themeSelect.value = val;
+                    themeSelect.dispatchEvent(new Event("change"));
+                }
+                syncThemeDropdownUI(val);
+            });
+        });
+
+        document.addEventListener("click", (e) => {
+            if (themeDropdown && !themeDropdown.contains(e.target)) {
+                themeDropdownMenu.style.display = "none";
+            }
+        });
+    }
 
     if (bgImageInput) {
         bgImageInput.addEventListener("change", async (e) => {
@@ -1191,6 +1260,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         canvas.style.background = `url("${compressedBase64}") center/cover no-repeat`;
                     }
                     updateBgImageUI();
+        syncThemeDropdownUI(currentTemplate.theme);
                     saveTemplateQuietly();
                 };
                 reader.readAsDataURL(file);
@@ -1227,6 +1297,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 canvas.style.background = "";
             }
             updateBgImageUI();
+        syncThemeDropdownUI(currentTemplate.theme);
             saveTemplateQuietly();
         });
     }
@@ -1252,6 +1323,7 @@ document.addEventListener("DOMContentLoaded", () => {
             reelCanvas.style.background = val;
             
             if (themeSelect) themeSelect.value = "custom";
+            syncThemeDropdownUI("custom");
             saveTemplateQuietly();
         });
     }
@@ -1311,6 +1383,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 reelCanvas.className = "reel-canvas";
                 reelCanvas.style.background = hex;
                 if (themeSelect) themeSelect.value = "custom";
+                syncThemeDropdownUI("custom");
                 saveTemplateQuietly();
             });
 
@@ -2161,6 +2234,7 @@ document.addEventListener("DOMContentLoaded", () => {
             if (bgColorHex) bgColorHex.textContent = hexColor;
         }
         updateBgImageUI();
+        syncThemeDropdownUI(currentTemplate.theme);
         
         fontTitleSelect.value = currentTemplate.fontTitle;
         toggleHeaderCard.checked = currentTemplate.showHeaderCard;

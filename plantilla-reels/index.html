@@ -129,14 +129,50 @@
                     <!-- Temas Preestablecidos -->
                     <div class="control-group">
                         <label class="control-label"><i class="fa-solid fa-fill-drip"></i> Temas Preestablecidos</label>
-                        <select id="theme-select" class="form-control">
-                            <option value="dark">Negro Profundo</option>
-                            <option value="light">Blanco Minimalista</option>
+                        <!-- Selector nativo oculto para mantener compatibilidad interna total -->
+                        <select id="theme-select" style="display: none;">
+                            <option value="dark">Negro Profundo (#141619)</option>
+                            <option value="light">Blanco Minimalista (#FAFAFA)</option>
                             <option value="neon">Neón Cyberpunk</option>
                             <option value="gradient-sunset">Sunset Orange</option>
                             <option value="gradient-forest">Deep Forest</option>
-                            <option value="custom" style="display: none;">Personalizado (Color Liso)</option>
+                            <option value="custom">Personalizado (Color Liso)</option>
                         </select>
+
+                        <!-- Desplegable Visual con Muestra de Color a la Derecha -->
+                        <div class="theme-dropdown" id="theme-dropdown" style="position: relative; width: 100%;">
+                            <button type="button" class="form-control" id="theme-dropdown-trigger" style="display: flex; align-items: center; justify-content: space-between; cursor: pointer; text-align: left; padding: 7px 10px; width: 100%;">
+                                <div style="display: flex; align-items: center; gap: 8px; overflow: hidden;">
+                                    <span id="theme-dropdown-current-label" style="font-weight: 500; font-size: 0.82rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Negro Profundo (#141619)</span>
+                                </div>
+                                <div style="display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
+                                    <span id="theme-dropdown-current-swatch" style="width: 22px; height: 22px; border-radius: 5px; background: #141619; border: 1px solid rgba(255,255,255,0.25); display: inline-block;"></span>
+                                    <i class="fa-solid fa-chevron-down" style="font-size: 0.7rem; color: #94a3b8;"></i>
+                                </div>
+                            </button>
+                            <div class="theme-dropdown-menu" id="theme-dropdown-menu" style="display: none; position: absolute; top: calc(100% + 4px); left: 0; right: 0; background: #1a1d24; border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.6); z-index: 1000; padding: 5px; flex-direction: column; gap: 3px;">
+                                <button type="button" class="theme-dropdown-item" data-value="dark" style="display: flex; align-items: center; justify-content: space-between; padding: 8px 10px; border-radius: 6px; border: none; background: transparent; color: #e2e8f0; font-size: 0.8rem; cursor: pointer; text-align: left; width: 100%;">
+                                    <span>Negro Profundo <small style="color: #94a3b8;">(#141619)</small></span>
+                                    <span style="width: 22px; height: 22px; border-radius: 5px; background: #141619; border: 1px solid rgba(255,255,255,0.3); flex-shrink: 0;"></span>
+                                </button>
+                                <button type="button" class="theme-dropdown-item" data-value="light" style="display: flex; align-items: center; justify-content: space-between; padding: 8px 10px; border-radius: 6px; border: none; background: transparent; color: #e2e8f0; font-size: 0.8rem; cursor: pointer; text-align: left; width: 100%;">
+                                    <span>Blanco Minimalista <small style="color: #94a3b8;">(#FAFAFA)</small></span>
+                                    <span style="width: 22px; height: 22px; border-radius: 5px; background: #fafafa; border: 1px solid rgba(255,255,255,0.3); flex-shrink: 0;"></span>
+                                </button>
+                                <button type="button" class="theme-dropdown-item" data-value="neon" style="display: flex; align-items: center; justify-content: space-between; padding: 8px 10px; border-radius: 6px; border: none; background: transparent; color: #e2e8f0; font-size: 0.8rem; cursor: pointer; text-align: left; width: 100%;">
+                                    <span>Neón Cyberpunk <small style="color: #94a3b8;">(Púrpura)</small></span>
+                                    <span style="width: 22px; height: 22px; border-radius: 5px; background: linear-gradient(135deg, #0b001a 0%, #1a0033 100%); border: 1px solid rgba(255,255,255,0.3); flex-shrink: 0;"></span>
+                                </button>
+                                <button type="button" class="theme-dropdown-item" data-value="gradient-sunset" style="display: flex; align-items: center; justify-content: space-between; padding: 8px 10px; border-radius: 6px; border: none; background: transparent; color: #e2e8f0; font-size: 0.8rem; cursor: pointer; text-align: left; width: 100%;">
+                                    <span>Sunset Orange <small style="color: #94a3b8;">(Degradado)</small></span>
+                                    <span style="width: 22px; height: 22px; border-radius: 5px; background: linear-gradient(180deg, #ff5e62 0%, #ff9966 100%); border: 1px solid rgba(255,255,255,0.3); flex-shrink: 0;"></span>
+                                </button>
+                                <button type="button" class="theme-dropdown-item" data-value="gradient-forest" style="display: flex; align-items: center; justify-content: space-between; padding: 8px 10px; border-radius: 6px; border: none; background: transparent; color: #e2e8f0; font-size: 0.8rem; cursor: pointer; text-align: left; width: 100%;">
+                                    <span>Deep Forest <small style="color: #94a3b8;">(Degradado)</small></span>
+                                    <span style="width: 22px; height: 22px; border-radius: 5px; background: linear-gradient(180deg, #11998e 0%, #38ef7d 100%); border: 1px solid rgba(255,255,255,0.3); flex-shrink: 0;"></span>
+                                </button>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- Color Personalizado (Opción Independiente) -->
