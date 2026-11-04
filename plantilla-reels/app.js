@@ -23,7 +23,7 @@ document.addEventListener("DOMContentLoaded", () => {
              .replace(/DISE[ÃÂ‘'O\s]*O DE REEL/gi, 'DISEÑO DE REEL')
              .replace(/DISE[ÃÂ‘'O\s]*O/g, 'DISEÑO')
              .replace(/T[ÃÂ\w\W]*?TULO DE GANCHO/gi, 'TÍTULO DE GANCHO')
-             .replace(/S[ÃÂ\s]*guenos/gi, 'Síguenos')
+             .replace(/S[^\w\s\d]*guenos/gi, 'Síguenos')
              .replace(/m[ÃÂ\s]*s consejos/gi, 'más consejos')
              .replace(/volar[ÃÂ\s]*\s*la cabeza/gi, 'volará la cabeza')
              .replace(/DISEÃ‘O/g, 'DISEÑO')
@@ -185,7 +185,7 @@ document.addEventListener("DOMContentLoaded", () => {
         str = str.replace(/<\/div>/gi, "\n");
         str = str.replace(/<\/p>/gi, "\n");
         const doc = new DOMParser().parseFromString(str, "text/html");
-        return (doc.body.textContent || "").trim();
+        return cleanAllMojibakeAndComments((doc.body.textContent || "").trim());
     }
 
     function plainTextToHtml(text) {
@@ -213,6 +213,36 @@ document.addEventListener("DOMContentLoaded", () => {
         if (sidebarFooterInput && document.activeElement !== sidebarFooterInput) {
             sidebarFooterInput.value = htmlToPlainText(currentTemplate.footerText || "");
             autoResizeTextarea(sidebarFooterInput);
+        }
+    }
+
+    function syncTextBlocksVisibilityUI() {
+        if (!currentTemplate) return;
+        const showHeader = currentTemplate.showHeaderCard !== false;
+        const showFooter = currentTemplate.showFooterCard !== false;
+
+        const headerGroup = document.getElementById("sidebar-header-group");
+        const footerGroup = document.getElementById("sidebar-footer-group");
+        const inputsGroup = document.getElementById("sidebar-text-inputs-group");
+        const targetHeaderBtn = document.querySelector('.card-target-btn[data-target="header"]');
+        const targetFooterBtn = document.querySelector('.card-target-btn[data-target="footer"]');
+        const targetSelector = document.querySelector('.card-target-selector');
+
+        if (headerGroup) headerGroup.style.display = showHeader ? "" : "none";
+        if (footerGroup) footerGroup.style.display = showFooter ? "" : "none";
+        if (inputsGroup) inputsGroup.style.display = (showHeader || showFooter) ? "" : "none";
+
+        if (targetHeaderBtn) targetHeaderBtn.style.display = showHeader ? "" : "none";
+        if (targetFooterBtn) targetFooterBtn.style.display = showFooter ? "" : "none";
+        if (targetSelector) targetSelector.style.display = (showHeader || showFooter) ? "" : "none";
+
+        // Redirigir el bloque seleccionado si el actual se ocultó
+        if (activeCardKey === "header" && !showHeader) {
+            if (showFooter) selectCard("footer");
+            else selectCard("media");
+        } else if (activeCardKey === "footer" && !showFooter) {
+            if (showHeader) selectCard("header");
+            else selectCard("media");
         }
     }
 
@@ -2315,12 +2345,19 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         });
 
-        // Sincronizar tarjeta seleccionada (default a header si no hay una activa)
-        if (activeCardKey && (activeCardKey === "header" || activeCardKey === "footer")) {
-            selectCard(activeCardKey);
+        // Sincronizar tarjeta seleccionada (respetando visibilidad de bloques)
+        let targetKeyToSelect = "header";
+        if (currentTemplate.showHeaderCard && currentTemplate.showFooterCard) {
+            targetKeyToSelect = (activeCardKey === "footer") ? "footer" : "header";
+        } else if (currentTemplate.showHeaderCard) {
+            targetKeyToSelect = "header";
+        } else if (currentTemplate.showFooterCard) {
+            targetKeyToSelect = "footer";
         } else {
-            selectCard("header");
+            targetKeyToSelect = "media";
         }
+        selectCard(targetKeyToSelect);
+        syncTextBlocksVisibilityUI();
         syncAspectRatioUI();
         updateSidebarTextInputs();
     }
@@ -2777,7 +2814,9 @@ document.addEventListener("DOMContentLoaded", () => {
     if (toggleHeaderCard) {
         toggleHeaderCard.addEventListener("change", (e) => {
             currentTemplate.showHeaderCard = e.target.checked;
-            headerCard.style.display = e.target.checked ? "flex" : "none";
+            if (headerCard) headerCard.style.display = e.target.checked ? "flex" : "none";
+            syncTextBlocksVisibilityUI();
+            updateSidebarTextInputs();
             saveTemplateQuietly();
         });
     }
@@ -2785,7 +2824,9 @@ document.addEventListener("DOMContentLoaded", () => {
     if (toggleFooterCard) {
         toggleFooterCard.addEventListener("change", (e) => {
             currentTemplate.showFooterCard = e.target.checked;
-            footerCard.style.display = e.target.checked ? "flex" : "none";
+            if (footerCard) footerCard.style.display = e.target.checked ? "flex" : "none";
+            syncTextBlocksVisibilityUI();
+            updateSidebarTextInputs();
             saveTemplateQuietly();
         });
     }
