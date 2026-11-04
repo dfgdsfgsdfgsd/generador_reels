@@ -322,21 +322,27 @@
                     </button>
                 </div>
 
-                <!-- Selector de Proporción Multimedia Central -->
+                <!-- Menú Desplegable de Proporción Multimedia Central -->
                 <div class="topbar-group topbar-center">
-                    <div class="topbar-aspect-wrapper">
-                        <span class="topbar-aspect-label">
-                            <i class="fa-solid fa-video"></i>
-                            <span class="topbar-aspect-text">
-                                <span>VIDEO O</span>
-                                <span>IMAGEN</span>
-                            </span>
-                        </span>
-                        <div class="aspect-ratio-selector" id="topbar-aspect-ratio-selector">
-                            <button type="button" class="aspect-btn active" data-ratio="1:1" title="Cuadrado (1:1)">1:1</button>
-                            <button type="button" class="aspect-btn" data-ratio="4:5" title="Vertical Retrato (4:5)">4:5</button>
-                            <button type="button" class="aspect-btn" data-ratio="9:16" title="Vertical Completo (9:16)">9:16</button>
-                            <button type="button" class="aspect-btn" data-ratio="16:9" title="Horizontal (16:9)">16:9</button>
+                    <div class="topbar-dropdown" id="aspect-dropdown">
+                        <button type="button" class="topbar-btn topbar-btn-secondary" id="aspect-dropdown-trigger" title="Cambiar formato del video o imagen">
+                            <i class="fa-solid fa-video" style="color: var(--color-accent, #818cf8);"></i>
+                            <span>Formato: <strong id="aspect-dropdown-current">1:1 (Cuadrado)</strong></span>
+                            <i class="fa-solid fa-chevron-down" style="font-size: 0.68rem; margin-left: 3px;"></i>
+                        </button>
+                        <div class="topbar-dropdown-menu" id="aspect-dropdown-menu">
+                            <button type="button" class="topbar-dropdown-item aspect-btn active" data-ratio="1:1" title="Cuadrado (1:1)">
+                                <span class="ratio-item-left"><i class="fa-regular fa-square"></i> 1:1 &bull; Cuadrado</span>
+                            </button>
+                            <button type="button" class="topbar-dropdown-item aspect-btn" data-ratio="4:5" title="Vertical Retrato (4:5)">
+                                <span class="ratio-item-left"><i class="fa-solid fa-mobile"></i> 4:5 &bull; Retrato</span>
+                            </button>
+                            <button type="button" class="topbar-dropdown-item aspect-btn" data-ratio="9:16" title="Vertical Completo (9:16)">
+                                <span class="ratio-item-left"><i class="fa-solid fa-mobile-screen"></i> 9:16 &bull; Vertical Reel</span>
+                            </button>
+                            <button type="button" class="topbar-dropdown-item aspect-btn" data-ratio="16:9" title="Horizontal (16:9)">
+                                <span class="ratio-item-left"><i class="fa-solid fa-display"></i> 16:9 &bull; Horizontal</span>
+                            </button>
                         </div>
                     </div>
                 </div>

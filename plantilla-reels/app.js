@@ -1040,6 +1040,16 @@ document.addEventListener("DOMContentLoaded", () => {
                 btn.classList.remove("active");
             }
         });
+        const currentLabelEl = document.getElementById("aspect-dropdown-current");
+        if (currentLabelEl) {
+            const labelMap = {
+                "1:1": "1:1 (Cuadrado)",
+                "4:5": "4:5 (Retrato)",
+                "9:16": "9:16 (Vertical)",
+                "16:9": "16:9 (Horizontal)"
+            };
+            currentLabelEl.textContent = labelMap[ratio] || ratio;
+        }
     }
 
     document.querySelectorAll(".aspect-btn").forEach(btn => {
@@ -2059,6 +2069,7 @@ document.addEventListener("DOMContentLoaded", () => {
         } else {
             selectCard("header");
         }
+        syncAspectRatioUI();
     }
 
     function applyScreenStyles(index) {
@@ -2232,12 +2243,45 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // Control del menú desplegable de exportación
+    const aspectDropdownTrigger = document.getElementById("aspect-dropdown-trigger");
+    const aspectDropdownMenu = document.getElementById("aspect-dropdown-menu");
+
+    if (aspectDropdownTrigger && aspectDropdownMenu) {
+        aspectDropdownTrigger.addEventListener("click", (e) => {
+            e.stopPropagation();
+            if (exportDropdownMenu) {
+                exportDropdownMenu.classList.remove("open");
+                if (exportDropdownTrigger) exportDropdownTrigger.classList.remove("open");
+            }
+            const isOpen = aspectDropdownMenu.classList.toggle("open");
+            aspectDropdownTrigger.classList.toggle("open", isOpen);
+        });
+
+        aspectDropdownMenu.querySelectorAll(".topbar-dropdown-item").forEach(item => {
+            item.addEventListener("click", () => {
+                aspectDropdownMenu.classList.remove("open");
+                aspectDropdownTrigger.classList.remove("open");
+            });
+        });
+
+        document.addEventListener("click", (e) => {
+            if (!aspectDropdownTrigger.contains(e.target) && !aspectDropdownMenu.contains(e.target)) {
+                aspectDropdownMenu.classList.remove("open");
+                aspectDropdownTrigger.classList.remove("open");
+            }
+        });
+    }
+
     const exportDropdownTrigger = document.getElementById("export-dropdown-trigger");
     const exportDropdownMenu = document.getElementById("export-dropdown-menu");
 
     if (exportDropdownTrigger && exportDropdownMenu) {
         exportDropdownTrigger.addEventListener("click", (e) => {
             e.stopPropagation();
+            if (aspectDropdownMenu) {
+                aspectDropdownMenu.classList.remove("open");
+                if (aspectDropdownTrigger) aspectDropdownTrigger.classList.remove("open");
+            }
             const isOpen = exportDropdownMenu.classList.toggle("open");
             exportDropdownTrigger.classList.toggle("open", isOpen);
         });
