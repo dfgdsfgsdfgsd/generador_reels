@@ -1953,18 +1953,16 @@ document.addEventListener("DOMContentLoaded", () => {
             showHeaderCard: true,
             showFooterCard: false,
             showInstagramOverlay: false,
-            headerText: index === 0
-                ? "🔥 <strong>COMPARATIVA / REACCIÓN</strong><br>Video 1 vs Video 2"
-                : `🔥 <strong>DISEÑO DOBLE ${index + 1}</strong>`,
+            headerText: `🔥 <strong>DISEÑO DOBLE ${index + 1}</strong>`,
             footerText: "👇 <strong>Comenta aquí abajo</strong> 🚀",
             fontSizes: {
                 header: 95,
                 footer: 95
             },
             positions: {
-                media: { top: "15px", left: "20px" },
-                header: { top: "345px", left: "20px" },
-                mediaBottom: { top: "415px", left: "20px" },
+                media: { top: "20px", left: "20px" },
+                header: { top: "295px", left: "20px" },
+                mediaBottom: { top: "360px", left: "20px" },
                 footer: { top: "580px", left: "20px" },
                 logo: { top: "150px", left: "140px" }
             },
@@ -2164,7 +2162,7 @@ document.addEventListener("DOMContentLoaded", () => {
 }">
                             
                             <!-- Bloque de texto superior -->
-                            <div class="text-card drag-el" id="header-card-${index}" style="top: ${screenData.positions?.header?.top || '40px'}; left: 20px; width: calc(100% - 40px); display: ${screenData.showHeaderCard ? 'flex' : 'none'}; height: ${screenData.styles?.header?.height ? screenData.styles.header.height + 'px' : 'auto'};">
+                            <div class="text-card drag-el" id="header-card-${index}" style="top: ${screenData.positions?.header?.top || (screenData.layout === 'split_dual' ? '295px' : '40px')}; left: 20px; width: calc(100% - 40px); display: ${screenData.showHeaderCard ? 'flex' : 'none'}; height: ${screenData.styles?.header?.height ? screenData.styles.header.height + 'px' : 'auto'};">
                                 <div class="text-content" contenteditable="true" id="header-text-${index}" data-placeholder="Escribe el título aquí...">
                                     ${screenData.headerText || ''}
                                 </div>
@@ -2175,7 +2173,7 @@ document.addEventListener("DOMContentLoaded", () => {
                             </div>
 
                             <!-- Bloque de video 1:1 (Superior) -->
-                            <div class="media-container" id="media-container-${index}" data-media-target="top" style="top: ${screenData.positions?.media?.top || (screenData.layout === 'split_dual' ? '15px' : '160px')}; left: ${screenData.positions?.media?.left || '20px'};">
+                            <div class="media-container" id="media-container-${index}" data-media-target="top" style="top: ${screenData.positions?.media?.top || (screenData.layout === 'split_dual' ? '20px' : '160px')}; left: ${screenData.positions?.media?.left || '20px'};">
                                 <video id="reel-video-${index}" loop muted playsinline style="display: none;"></video>
                                 <img id="reel-img-${index}" src="" alt="Previsualización" style="display: none;">
                                 <div class="media-placeholder" id="media-placeholder-${index}">
@@ -2187,7 +2185,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
                             ${screenData.layout === 'split_dual' ? `
                             <!-- Bloque de video 1:1 (Inferior) para segundo video -->
-                            <div class="media-container media-bottom-container" id="media-container-bottom-${index}" data-media-target="bottom" style="top: ${screenData.positions?.mediaBottom?.top || '415px'}; left: ${screenData.positions?.mediaBottom?.left || '20px'};">
+                            <div class="media-container media-bottom-container" id="media-container-bottom-${index}" data-media-target="bottom" style="top: ${screenData.positions?.mediaBottom?.top || '360px'}; left: ${screenData.positions?.mediaBottom?.left || '20px'};">
                                 <video id="reel-video-bottom-${index}" loop muted playsinline style="display: none;"></video>
                                 <img id="reel-img-bottom-${index}" src="" alt="Previsualización" style="display: none;">
                                 <div class="media-placeholder" id="media-placeholder-bottom-${index}">
@@ -2596,11 +2594,14 @@ document.addEventListener("DOMContentLoaded", () => {
         if (!screenData.positions) screenData.positions = {};
 
         if (targetLayout === "split_dual") {
-            screenData.positions.media = { top: "15px", left: "20px" };
-            screenData.positions.header = { top: "345px", left: "20px" };
-            screenData.positions.mediaBottom = { top: "415px", left: "20px" };
+            screenData.positions.media = { top: "20px", left: "20px" };
+            screenData.positions.header = { top: "295px", left: "20px" };
+            screenData.positions.mediaBottom = { top: "360px", left: "20px" };
             screenData.showHeaderCard = true;
             screenData.showFooterCard = false;
+            if (!screenData.headerText || screenData.headerText.includes("TÍTULO DE GANCHO") || screenData.headerText.includes("COMPARATIVA")) {
+                screenData.headerText = `🔥 <strong>DISEÑO DOBLE ${currentProject.activeScreenIndex + 1}</strong>`;
+            }
         } else {
             screenData.positions.media = { top: "160px", left: "20px" };
             screenData.positions.header = { top: "40px", left: "20px" };
@@ -2966,7 +2967,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // LISTENER DE GESTIÓN DE PANTALLAS (AÑADIR, DUPLICAR, ELIMINAR)
     addPhoneBtn.addEventListener("click", () => {
-        const isDual = currentProject.screens.some(s => s.layout === "split_dual");
+        const activeScreen = currentProject.screens[currentProject.activeScreenIndex];
+        const isDual = activeScreen ? (activeScreen.layout === "split_dual") : currentProject.screens.some(s => s.layout === "split_dual");
         const newScreen = isDual 
             ? createDualVideoScreen(currentProject.screens.length) 
             : createDefaultScreen(currentProject.screens.length);
