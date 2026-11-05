@@ -151,6 +151,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const bgImageThumb = document.getElementById("bg-image-thumb");
     const changeBgImageBtn = document.getElementById("change-bg-image-btn");
     const removeBgImageBtn = document.getElementById("remove-bg-image-btn");
+    const bgEffectGroup = document.getElementById("bg-effect-group");
+    const bgEffectSelect = document.getElementById("bg-effect-select");
     
     const fontTitleSelect = document.getElementById("font-title-select");
     const fontSizeSlider = document.getElementById("font-size-slider");
@@ -1442,6 +1444,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 statusBadge.textContent = "Activa";
                 statusBadge.style.color = "#10b981";
             }
+            if (bgEffectGroup) bgEffectGroup.style.display = "block";
         } else {
             if (uploadLabel) uploadLabel.style.display = "flex";
             if (bgImageBtnText) bgImageBtnText.textContent = "Subir Foto de Fondo";
@@ -1450,6 +1453,10 @@ document.addEventListener("DOMContentLoaded", () => {
                 statusBadge.textContent = "(opcional)";
                 statusBadge.style.color = "#64748b";
             }
+            if (bgEffectGroup) bgEffectGroup.style.display = "none";
+        }
+        if (bgEffectSelect && currentScreen) {
+            bgEffectSelect.value = currentScreen.bgEffect || "none";
         }
     }
 
@@ -1478,6 +1485,26 @@ document.addEventListener("DOMContentLoaded", () => {
         saveTemplateQuietly();
     });
 
+    if (bgEffectSelect) {
+        bgEffectSelect.addEventListener("change", (e) => {
+            const effect = e.target.value;
+            const currentScreen = currentProject.screens[currentProject.activeScreenIndex];
+            if (currentScreen) {
+                currentScreen.bgEffect = effect;
+            }
+            currentTemplate.bgEffect = effect;
+            const index = currentProject.activeScreenIndex;
+            const canvas = document.getElementById(`reel-canvas-${index}`);
+            if (canvas) {
+                canvas.classList.remove("bg-effect-kenburns", "bg-effect-pulse", "bg-effect-water");
+                if (effect && effect !== "none") {
+                    canvas.classList.add(`bg-effect-${effect}`);
+                }
+            }
+            saveTemplateQuietly();
+        });
+    }
+
     if (bgImageInput) {
         bgImageInput.addEventListener("change", async (e) => {
             const file = e.target.files[0];
@@ -1496,7 +1523,8 @@ document.addEventListener("DOMContentLoaded", () => {
                     
                     const canvas = document.getElementById(`reel-canvas-${targetIndex}`);
                     if (canvas) {
-                        canvas.className = "reel-canvas";
+                        const effect = targetScreen.bgEffect || "none";
+                        canvas.className = `reel-canvas ${effect !== 'none' ? 'bg-effect-' + effect : ''}`;
                         canvas.style.background = `url("${compressedBase64}") center/cover no-repeat`;
                     }
                     updateBgImageUI();
@@ -2159,7 +2187,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 </div>
                 <div class="phone-mockup ${index === currentProject.activeScreenIndex ? 'selected-phone' : ''}" data-index="${index}">
                     <div class="phone-screen">
-                        <div class="reel-canvas theme-${screenData.theme}" id="reel-canvas-${index}" style="${
+                        <div class="reel-canvas theme-${screenData.theme} ${screenData.bgEffect && screenData.bgEffect !== 'none' ? 'bg-effect-' + screenData.bgEffect : ''}" id="reel-canvas-${index}" style="${
     screenData.theme === 'custom' 
         ? 'background: ' + screenData.customColor 
         : (screenData.theme === 'image' && screenData.bgImageSrc ? 'background: url(' + screenData.bgImageSrc + ') center/cover no-repeat;' : '')
@@ -3209,10 +3237,12 @@ document.addEventListener("DOMContentLoaded", () => {
             logToServer("[Grabador] Solicitando procesamiento FFmpeg...");
             recordVideoBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Procesando en Servidor...';
 
+            const activeScreen = currentProject.screens[currentProject.activeScreenIndex] || {};
             const exportPayload = {
                 theme: themeSelect.value,
                 customColor: currentTemplate.customColor,
-                bgImageSrc: currentTemplate.bgImageSrc || null,
+                bgImageSrc: activeScreen.bgImageSrc || currentTemplate.bgImageSrc || null,
+                bgEffect: activeScreen.bgEffect || currentTemplate.bgEffect || "none",
                 canvasWidth: reelCanvas ? reelCanvas.offsetWidth : 360,
                 canvasHeight: reelCanvas ? reelCanvas.offsetHeight : 640,
                 layout: currentTemplate.layout || "single",
@@ -3743,6 +3773,7 @@ document.addEventListener("DOMContentLoaded", () => {
             theme: screenData.theme,
             customColor: screenData.customColor,
             bgImageSrc: screenData.bgImageSrc || null,
+            bgEffect: screenData.bgEffect || "none",
             canvasWidth: scrCanvas ? scrCanvas.offsetWidth : 360,
             canvasHeight: scrCanvas ? scrCanvas.offsetHeight : 640,
             layout: screenData.layout || "single",

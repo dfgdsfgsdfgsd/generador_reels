@@ -2337,3 +2337,67 @@ emoji-picker.dark {
     border-color: var(--color-primary);
     box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4);
 }
+
+
+/* ===================================================
+   EFECTOS DE MOVIMIENTO DEL FONDO
+   (Animación pura de fondo sobre .reel-canvas sin alterar el árbol DOM ni el reproductor de video)
+=================================================== */
+.bg-effect-kenburns {
+    animation: kenBurnsBg 14s ease-in-out infinite alternate !important;
+}
+
+@keyframes kenBurnsBg {
+    0% {
+        background-size: 100% auto;
+        background-position: 50% 50%;
+    }
+    50% {
+        background-size: 114% auto;
+        background-position: 45% 48%;
+    }
+    100% {
+        background-size: 104% auto;
+        background-position: 55% 52%;
+    }
+}
+
+.bg-effect-pulse {
+    animation: pulseBg 4.5s ease-in-out infinite alternate !important;
+}
+
+@keyframes pulseBg {
+    0% {
+        background-size: 100% auto;
+    }
+    100% {
+        background-size: 108% auto;
+    }
+}
+
+.bg-effect-water {
+    animation: waterWaveBg 8s ease-in-out infinite alternate !important;
+}
+
+@keyframes waterWaveBg {
+    0% {
+        background-position: 50% 50%;
+        background-size: 102% auto;
+    }
+    25% {
+        background-position: 52% 47%;
+        background-size: 105% auto;
+    }
+    50% {
+        background-position: 47% 53%;
+        background-size: 107% auto;
+    }
+    75% {
+        background-position: 53% 51%;
+        background-size: 104% auto;
+    }
+    100% {
+        background-position: 49% 49%;
+        background-size: 103% auto;
+    }
+}

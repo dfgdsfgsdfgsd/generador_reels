@@ -632,6 +632,27 @@ async def export_video(request: Request):
         generate_mask_pil(dest_x, dest_y, dest_w, dest_h, r, 720, 1280, temp_mask_path)
 
         files_to_clean = [temp_bg_path, temp_overlay_path, temp_mask_path]
+
+        bg_effect = data.get("bgEffect", "none")
+        bg_filter_chain = ""
+        bg_target = "0:v"
+        print(f"[Python Exportador] Procesando bgEffect='{bg_effect}', bgImageSrc={'SI' if data.get('bgImageSrc') else 'NO'}")
+        if bg_effect and bg_effect != "none" and (data.get("theme") == "image" or data.get("bgImageSrc")):
+            if bg_effect == "kenburns":
+                bg_filter_chain = "[0:v]scale=900:1600,crop=720:1280:x='(in_w-720)/2 + 60*sin(2*PI*t/14)':y='(in_h-1280)/2 + 90*cos(2*PI*t/14)'[bg_anim];"
+                bg_target = "bg_anim"
+            elif bg_effect == "pulse":
+                bg_filter_chain = "[0:v]scale=880:1564,crop=720:1280:x='(in_w-720)/2 + 20*sin(2*PI*t/4.5)':y='(in_h-1280)/2 + 30*sin(2*PI*t/4.5)',eq=brightness='0.03*sin(2*PI*t/4.5)':saturation='1.0+0.15*sin(2*PI*t/4.5)':eval=frame[bg_anim];"
+                bg_target = "bg_anim"
+            elif bg_effect == "water":
+                bg_filter_chain = (
+                    "perlin=size=360x640:rate=25:octaves=1:xscale=12:yscale=18:tscale=1.10,format=gray,scale=720:1280:flags=bicubic,lut=c0='clip(128+(val-128)*0.13,0,255)'[xmap];"
+                    "perlin=size=360x640:rate=25:octaves=1:xscale=14:yscale=20:tscale=1.25:random_seed=77,format=gray,scale=720:1280:flags=bicubic,lut=c0='clip(128+(val-128)*0.13,0,255)'[ymap];"
+                    "[0:v]scale=720:1280[bg_scaled];"
+                    "[bg_scaled][xmap][ymap]displace=edge=smear[bg_anim];"
+                )
+                bg_target = "bg_anim"
+
         if not is_persistent1 and temp_input_video1:
             files_to_clean.append(temp_input_video1)
 
@@ -643,13 +664,14 @@ async def export_video(request: Request):
                 files_to_clean.append(temp_input_video2)
 
             filter_complex = (
+                f"{bg_filter_chain}"
                 f"[1:v]scale=w='if(gte(iw/ih,{dest_w}/{dest_h}),-1,{dest_w})':h='if(gte(iw/ih,{dest_w}/{dest_h}),{dest_h},-1)',crop={dest_w}:{dest_h}[scaled_vid1];"
                 f"[scaled_vid1]pad=720:1280:{dest_x}:{dest_y}:color=black[padded_vid1];"
                 f"[padded_vid1][3:v]alphamerge[masked_vid1];"
                 f"[4:v]scale=w='if(gte(iw/ih,{dest2_w}/{dest2_h}),-1,{dest2_w})':h='if(gte(iw/ih,{dest2_w}/{dest2_h}),{dest2_h},-1)',crop={dest2_w}:{dest2_h}[scaled_vid2];"
                 f"[scaled_vid2]pad=720:1280:{dest2_x}:{dest2_y}:color=black[padded_vid2];"
                 f"[padded_vid2][5:v]alphamerge[masked_vid2];"
-                f"[0:v][masked_vid1]overlay=0:0:shortest=1[bg1];"
+                f"[{bg_target}][masked_vid1]overlay=0:0:shortest=1[bg1];"
                 f"[bg1][masked_vid2]overlay=0:0:shortest=1[bg2];"
                 f"[bg2][2:v]overlay=0:0:shortest=1[outv]"
             )
@@ -662,14 +684,18 @@ async def export_video(request: Request):
                 f'-map "[outv]" -map 1:a? -c:v libx264 -preset ultrafast -pix_fmt yuv420p -c:a aac -t {target_duration:.2f} "{temp_output_video}"'
             )
         else:
+            filter_complex = (
+                f"{bg_filter_chain}"
+                f"[1:v]scale=w='if(gte(iw/ih,{dest_w}/{dest_h}),-1,{dest_w})':h='if(gte(iw/ih,{dest_w}/{dest_h}),{dest_h},-1)',crop={dest_w}:{dest_h}[scaled_vid];"
+                f"[scaled_vid]pad=720:1280:{dest_x}:{dest_y}:color=black[padded_vid];"
+                f"[padded_vid][3:v]alphamerge[masked_vid];"
+                f"[{bg_target}][masked_vid]overlay=0:0:shortest=1[bg_vid];"
+                f"[bg_vid][2:v]overlay=0:0[outv]"
+            )
             ffmpeg_cmd = (
                 f'"{FFMPEG_EXE}" -y -loop 1 -i "{temp_bg_path}" -i "{temp_input_video1}" '
                 f'-loop 1 -i "{temp_overlay_path}" -loop 1 -i "{temp_mask_path}" '
-                f'-filter_complex "[1:v]scale=w=\'if(gte(iw/ih,{dest_w}/{dest_h}),-1,{dest_w})\':h=\'if(gte(iw/ih,{dest_w}/{dest_h}),{dest_h},-1)\',crop={dest_w}:{dest_h}[scaled_vid];'
-                f'[scaled_vid]pad=720:1280:{dest_x}:{dest_y}:color=black[padded_vid];'
-                f'[padded_vid][3:v]alphamerge[masked_vid];'
-                f'[0:v][masked_vid]overlay=0:0:shortest=1[bg_vid];'
-                f'[bg_vid][2:v]overlay=0:0[outv]" '
+                f'-filter_complex "{filter_complex}" '
                 f'-map "[outv]" -map 1:a? -c:v libx264 -preset ultrafast -pix_fmt yuv420p -c:a aac -t {target_duration:.2f} "{temp_output_video}"'
             )
 
