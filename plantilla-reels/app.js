@@ -660,10 +660,11 @@ document.addEventListener("DOMContentLoaded", () => {
         }
         
         if (key === "media" || key === "mediaBottom") {
+            currentUploadTarget = (key === "mediaBottom") ? "bottom" : "top";
             fontSizeSlider.disabled = true;
-            fontSizeLabel.textContent = key === "media" ? "Tamaño: Video Superior (1:1)" : "Tamaño: Video Inferior (1:1)";
+            fontSizeLabel.textContent = key === "media" ? "Formato: Video Superior" : "Formato: Video Inferior";
             boxWidthSlider.disabled = true;
-            boxWidthLabel.textContent = "Ancho de Caja: Fijo 1:1";
+            boxWidthLabel.textContent = "Ancho de Caja: Auto";
             if (key === "media" && mediaContainer) {
                 mediaContainer.classList.add("card-selected-highlight");
             } else if (key === "mediaBottom") {
@@ -671,6 +672,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (mBottom) mBottom.classList.add("card-selected-highlight");
             }
             syncAdjustButtonsState();
+            syncAspectRatioUI();
             return;
         }
 
@@ -1366,7 +1368,11 @@ document.addEventListener("DOMContentLoaded", () => {
     
     // Sincronizar botones de proporción de aspecto (1:1, 4:5, 9:16, 16:9)
     function syncAspectRatioUI() {
-        const ratio = currentTemplate?.mediaRatio || "1:1";
+        const isBottom = (activeCardKey === "mediaBottom");
+        const ratio = isBottom 
+            ? (currentTemplate?.mediaBottomRatio || "1:1") 
+            : (currentTemplate?.mediaRatio || "1:1");
+
         document.querySelectorAll(".aspect-btn").forEach(btn => {
             if (btn.dataset.ratio === ratio) {
                 btn.classList.add("active");
@@ -1382,7 +1388,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 "9:16": "9:16 (Vertical)",
                 "16:9": "16:9 (Horizontal)"
             };
-            currentLabelEl.textContent = labelMap[ratio] || ratio;
+            const prefix = isBottom ? "[Inferior] " : (currentTemplate?.layout === "split_dual" ? "[Superior] " : "");
+            currentLabelEl.textContent = prefix + (labelMap[ratio] || ratio);
         }
     }
 
@@ -1390,7 +1397,11 @@ document.addEventListener("DOMContentLoaded", () => {
         btn.addEventListener("click", () => {
             const ratio = btn.dataset.ratio;
             if (!currentTemplate) return;
-            currentTemplate.mediaRatio = ratio;
+            if (activeCardKey === "mediaBottom") {
+                currentTemplate.mediaBottomRatio = ratio;
+            } else {
+                currentTemplate.mediaRatio = ratio;
+            }
             applyScreenMedia(currentProject.activeScreenIndex);
             syncAspectRatioUI();
             saveTemplateQuietly();
@@ -2266,6 +2277,44 @@ document.addEventListener("DOMContentLoaded", () => {
                     selectScreen(index);
                     selectCard("mediaBottom");
                 });
+                mContBottom.addEventListener("dblclick", (e) => {
+                    e.stopPropagation();
+                    currentUploadTarget = "bottom";
+                    selectScreen(index);
+                    selectCard("mediaBottom");
+                    if (mediaInput) {
+                        mediaInput.value = "";
+                        mediaInput.click();
+                    }
+                });
+                const phBottom = mContBottom.querySelector(".media-placeholder");
+                if (phBottom) {
+                    phBottom.style.cursor = "pointer";
+                    phBottom.addEventListener("click", (e) => {
+                        e.stopPropagation();
+                        currentUploadTarget = "bottom";
+                        selectScreen(index);
+                        selectCard("mediaBottom");
+                        if (mediaInput) {
+                            mediaInput.value = "";
+                            mediaInput.click();
+                        }
+                    });
+                }
+                const screenVidBottom = document.getElementById(`reel-video-bottom-${index}`);
+                if (screenVidBottom) {
+                    screenVidBottom.addEventListener("play", () => {
+                        if (index === currentProject.activeScreenIndex) updatePlayPauseUI();
+                    });
+                    screenVidBottom.addEventListener("pause", () => {
+                        if (index === currentProject.activeScreenIndex) updatePlayPauseUI();
+                    });
+                    screenVidBottom.addEventListener("timeupdate", () => {
+                        if (index === currentProject.activeScreenIndex && !isScrubbing) {
+                            syncTimelineControls();
+                        }
+                    });
+                }
             }
             const screenVid = document.getElementById(`reel-video-${index}`);
             if (screenVid) {
@@ -2661,29 +2710,40 @@ document.addEventListener("DOMContentLoaded", () => {
             if (editMediaBtn) editMediaBtn.disabled = true;
         }
 
-        // Pausar todos los videos de otras pantallas y reproducir el del teléfono seleccionado
+        // Pausar todos los videos de otras pantallas y reproducir los del teléfono seleccionado
         currentProject.screens.forEach((scr, idx) => {
             const vid = document.getElementById(`reel-video-${idx}`);
-            if (vid) {
-                if (idx === index) {
-                    if (scr.mediaType === "video" && scr.mediaSrc) {
-                        if (scr.fixedFrameTime !== undefined && scr.fixedFrameTime !== null) {
-                            vid.currentTime = scr.fixedFrameTime;
-                            vid.pause();
-                        } else {
-                            vid.muted = true;
-                            const playPromise = vid.play();
-                            if (playPromise !== undefined) {
-                                playPromise.catch(() => {});
-                            }
-                        }
+            const vidBottom = document.getElementById(`reel-video-bottom-${idx}`);
+            
+            if (idx === index) {
+                if (vid && scr.mediaType === "video" && scr.mediaSrc) {
+                    if (scr.fixedFrameTime !== undefined && scr.fixedFrameTime !== null) {
+                        vid.currentTime = scr.fixedFrameTime;
+                        vid.pause();
+                    } else {
+                        vid.muted = true;
+                        vid.play().catch(() => {});
                     }
-                } else {
+                }
+                if (vidBottom && scr.mediaBottomType === "video" && scr.mediaBottomSrc) {
+                    if (scr.fixedFrameTime !== undefined && scr.fixedFrameTime !== null) {
+                        vidBottom.currentTime = scr.fixedFrameTime;
+                        vidBottom.pause();
+                    } else {
+                        vidBottom.muted = true;
+                        vidBottom.play().catch(() => {});
+                    }
+                }
+            } else {
+                if (vid) {
                     vid.pause();
-                    vid.muted = true; // Silenciar y pausar los no activos
-                    if (vid.currentTime === 0) {
-                        vid.currentTime = 0.1; // Renderizar primer fotograma en inactivos
-                    }
+                    vid.muted = true;
+                    if (vid.currentTime === 0) vid.currentTime = 0.05;
+                }
+                if (vidBottom) {
+                    vidBottom.pause();
+                    vidBottom.muted = true;
+                    if (vidBottom.currentTime === 0) vidBottom.currentTime = 0.05;
                 }
             }
         });
@@ -2744,17 +2804,31 @@ document.addEventListener("DOMContentLoaded", () => {
         const mCont = document.getElementById(`media-container-${index}`);
         if (!video || !img || !placeholder) return;
 
-        // Aplicar proporción seleccionada (1:1, 4:5, 9:16, 16:9)
+        const classMap = { "1:1": "ratio-1-1", "4:5": "ratio-4-5", "9:16": "ratio-9-16", "16:9": "ratio-16-9" };
+        const canvas = document.getElementById(`reel-canvas-${index}`);
+
+        // Aplicar proporción seleccionada al contenedor superior
         if (mCont) {
             const ratio = screenData.mediaRatio || "1:1";
             mCont.classList.remove("ratio-1-1", "ratio-4-5", "ratio-9-16", "ratio-16-9");
-            const classMap = { "1:1": "ratio-1-1", "4:5": "ratio-4-5", "9:16": "ratio-9-16", "16:9": "ratio-16-9" };
             mCont.classList.add(classMap[ratio] || "ratio-1-1");
 
-            const canvas = document.getElementById(`reel-canvas-${index}`);
             if (canvas && mCont.offsetWidth > 0) {
                 const autoLeft = Math.max(10, Math.round((canvas.offsetWidth - mCont.offsetWidth) / 2));
                 mCont.style.left = autoLeft + "px";
+            }
+        }
+
+        // Aplicar proporción seleccionada al contenedor inferior (Diseño Doble Video)
+        const mContBottom = document.getElementById(`media-container-bottom-${index}`);
+        if (mContBottom) {
+            const bottomRatio = screenData.mediaBottomRatio || "1:1";
+            mContBottom.classList.remove("ratio-1-1", "ratio-4-5", "ratio-9-16", "ratio-16-9");
+            mContBottom.classList.add(classMap[bottomRatio] || "ratio-1-1");
+
+            if (canvas && mContBottom.offsetWidth > 0) {
+                const autoLeft = Math.max(10, Math.round((canvas.offsetWidth - mContBottom.offsetWidth) / 2));
+                mContBottom.style.left = autoLeft + "px";
             }
         }
         
@@ -2765,8 +2839,15 @@ document.addEventListener("DOMContentLoaded", () => {
             video.style.display = "block";
             placeholder.style.display = "none";
             placeholder.style.visibility = "hidden";
+            video.preload = "auto";
             video.src = screenData.mediaSrc;
             video.muted = true;
+
+            const onMeta = () => {
+                if (video.currentTime === 0) video.currentTime = 0.05;
+            };
+            video.addEventListener("loadedmetadata", onMeta, { once: true });
+
             if (index === currentProject.activeScreenIndex) {
                 if (screenData.fixedFrameTime !== undefined && screenData.fixedFrameTime !== null) {
                     video.currentTime = screenData.fixedFrameTime;
@@ -2782,7 +2863,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (screenData.fixedFrameTime !== undefined && screenData.fixedFrameTime !== null) {
                     video.currentTime = screenData.fixedFrameTime;
                 } else if (video.currentTime === 0) {
-                    video.currentTime = 0.1;
+                    video.currentTime = 0.05;
                 }
             }
         } else if (screenData.mediaType === "image" && screenData.mediaSrc) {
@@ -2818,8 +2899,15 @@ document.addEventListener("DOMContentLoaded", () => {
                 videoBottom.style.display = "block";
                 placeholderBottom.style.display = "none";
                 placeholderBottom.style.visibility = "hidden";
+                videoBottom.preload = "auto";
                 videoBottom.src = screenData.mediaBottomSrc;
                 videoBottom.muted = true;
+
+                const onMetaBottom = () => {
+                    if (videoBottom.currentTime === 0) videoBottom.currentTime = 0.05;
+                };
+                videoBottom.addEventListener("loadedmetadata", onMetaBottom, { once: true });
+
                 if (index === currentProject.activeScreenIndex) {
                     videoBottom.play().catch(() => {});
                 } else {

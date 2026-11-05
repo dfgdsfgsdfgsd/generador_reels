@@ -77,9 +77,31 @@ async def upload_media(request: Request):
     filepath = os.path.join(uploads_dir, filename)
     try:
         body = await request.body()
-        with open(filepath, "wb") as f:
-            f.write(body)
-        print(f"[Generador Reels] Media guardada persistentemente: {filename}")
+        if ext == ".mp4":
+            temp_raw = filepath + ".raw"
+            with open(temp_raw, "wb") as f:
+                f.write(body)
+            try:
+                ffmpeg_exe = imageio_ffmpeg.get_ffmpeg_exe()
+                proc = await asyncio.create_subprocess_exec(
+                    ffmpeg_exe, "-y", "-i", temp_raw,
+                    "-c:v", "libx264", "-preset", "ultrafast",
+                    "-pix_fmt", "yuv420p", "-c:a", "aac",
+                    "-movflags", "+faststart", filepath,
+                    stdout=asyncio.subprocess.DEVNULL,
+                    stderr=asyncio.subprocess.DEVNULL
+                )
+                await proc.wait()
+                if os.path.exists(temp_raw):
+                    os.remove(temp_raw)
+            except Exception as conv_err:
+                print("[Generador Reels] Error convirtiendo a H.264, usando original:", conv_err)
+                if os.path.exists(temp_raw):
+                    os.replace(temp_raw, filepath)
+        else:
+            with open(filepath, "wb") as f:
+                f.write(body)
+        print(f"[Generador Reels] Media guardada persistentemente (H.264 compatible): {filename}")
         return {"success": True, "url": f"/uploads/{filename}"}
     except Exception as e:
         print("[Generador Reels] Error guardando media:", e)
