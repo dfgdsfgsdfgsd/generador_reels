@@ -1,4 +1,5 @@
-* 81dc607 2026-11-05 19:18:56 | style(bg-effects): aumentar dinamismo y visibilidad de ondas de agua en la vista previa del navegador (HEAD -> feature/servidor-mcp) [Daniel]
+* 18162c0 2026-11-05 19:26:38 | feat(bg-effects): implementar refraccion de agua en tiempo real con WebGL idéntica a FFmpeg manteniendo 60 FPS fluidos (HEAD -> feature/servidor-mcp) [Daniel]
+* 81dc607 2026-11-05 19:18:56 | style(bg-effects): aumentar dinamismo y visibilidad de ondas de agua en la vista previa del navegador [Daniel]
 * 88c39b3 2026-11-05 19:09:25 | fix(export): sincronizar bgImageSrc y bgEffect de la pantalla activa al exportar video y forzar generacion de fondo con imagen [Daniel]
 * dd11c4f 2026-11-05 19:01:57 | fix(media): evitar reseteo del video al completar la subida persistente en segundo plano [Daniel]
 * a0829ef 2026-11-05 18:48:19 | feat(bg-effects): efectos de fondo mediante background puro sin romper fluidez de video [Daniel]

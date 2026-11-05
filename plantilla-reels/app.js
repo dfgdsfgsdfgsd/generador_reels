@@ -2178,9 +2178,9 @@ document.addEventListener("DOMContentLoaded", () => {
     // =========================================================
     // RENDERIZADOR WEBGL DE EFECTOS LÍQUIDOS EN TIEMPO REAL
     // =========================================================
-    let activeWaterGl = null;
-    let waterAnimationId = null;
-    let currentWaterImageSrc = null;
+    var activeWaterGl = null;
+    var waterAnimationId = null;
+    var currentWaterImageSrc = null;
 
     function setupWaterEffect(canvasEl, imageSrc) {
         if (!canvasEl) return;
