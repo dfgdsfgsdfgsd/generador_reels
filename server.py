@@ -148,22 +148,26 @@ def get_text_card_drawing(draw, style: Dict[str, Any], html_text: str, scale: fl
     width = parse_val(style.get("width"), 0) * scale
     height = parse_val(style.get("height"), 0) * scale
 
-    # Parse horizontal padding properly (e.g. "12px 18px")
+    # Parse horizontal and vertical padding properly (e.g. "12px 18px")
     padding_str = style.get("padding", "14")
-    padding_px = 14
+    padding_px_y = 14.0
+    padding_px_x = 14.0
     if padding_str:
         parts = [p.replace("px", "").strip() for p in str(padding_str).split()]
         if len(parts) >= 2:
             try:
-                padding_px = float(parts[1]) # Horizontal padding
+                padding_px_y = float(parts[0])
+                padding_px_x = float(parts[1])
             except ValueError:
                 pass
         elif len(parts) == 1:
             try:
-                padding_px = float(parts[0])
+                padding_px_y = float(parts[0])
+                padding_px_x = float(parts[0])
             except ValueError:
                 pass
-    padding = padding_px * scale
+    padding = padding_px_x * scale
+    padding_y = max(padding_px_y * scale, 18 * scale)
     r = parse_val(style.get("borderRadius"), 12) * scale
 
     bg_color_str = style.get("backgroundColor", "rgba(0,0,0,0.85)")
@@ -205,9 +209,10 @@ def get_text_card_drawing(draw, style: Dict[str, Any], html_text: str, scale: fl
     def is_emoji(char):
         cp = ord(char)
         return (
+            (0x1F000 <= cp <= 0x1FAFF) or
             (0x2600 <= cp <= 0x27BF) or
-            (0x1F300 <= cp <= 0x1F9FF) or
-            (0x1FA70 <= cp <= 0x1FAFF)
+            (0x2300 <= cp <= 0x23FF) or
+            (0x2B00 <= cp <= 0x2BFF)
         )
 
     def get_line_width_with_emojis(text, regular_font, em_font):
@@ -272,13 +277,21 @@ def get_text_card_drawing(draw, style: Dict[str, Any], html_text: str, scale: fl
 
     line_count = len(clean_lines)
     line_height = size * 1.35
-    total_text_height = (line_count - 1) * line_height + (size * 0.8)
+    total_text_height = (line_count - 1) * line_height + (size * 0.9)
 
-    # Dibujar RectÃ¡ngulo con bordes redondeados usando las medidas exactas del cliente
-    draw.rounded_rectangle([left, top, left + width, top + height], radius=r, fill=bg_rgba)
+    # Autoajustar la altura de la caja para que NUNCA se escapen las letras
+    min_needed_height = total_text_height + (2 * padding_y)
+    actual_height = max(height, min_needed_height)
 
-    # El inicio Y se centra verticalmente dentro del alto exacto de la caja
-    text_start_y = top + (height / 2) - (total_text_height / 2) - (size * 0.08)
+    # Expandir simetricamente desde el centro vertical original
+    diff_h = actual_height - height
+    actual_top = max(16.0 * scale, top - (diff_h / 2.0))
+
+    # Dibujar Rectangulo con bordes redondeados usando las medidas adaptadas
+    draw.rounded_rectangle([left, actual_top, left + width, actual_top + actual_height], radius=r, fill=bg_rgba)
+
+    # El inicio Y se centra verticalmente dentro del alto calculado
+    text_start_y = actual_top + (actual_height / 2.0) - (total_text_height / 2.0) - (size * 0.08)
 
     for i, line in enumerate(clean_lines):
         y = text_start_y + i * line_height
@@ -292,14 +305,19 @@ def get_text_card_drawing(draw, style: Dict[str, Any], html_text: str, scale: fl
         else:
             x_curr = left + padding
 
-        # Dibujar carÃ¡cter por carÃ¡cter para soportar emojis correctamente
+        # Dibujar caracter por caracter soportando emojis en color nativo
         for char in line:
             use_emoji = is_emoji(char) and emoji_font is not None
-            active_font = emoji_font if use_emoji else font
-            
-            draw.text((x_curr, y), char, font=active_font, fill=line_color)
+            if use_emoji:
+                try:
+                    draw.text((x_curr, y), char, font=emoji_font, embedded_color=True)
+                except Exception:
+                    draw.text((x_curr, y), char, font=emoji_font, fill=line_color)
+            else:
+                draw.text((x_curr, y), char, font=font, fill=line_color)
             
             try:
+                active_font = emoji_font if use_emoji else font
                 if hasattr(draw, 'textlength'):
                     w = draw.textlength(char, font=active_font)
                 else:
