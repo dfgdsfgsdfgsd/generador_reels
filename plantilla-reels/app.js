@@ -1492,6 +1492,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
         updateBgImageUI();
         syncThemeDropdownUI(theme);
+        updateActiveBgAnimation();
         saveTemplateQuietly();
     });
 
@@ -1505,12 +1506,7 @@ document.addEventListener("DOMContentLoaded", () => {
             currentTemplate.bgEffect = effect;
             const index = currentProject.activeScreenIndex;
             const canvas = document.getElementById(`reel-canvas-${index}`);
-            if (canvas) {
-                canvas.classList.remove("bg-effect-kenburns", "bg-effect-pulse", "bg-effect-water");
-                if (effect && effect !== "none") {
-                    canvas.classList.add(`bg-effect-${effect}`);
-                }
-            }
+            updateActiveBgAnimation();
             saveTemplateQuietly();
         });
     }
@@ -1555,6 +1551,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     const resData = await uploadRes.json();
                     targetScreen.bgImageSrc = resData.url;
                     currentTemplate.bgImageSrc = resData.url;
+                    updateActiveBgAnimation();
                     saveTemplateQuietly();
                 }
             } catch (err) {
@@ -1579,6 +1576,7 @@ document.addEventListener("DOMContentLoaded", () => {
             }
             updateBgImageUI();
         syncThemeDropdownUI(currentTemplate.theme);
+            updateActiveBgAnimation();
             saveTemplateQuietly();
         });
     }
@@ -2176,6 +2174,178 @@ document.addEventListener("DOMContentLoaded", () => {
         saveTemplateQuietly();
     }
 
+
+    // =========================================================
+    // RENDERIZADOR WEBGL DE EFECTOS LÍQUIDOS EN TIEMPO REAL
+    // =========================================================
+    let activeWaterGl = null;
+    let waterAnimationId = null;
+    let currentWaterImageSrc = null;
+
+    function setupWaterEffect(canvasEl, imageSrc) {
+        if (!canvasEl) return;
+        if (!imageSrc) {
+            stopWaterEffect();
+            canvasEl.style.display = "none";
+            return;
+        }
+
+        canvasEl.style.display = "block";
+        
+        if (activeWaterGl && activeWaterGl.canvas === canvasEl && currentWaterImageSrc === imageSrc) {
+            return;
+        }
+
+        stopWaterEffect();
+        currentWaterImageSrc = imageSrc;
+
+        let gl = canvasEl.getContext("webgl", { alpha: false, depth: false, antialias: false, powerPreference: "high-performance" });
+        if (!gl) {
+            gl = canvasEl.getContext("experimental-webgl");
+        }
+        if (!gl) {
+            console.warn("[WebGL Water] WebGL no soportado en este navegador.");
+            canvasEl.style.display = "none";
+            return;
+        }
+
+        const vsSource = `
+            attribute vec2 a_pos;
+            varying vec2 v_uv;
+            void main() {
+                v_uv = (a_pos + 1.0) * 0.5;
+                v_uv.y = 1.0 - v_uv.y;
+                gl_Position = vec4(a_pos, 0.0, 1.0);
+            }
+        `;
+
+        const fsSource = `
+            precision mediump float;
+            uniform sampler2D u_image;
+            uniform float u_time;
+            uniform vec2 u_scale;
+            varying vec2 v_uv;
+
+            void main() {
+                vec2 p = (v_uv - 0.5) * u_scale + 0.5;
+                
+                // Refracción fluida de agua idéntica al filtro displace de FFmpeg
+                float wave1 = sin(p.y * 18.0 + u_time * 2.2 + p.x * 6.0);
+                float wave2 = cos(p.x * 22.0 - u_time * 1.8 + p.y * 8.0);
+                float wave3 = sin((p.x + p.y) * 14.0 + u_time * 2.8);
+                
+                vec2 displacement = vec2(
+                    wave1 * 0.010 + wave3 * 0.006,
+                    wave2 * 0.012 + wave3 * 0.006
+                );
+                
+                vec2 distorted_uv = clamp(p + displacement, 0.0, 1.0);
+                vec4 color = texture2D(u_image, distorted_uv);
+                
+                // Reflejo especular en las crestas de ola
+                float highlight = (wave1 + wave2 + wave3) * 0.035;
+                gl_FragColor = vec4(color.rgb + highlight, 1.0);
+            }
+        `;
+
+        function compile(type, src) {
+            const s = gl.createShader(type);
+            gl.shaderSource(s, src);
+            gl.compileShader(s);
+            return s;
+        }
+
+        const prog = gl.createProgram();
+        gl.attachShader(prog, compile(gl.VERTEX_SHADER, vsSource));
+        gl.attachShader(prog, compile(gl.FRAGMENT_SHADER, fsSource));
+        gl.linkProgram(prog);
+        gl.useProgram(prog);
+
+        const buf = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, -1, 1, 1, -1, 1, 1]), gl.STATIC_DRAW);
+
+        const pos = gl.getAttribLocation(prog, "a_pos");
+        gl.enableVertexAttribArray(pos);
+        gl.vertexAttribPointer(pos, 2, gl.FLOAT, false, 0, 0);
+
+        const timeLoc = gl.getUniformLocation(prog, "u_time");
+        const scaleLoc = gl.getUniformLocation(prog, "u_scale");
+        const tex = gl.createTexture();
+        gl.bindTexture(gl.TEXTURE_2D, tex);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+
+        const img = new Image();
+        img.crossOrigin = "anonymous";
+        img.onload = () => {
+            gl.bindTexture(gl.TEXTURE_2D, tex);
+            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img);
+            
+            const canvasAspect = canvasEl.width / canvasEl.height;
+            const imgAspect = (img.naturalWidth || img.width || 360) / (img.naturalHeight || img.height || 640);
+            let sx = 1.0, sy = 1.0;
+            if (imgAspect > canvasAspect) {
+                sx = canvasAspect / imgAspect;
+            } else {
+                sy = imgAspect / canvasAspect;
+            }
+            gl.uniform2f(scaleLoc, sx, sy);
+
+            activeWaterGl = gl;
+            const start = performance.now();
+            
+            function loop(t) {
+                if (!activeWaterGl || activeWaterGl !== gl) return;
+                const elapsed = (t - start) / 1000.0;
+                gl.uniform1f(timeLoc, elapsed);
+                gl.drawArrays(gl.TRIANGLES, 0, 6);
+                waterAnimationId = requestAnimationFrame(loop);
+            }
+            waterAnimationId = requestAnimationFrame(loop);
+        };
+        img.src = imageSrc;
+    }
+
+    function stopWaterEffect() {
+        if (waterAnimationId) {
+            cancelAnimationFrame(waterAnimationId);
+            waterAnimationId = null;
+        }
+        activeWaterGl = null;
+        currentWaterImageSrc = null;
+        document.querySelectorAll(".reel-bg-canvas").forEach(c => {
+            c.style.display = "none";
+        });
+    }
+
+    function updateActiveBgAnimation() {
+        if (!currentProject || !currentProject.screens) return;
+        const idx = currentProject.activeScreenIndex;
+        const screen = currentProject.screens[idx];
+        if (!screen) return;
+        
+        const canvas = document.getElementById(`reel-canvas-${idx}`) || document.getElementById("reel-canvas");
+        const bgCanvas = document.getElementById(`reel-bg-canvas-${idx}`) || document.getElementById("reel-bg-canvas");
+        const effect = screen.bgEffect || "none";
+        const bgImg = screen.bgImageSrc;
+
+        if (canvas) {
+            canvas.classList.remove("bg-effect-kenburns", "bg-effect-pulse", "bg-effect-water");
+        }
+
+        if (effect === "water" && bgImg) {
+            setupWaterEffect(bgCanvas, bgImg);
+        } else {
+            stopWaterEffect();
+            if (effect && effect !== "none" && canvas) {
+                canvas.classList.add(`bg-effect-${effect}`);
+            }
+        }
+    }
+
     function renderScreens() {
         if (!simulatorPane) return;
         simulatorPane.innerHTML = "";
@@ -2205,6 +2375,7 @@ document.addEventListener("DOMContentLoaded", () => {
         ? 'background: ' + screenData.customColor 
         : (screenData.theme === 'image' && screenData.bgImageSrc ? 'background: url(' + screenData.bgImageSrc + ') center/cover no-repeat;' : '')
 }">
+                            <canvas class="reel-bg-canvas" id="reel-bg-canvas-${index}" width="360" height="640" style="display: none;"></canvas>
                             
                             <!-- Bloque de texto superior -->
                             <div class="text-card drag-el" id="header-card-${index}" style="top: ${screenData.positions?.header?.top || (screenData.layout === 'split_dual' ? '295px' : '40px')}; left: 20px; width: calc(100% - 40px); display: ${screenData.showHeaderCard ? 'flex' : 'none'}; height: ${screenData.styles?.header?.height ? screenData.styles.header.height + 'px' : 'auto'};">
@@ -2615,6 +2786,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 });
             }
         });
+        updateActiveBgAnimation();
     }
 
 
@@ -2813,6 +2985,7 @@ document.addEventListener("DOMContentLoaded", () => {
         syncTextBlocksVisibilityUI();
         syncAspectRatioUI();
         updateSidebarTextInputs();
+        updateActiveBgAnimation();
     }
 
     function applyScreenStyles(index) {
