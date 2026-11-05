@@ -2376,28 +2376,28 @@ emoji-picker.dark {
 }
 
 .bg-effect-water {
-    animation: waterWaveBg 8s ease-in-out infinite alternate !important;
+    animation: waterWaveBg 4s ease-in-out infinite alternate !important;
 }
 
 @keyframes waterWaveBg {
     0% {
         background-position: 50% 50%;
-        background-size: 102% auto;
+        background-size: 103% 103%;
     }
     25% {
-        background-position: 52% 47%;
-        background-size: 105% auto;
+        background-position: 47% 53%;
+        background-size: 109% 104%;
     }
     50% {
-        background-position: 47% 53%;
-        background-size: 107% auto;
+        background-position: 53% 48%;
+        background-size: 104% 110%;
     }
     75% {
-        background-position: 53% 51%;
-        background-size: 104% auto;
+        background-position: 48% 52%;
+        background-size: 108% 105%;
     }
     100% {
-        background-position: 49% 49%;
-        background-size: 103% auto;
+        background-position: 52% 47%;
+        background-size: 105% 109%;
     }
 }
