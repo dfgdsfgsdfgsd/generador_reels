@@ -1,4 +1,5 @@
-﻿import os
+import subprocess
+import os
 import json
 import time
 import asyncio
@@ -140,6 +141,8 @@ def parse_color(color_str, default_rgba):
     return default_rgba
 
 def get_text_card_drawing(draw, style: Dict[str, Any], html_text: str, scale: float, width_canvas: int, height_canvas: int):
+    if not style or not isinstance(style, dict):
+        return
     left = parse_val(style.get("left"), 0) * scale
     top = parse_val(style.get("top"), 0) * scale
     width = parse_val(style.get("width"), 0) * scale
@@ -380,36 +383,86 @@ def generate_background_pil(theme: str, custom_color: str, width: int, height: i
 
     img.save(output_path, "PNG")
 
+def draw_rounded_media_image(base_img_path: str, img_src: str, x: int, y: int, w: int, h: int, r: int):
+    try:
+        if not img_src or not os.path.exists(base_img_path):
+            return
+        if img_src.startswith("/uploads/"):
+            src_path = os.path.join(CURRENT_DIR, img_src.lstrip("/"))
+        elif os.path.exists(img_src):
+            src_path = img_src
+        else:
+            return
+        if not os.path.exists(src_path):
+            return
+
+        base = Image.open(base_img_path).convert("RGBA")
+        m_img = Image.open(src_path).convert("RGBA")
+        bw, bh = m_img.size
+        if bw <= 0 or bh <= 0 or w <= 0 or h <= 0:
+            return
+        scale_factor = max(w / bw, h / bh)
+        rw, rh = max(1, int(bw * scale_factor)), max(1, int(bh * scale_factor))
+        m_resized = m_img.resize((rw, rh), Image.Resampling.LANCZOS)
+        cx, cy = max(0, (rw - w) // 2), max(0, (rh - h) // 2)
+        m_cropped = m_resized.crop((cx, cy, cx + w, cy + h))
+
+        mask = Image.new("L", (w, h), 0)
+        mdraw = ImageDraw.Draw(mask)
+        mdraw.rounded_rectangle([0, 0, w, h], radius=r, fill=255)
+        m_cropped.putalpha(mask)
+
+        base.alpha_composite(m_cropped, dest=(x, y))
+        base.save(base_img_path, "PNG")
+        print(f"[Python Exportador] Imagen estática añadida al fondo: {img_src}")
+    except Exception as err:
+        print("[Python Exportador] Error agregando imagen estática:", err)
+
 def generate_overlay_pil(data: Dict[str, Any], scale: float, width: int, height: int, output_path: str):
     # Genera la capa transparente de textos (y sombras emuladas)
     img = Image.new("RGBA", (width, height), (0, 0, 0, 0))
     draw = ImageDraw.Draw(img)
 
-    # Nota: PIL no tiene un filtro directo de feDropShadow fÃ¡cil, 
-    # pero podemos emular la sombra del video dibujando un rectÃ¡ngulo semi-transparente negro difuminado detrÃ¡s o simplemente un borde suave
-    v_left = data.get("videoLeft", 0) * scale
-    v_top = data.get("videoTop", 0) * scale
-    v_width = data.get("videoWidth", 0) * scale
-    v_height = data.get("videoHeight", 0) * scale
-    r = parse_val(data.get("headerStyle", {}).get("borderRadius"), 12) * scale
+    v_left = parse_val(data.get("videoLeft"), 0) * scale
+    v_top = parse_val(data.get("videoTop"), 0) * scale
+    v_width = parse_val(data.get("videoWidth"), 0) * scale
+    v_height = parse_val(data.get("videoHeight"), 0) * scale
+    r = parse_val(data.get("borderRadius"), 12) * scale
 
-    # Emular sombra del video bÃ¡sica: RectÃ¡ngulo de fondo un poco mÃ¡s grande con opacidad muy baja
+    # Emular sombra del video básica
     shadow_offset = 6 * scale
-    draw.rounded_rectangle(
-        [v_left - shadow_offset, v_top - shadow_offset, v_left + v_width + shadow_offset, v_top + v_height + shadow_offset],
-        radius=r + shadow_offset,
-        fill=(0, 0, 0, 30)
-    )
+    if v_width > 0 and v_height > 0:
+        draw.rounded_rectangle(
+            [v_left - shadow_offset, v_top - shadow_offset, v_left + v_width + shadow_offset, v_top + v_height + shadow_offset],
+            radius=r + shadow_offset,
+            fill=(0, 0, 0, 30)
+        )
 
-    if data.get("headerStyle"):
-        get_text_card_drawing(draw, data.get("headerStyle"), data.get("headerHtml", ""), scale, width, height)
-    if data.get("footerStyle"):
-        get_text_card_drawing(draw, data.get("footerStyle"), data.get("footerHtml", ""), scale, width, height)
+    # Sombra para video inferior si existe (Diseño split_dual)
+    if data.get("mediaBottomSrc") or data.get("layout") == "split_dual":
+        v2_left = parse_val(data.get("videoBottomLeft"), 20) * scale
+        v2_top = parse_val(data.get("videoBottomTop"), 360) * scale
+        v2_width = parse_val(data.get("videoBottomWidth"), 320) * scale
+        v2_height = parse_val(data.get("videoBottomHeight"), 320) * scale
+        if v2_width > 0 and v2_height > 0:
+            draw.rounded_rectangle(
+                [v2_left - shadow_offset, v2_top - shadow_offset, v2_left + v2_width + shadow_offset, v2_top + v2_height + shadow_offset],
+                radius=r + shadow_offset,
+                fill=(0, 0, 0, 30)
+            )
+
+    header_style = data.get("headerStyle")
+    if header_style and isinstance(header_style, dict):
+        get_text_card_drawing(draw, header_style, data.get("headerHtml", ""), scale, width, height)
+
+    footer_style = data.get("footerStyle")
+    if footer_style and isinstance(footer_style, dict):
+        get_text_card_drawing(draw, footer_style, data.get("footerHtml", ""), scale, width, height)
 
     # Procesar Logo Flotante
     logo_src = data.get("logoSrc")
     logo_style = data.get("logoStyle")
-    if logo_src and logo_style:
+    if logo_src and logo_style and isinstance(logo_style, dict):
         try:
             import base64
             from io import BytesIO
@@ -435,14 +488,26 @@ def generate_overlay_pil(data: Dict[str, Any], scale: float, width: int, height:
                 
             logo_img_resized = logo_img.resize((l_width, l_height), resample=resample_method)
             img.alpha_composite(logo_img_resized, dest=(l_left, l_top))
-            print("[Python Exportador] Logo flotante procesado con Ã©xito.")
+            print("[Python Exportador] Logo flotante procesado con éxito.")
         except Exception as e:
             print("[Python Exportador] Error al procesar logo flotante:", e)
 
     img.save(output_path, "PNG")
 
+def get_video_duration(video_path: str) -> float:
+    try:
+        cmd = [FFMPEG_EXE, "-i", video_path]
+        proc = subprocess.run(cmd, capture_output=True, text=True)
+        for line in proc.stderr.splitlines():
+            if "Duration:" in line:
+                parts = line.split("Duration:")[1].split(",")[0].strip().split(":")
+                return float(parts[0]) * 3600 + float(parts[1]) * 60 + float(parts[2])
+    except Exception as e:
+        print("[Python Exportador] Error obteniendo duración:", e)
+    return 15.0
+
 def generate_mask_pil(dest_x: int, dest_y: int, dest_w: int, dest_h: int, r: int, width: int, height: int, output_path: str):
-    # Fondo negro y el Ã¡rea de recorte del video en blanco
+    # Fondo negro y el área de recorte del video en blanco
     img = Image.new("RGBA", (width, height), (0, 0, 0, 255))
     draw = ImageDraw.Draw(img)
     draw.rounded_rectangle([dest_x, dest_y, dest_x + dest_w, dest_y + dest_h], radius=r, fill=(255, 255, 255, 255))
@@ -454,49 +519,143 @@ async def export_video(request: Request):
         data = await request.json()
         scale = 720 / parse_val(data.get("canvasWidth"), 360)
 
-        dest_w = int(round(parse_val(data.get("videoWidth"), 0) * scale))
-        dest_h = int(round(parse_val(data.get("videoHeight"), 0) * scale))
-        dest_x = int(round(parse_val(data.get("videoLeft"), 0) * scale))
-        dest_y = int(round(parse_val(data.get("videoTop"), 0) * scale))
+        dest_w = int(round(parse_val(data.get("videoWidth"), 320) * scale))
+        dest_h = int(round(parse_val(data.get("videoHeight"), 320) * scale))
+        dest_x = int(round(parse_val(data.get("videoLeft"), 20) * scale))
+        dest_y = int(round(parse_val(data.get("videoTop"), 20) * scale))
         r = int(round(parse_val(data.get("borderRadius"), 12) * scale))
 
         temp_bg_path = os.path.join(CURRENT_DIR, "temp_bg.png")
         temp_overlay_path = os.path.join(CURRENT_DIR, "temp_overlay.png")
         temp_mask_path = os.path.join(CURRENT_DIR, "temp_mask.png")
-        
-        # Determinar el video de entrada (si viene de persistencia /uploads/ o fallback temporal)
-        media_src = data.get("mediaSrc")
-        if media_src and media_src.startswith("/uploads/"):
-            temp_input_video = os.path.join(CURRENT_DIR, media_src.lstrip("/"))
-            is_persistent = True
-        else:
-            temp_input_video = os.path.join(CURRENT_DIR, "temp_input.mp4")
-            is_persistent = False
-            
+        temp_mask2_path = os.path.join(CURRENT_DIR, "temp_mask2.png")
         temp_output_video = os.path.join(CURRENT_DIR, "temp_output.mp4")
 
-        # Generar fondos y capas usando PIL de forma ultra rÃ¡pida
+        # Determinar videos de entrada (Video 1 superior y Video 2 inferior)
+        media_src = data.get("mediaSrc")
+        media_bottom_src = data.get("mediaBottomSrc")
+
+        def is_video_type(src, mtype):
+            if not src:
+                return False
+            if mtype == "video":
+                return True
+            lower = src.lower()
+            return any(lower.endswith(ext) for ext in [".mp4", ".mov", ".webm", ".mkv"])
+
+        is_video_1 = is_video_type(media_src, data.get("mediaType"))
+        is_video_2 = is_video_type(media_bottom_src, data.get("mediaBottomType"))
+
+        temp_input_video1 = None
+        is_persistent1 = False
+        if is_video_1:
+            if media_src.startswith("/uploads/"):
+                temp_input_video1 = os.path.join(CURRENT_DIR, media_src.lstrip("/"))
+                is_persistent1 = True
+            elif os.path.exists(media_src):
+                temp_input_video1 = media_src
+                is_persistent1 = True
+            else:
+                temp_input_video1 = os.path.join(CURRENT_DIR, "temp_input.mp4")
+                is_persistent1 = False
+
+        temp_input_video2 = None
+        is_persistent2 = False
+        if is_video_2:
+            if media_bottom_src.startswith("/uploads/"):
+                temp_input_video2 = os.path.join(CURRENT_DIR, media_bottom_src.lstrip("/"))
+                is_persistent2 = True
+            elif os.path.exists(media_bottom_src):
+                temp_input_video2 = media_bottom_src
+                is_persistent2 = True
+            else:
+                temp_input_video2 = os.path.join(CURRENT_DIR, "temp_input2.mp4")
+                is_persistent2 = False
+
+        # Si el video 1 no existe pero el 2 sí, usar el slot 2 como video 1
+        if (not is_video_1 or not temp_input_video1 or not os.path.exists(temp_input_video1)) and is_video_2 and temp_input_video2 and os.path.exists(temp_input_video2):
+            temp_input_video1 = temp_input_video2
+            is_persistent1 = is_persistent2
+            is_video_1 = True
+            is_video_2 = False
+            dest_w = int(round(parse_val(data.get("videoBottomWidth"), 320) * scale))
+            dest_h = int(round(parse_val(data.get("videoBottomHeight"), 320) * scale))
+            dest_x = int(round(parse_val(data.get("videoBottomLeft"), 20) * scale))
+            dest_y = int(round(parse_val(data.get("videoBottomTop"), 360) * scale))
+
+        if not temp_input_video1 or not os.path.exists(temp_input_video1):
+            raise HTTPException(status_code=400, detail="No se ha encontrado el archivo de video para exportar.")
+
+        # Calcular duración exacta de los videos
+        durations = []
+        if temp_input_video1 and os.path.exists(temp_input_video1):
+            durations.append(get_video_duration(temp_input_video1))
+        if is_video_2 and temp_input_video2 and os.path.exists(temp_input_video2):
+            durations.append(get_video_duration(temp_input_video2))
+        target_duration = min(durations) if durations else 15.0
+        print(f"[Python Exportador] Duración seleccionada para exportar: {target_duration:.2f}s")
+
+        # Generar fondos y capas usando PIL
         generate_background_pil(data.get("theme"), data.get("customColor"), 720, 1280, temp_bg_path, data.get("bgImageSrc"))
+
+        # Si el slot 1 es imagen, incrustarlo en el fondo
+        if media_src and not is_video_1:
+            draw_rounded_media_image(temp_bg_path, media_src, dest_x, dest_y, dest_w, dest_h, r)
+
+        # Si el slot 2 es imagen, incrustarlo en el fondo
+        dest2_w = int(round(parse_val(data.get("videoBottomWidth"), 320) * scale))
+        dest2_h = int(round(parse_val(data.get("videoBottomHeight"), 320) * scale))
+        dest2_x = int(round(parse_val(data.get("videoBottomLeft"), 20) * scale))
+        dest2_y = int(round(parse_val(data.get("videoBottomTop"), 360) * scale))
+        if media_bottom_src and not is_video_2:
+            draw_rounded_media_image(temp_bg_path, media_bottom_src, dest2_x, dest2_y, dest2_w, dest2_h, r)
+
         generate_overlay_pil(data, scale, 720, 1280, temp_overlay_path)
         generate_mask_pil(dest_x, dest_y, dest_w, dest_h, r, 720, 1280, temp_mask_path)
 
-        if not os.path.exists(temp_input_video):
-            raise HTTPException(status_code=400, detail="No se ha subido ningÃºn video.")
+        files_to_clean = [temp_bg_path, temp_overlay_path, temp_mask_path]
+        if not is_persistent1 and temp_input_video1:
+            files_to_clean.append(temp_input_video1)
 
-        # Comando FFmpeg ultra rÃ¡pido usando hardware acceleration si estÃ¡ disponible, sino libx264 preset ultrafast
-        # -preset ultrafast es crucial para la velocidad mÃ¡xima en CPU
-        ffmpeg_cmd = (
-            f'"{FFMPEG_EXE}" -y -loop 1 -i "{temp_bg_path}" -i "{temp_input_video}" '
-            f'-loop 1 -i "{temp_overlay_path}" -loop 1 -i "{temp_mask_path}" '
-            f'-filter_complex "[1:v]scale=w=\'if(gte(iw/ih,{dest_w}/{dest_h}),-1,{dest_w})\':h=\'if(gte(iw/ih,{dest_w}/{dest_h}),{dest_h},-1)\',crop={dest_w}:{dest_h}[scaled_vid];'
-            f'[scaled_vid]pad=720:1280:{dest_x}:{dest_y}:color=black[padded_vid];'
-            f'[padded_vid][3:v]alphamerge[masked_vid];'
-            f'[0:v][masked_vid]overlay=0:0:shortest=1[bg_vid];'
-            f'[bg_vid][2:v]overlay=0:0[outv]" '
-            f'-map "[outv]" -map 1:a? -c:v libx264 -preset ultrafast -pix_fmt yuv420p -c:a aac -shortest "{temp_output_video}"'
-        )
+        # Comando FFmpeg (Dual Video simultáneo o Simple)
+        if is_video_2 and temp_input_video2 and os.path.exists(temp_input_video2):
+            generate_mask_pil(dest2_x, dest2_y, dest2_w, dest2_h, r, 720, 1280, temp_mask2_path)
+            files_to_clean.append(temp_mask2_path)
+            if not is_persistent2:
+                files_to_clean.append(temp_input_video2)
 
-        print("[Python Exportador] Ejecutando FFmpeg de forma ultra-rÃ¡pida...")
+            filter_complex = (
+                f"[1:v]scale=w='if(gte(iw/ih,{dest_w}/{dest_h}),-1,{dest_w})':h='if(gte(iw/ih,{dest_w}/{dest_h}),{dest_h},-1)',crop={dest_w}:{dest_h}[scaled_vid1];"
+                f"[scaled_vid1]pad=720:1280:{dest_x}:{dest_y}:color=black[padded_vid1];"
+                f"[padded_vid1][3:v]alphamerge[masked_vid1];"
+                f"[4:v]scale=w='if(gte(iw/ih,{dest2_w}/{dest2_h}),-1,{dest2_w})':h='if(gte(iw/ih,{dest2_w}/{dest2_h}),{dest2_h},-1)',crop={dest2_w}:{dest2_h}[scaled_vid2];"
+                f"[scaled_vid2]pad=720:1280:{dest2_x}:{dest2_y}:color=black[padded_vid2];"
+                f"[padded_vid2][5:v]alphamerge[masked_vid2];"
+                f"[0:v][masked_vid1]overlay=0:0:shortest=1[bg1];"
+                f"[bg1][masked_vid2]overlay=0:0:shortest=1[bg2];"
+                f"[bg2][2:v]overlay=0:0:shortest=1[outv]"
+            )
+
+            ffmpeg_cmd = (
+                f'"{FFMPEG_EXE}" -y -loop 1 -i "{temp_bg_path}" -i "{temp_input_video1}" '
+                f'-loop 1 -i "{temp_overlay_path}" -loop 1 -i "{temp_mask_path}" '
+                f'-i "{temp_input_video2}" -loop 1 -i "{temp_mask2_path}" '
+                f'-filter_complex "{filter_complex}" '
+                f'-map "[outv]" -map 1:a? -c:v libx264 -preset ultrafast -pix_fmt yuv420p -c:a aac -t {target_duration:.2f} "{temp_output_video}"'
+            )
+        else:
+            ffmpeg_cmd = (
+                f'"{FFMPEG_EXE}" -y -loop 1 -i "{temp_bg_path}" -i "{temp_input_video1}" '
+                f'-loop 1 -i "{temp_overlay_path}" -loop 1 -i "{temp_mask_path}" '
+                f'-filter_complex "[1:v]scale=w=\'if(gte(iw/ih,{dest_w}/{dest_h}),-1,{dest_w})\':h=\'if(gte(iw/ih,{dest_w}/{dest_h}),{dest_h},-1)\',crop={dest_w}:{dest_h}[scaled_vid];'
+                f'[scaled_vid]pad=720:1280:{dest_x}:{dest_y}:color=black[padded_vid];'
+                f'[padded_vid][3:v]alphamerge[masked_vid];'
+                f'[0:v][masked_vid]overlay=0:0:shortest=1[bg_vid];'
+                f'[bg_vid][2:v]overlay=0:0[outv]" '
+                f'-map "[outv]" -map 1:a? -c:v libx264 -preset ultrafast -pix_fmt yuv420p -c:a aac -t {target_duration:.2f} "{temp_output_video}"'
+            )
+
+        print("[Python Exportador] Ejecutando FFmpeg de forma ultra-rápida...")
         process = await asyncio.create_subprocess_shell(
             ffmpeg_cmd,
             stdout=asyncio.subprocess.PIPE,
@@ -504,11 +663,7 @@ async def export_video(request: Request):
         )
         stdout, stderr = await process.communicate()
 
-        # Limpieza de imÃ¡genes temporales
-        files_to_clean = [temp_bg_path, temp_overlay_path, temp_mask_path]
-        if not is_persistent:
-            files_to_clean.append(temp_input_video)
-            
+        # Limpieza de temporales
         for temp_file in files_to_clean:
             if os.path.exists(temp_file):
                 try:
@@ -520,7 +675,7 @@ async def export_video(request: Request):
             print("[Python Exportador] Error en FFmpeg:", stderr.decode())
             raise HTTPException(status_code=500, detail=f"Error en FFmpeg: {stderr.decode()}")
 
-        print("[Python Exportador] ExportaciÃ³n finalizada con Ã©xito.")
+        print("[Python Exportador] Exportación finalizada con éxito.")
         if os.path.exists(temp_output_video):
             return FileResponse(
                 temp_output_video,

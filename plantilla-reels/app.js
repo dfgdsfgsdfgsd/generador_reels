@@ -93,6 +93,10 @@ document.addEventListener("DOMContentLoaded", () => {
     let reelVideo = null;
     let reelImg = null;
     let mediaPlaceholder = null;
+    let mediaContainerBottom = null;
+    let reelVideoBottom = null;
+    let reelImgBottom = null;
+    let mediaPlaceholderBottom = null;
     let logoCard = null;
     let logoImgPreview = null;
     let instagramOverlay = null;
@@ -2650,6 +2654,10 @@ document.addEventListener("DOMContentLoaded", () => {
         reelVideo = document.getElementById(`reel-video-${index}`);
         reelImg = document.getElementById(`reel-img-${index}`);
         mediaPlaceholder = document.getElementById(`media-placeholder-${index}`);
+        mediaContainerBottom = document.getElementById(`media-container-bottom-${index}`);
+        reelVideoBottom = document.getElementById(`reel-video-bottom-${index}`);
+        reelImgBottom = document.getElementById(`reel-img-bottom-${index}`);
+        mediaPlaceholderBottom = document.getElementById(`media-placeholder-bottom-${index}`);
         logoCard = document.getElementById(`logo-card-${index}`);
         logoImgPreview = document.getElementById(`logo-img-preview-${index}`);
         instagramOverlay = document.getElementById(`instagram-overlay-${index}`);
@@ -3159,11 +3167,15 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     recordVideoBtn.addEventListener("click", async () => {
-        const hasPersistentVideo = currentTemplate.mediaSrc && currentTemplate.mediaSrc.startsWith("/uploads/");
-        logToServer(`[Grabador] Click en botón de exportación. mediaType=${currentTemplate.mediaType}, tieneFile=${!!rawVideoFile}, tienePersistencia=${hasPersistentVideo}`);
+        const hasTopVideo = currentTemplate.mediaType === "video" && (currentTemplate.mediaSrc || rawVideoFile);
+        const hasBottomVideo = currentTemplate.layout === "split_dual" && currentTemplate.mediaBottomType === "video" && currentTemplate.mediaBottomSrc;
+        const hasPersistentVideo = (currentTemplate.mediaSrc && currentTemplate.mediaSrc.startsWith("/uploads/")) ||
+                                   (currentTemplate.mediaBottomSrc && currentTemplate.mediaBottomSrc.startsWith("/uploads/"));
 
-        if (currentTemplate.mediaType !== "video") {
-            alert("Por favor, selecciona un video (.mp4) en el simulador antes de exportar.");
+        logToServer(`[Grabador] Click en botón de exportación. mediaType=${currentTemplate.mediaType}, bottomType=${currentTemplate.mediaBottomType}, tieneFile=${!!rawVideoFile}, tienePersistencia=${hasPersistentVideo}`);
+
+        if (!hasTopVideo && !hasBottomVideo) {
+            alert("Por favor, selecciona al menos un video (.mp4) en el simulador antes de exportar.");
             return;
         }
 
@@ -3201,15 +3213,24 @@ document.addEventListener("DOMContentLoaded", () => {
                 theme: themeSelect.value,
                 customColor: currentTemplate.customColor,
                 bgImageSrc: currentTemplate.bgImageSrc || null,
-                canvasWidth: reelCanvas.offsetWidth,
-                canvasHeight: reelCanvas.offsetHeight,
-                videoLeft: mediaContainer.offsetLeft,
-                videoTop: mediaContainer.offsetTop,
-                videoWidth: mediaContainer.offsetWidth,
-                videoHeight: mediaContainer.offsetHeight,
-                mediaSrc: currentTemplate.mediaSrc,
-                headerHtml: currentTemplate.showHeaderCard ? headerTextEl.innerHTML : "",
-                headerStyle: currentTemplate.showHeaderCard ? {
+                canvasWidth: reelCanvas ? reelCanvas.offsetWidth : 360,
+                canvasHeight: reelCanvas ? reelCanvas.offsetHeight : 640,
+                layout: currentTemplate.layout || "single",
+                mediaType: currentTemplate.mediaType || null,
+                mediaSrc: currentTemplate.mediaSrc || null,
+                videoLeft: mediaContainer ? mediaContainer.offsetLeft : 0,
+                videoTop: mediaContainer ? mediaContainer.offsetTop : 0,
+                videoWidth: mediaContainer ? mediaContainer.offsetWidth : 320,
+                videoHeight: mediaContainer ? mediaContainer.offsetHeight : 320,
+                mediaBottomType: currentTemplate.mediaBottomType || null,
+                mediaBottomSrc: currentTemplate.mediaBottomSrc || null,
+                videoBottomLeft: mediaContainerBottom ? mediaContainerBottom.offsetLeft : 20,
+                videoBottomTop: mediaContainerBottom ? mediaContainerBottom.offsetTop : 360,
+                videoBottomWidth: mediaContainerBottom ? mediaContainerBottom.offsetWidth : 320,
+                videoBottomHeight: mediaContainerBottom ? mediaContainerBottom.offsetHeight : 320,
+                borderRadius: 12,
+                headerHtml: (currentTemplate.showHeaderCard && headerTextEl) ? headerTextEl.innerHTML : "",
+                headerStyle: (currentTemplate.showHeaderCard && headerCard && headerTextEl) ? {
                     fontFamily: window.getComputedStyle(headerTextEl).fontFamily,
                     fontSize: window.getComputedStyle(headerTextEl).fontSize,
                     fontWeight: window.getComputedStyle(headerTextEl).fontWeight,
@@ -3224,8 +3245,8 @@ document.addEventListener("DOMContentLoaded", () => {
                     left: headerCard.offsetLeft,
                     top: headerCard.offsetTop
                 } : null,
-                footerHtml: currentTemplate.showFooterCard ? footerTextEl.innerHTML : "",
-                footerStyle: currentTemplate.showFooterCard ? {
+                footerHtml: (currentTemplate.showFooterCard && footerTextEl) ? footerTextEl.innerHTML : "",
+                footerStyle: (currentTemplate.showFooterCard && footerCard && footerTextEl) ? {
                     fontFamily: window.getComputedStyle(footerTextEl).fontFamily,
                     fontSize: window.getComputedStyle(footerTextEl).fontSize,
                     fontWeight: window.getComputedStyle(footerTextEl).fontWeight,
@@ -3241,7 +3262,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     top: footerCard.offsetTop
                 } : null,
                 logoSrc: currentTemplate.logoSrc || null,
-                logoStyle: currentTemplate.logoSrc ? {
+                logoStyle: (currentTemplate.logoSrc && logoCard) ? {
                     width: logoCard.offsetWidth,
                     height: logoCard.offsetHeight,
                     left: logoCard.offsetLeft,
@@ -3715,21 +3736,31 @@ document.addEventListener("DOMContentLoaded", () => {
         const fCard = document.getElementById(`footer-card-${index}`);
         const fText = document.getElementById(`footer-text-${index}`);
         const mContainer = document.getElementById(`media-container-${index}`);
+        const mContBottom = document.getElementById(`media-container-bottom-${index}`);
         const lCard = document.getElementById(`logo-card-${index}`);
         
         return {
             theme: screenData.theme,
             customColor: screenData.customColor,
             bgImageSrc: screenData.bgImageSrc || null,
-            canvasWidth: scrCanvas.offsetWidth,
-            canvasHeight: scrCanvas.offsetHeight,
-            videoLeft: mContainer.offsetLeft,
-            videoTop: mContainer.offsetTop,
-            videoWidth: mContainer.offsetWidth,
-            videoHeight: mContainer.offsetHeight,
-            mediaSrc: screenData.mediaSrc,
-            headerHtml: screenData.showHeaderCard ? hText.innerHTML : "",
-            headerStyle: screenData.showHeaderCard ? {
+            canvasWidth: scrCanvas ? scrCanvas.offsetWidth : 360,
+            canvasHeight: scrCanvas ? scrCanvas.offsetHeight : 640,
+            layout: screenData.layout || "single",
+            mediaType: screenData.mediaType || null,
+            mediaSrc: screenData.mediaSrc || null,
+            videoLeft: mContainer ? mContainer.offsetLeft : 0,
+            videoTop: mContainer ? mContainer.offsetTop : 0,
+            videoWidth: mContainer ? mContainer.offsetWidth : 320,
+            videoHeight: mContainer ? mContainer.offsetHeight : 320,
+            mediaBottomType: screenData.mediaBottomType || null,
+            mediaBottomSrc: screenData.mediaBottomSrc || null,
+            videoBottomLeft: mContBottom ? mContBottom.offsetLeft : 20,
+            videoBottomTop: mContBottom ? mContBottom.offsetTop : 360,
+            videoBottomWidth: mContBottom ? mContBottom.offsetWidth : 320,
+            videoBottomHeight: mContBottom ? mContBottom.offsetHeight : 320,
+            borderRadius: 12,
+            headerHtml: (screenData.showHeaderCard && hText) ? hText.innerHTML : "",
+            headerStyle: (screenData.showHeaderCard && hCard && hText) ? {
                 fontFamily: window.getComputedStyle(hText).fontFamily,
                 fontSize: window.getComputedStyle(hText).fontSize,
                 fontWeight: window.getComputedStyle(hText).fontWeight,
@@ -3744,8 +3775,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 left: hCard.offsetLeft,
                 top: hCard.offsetTop
             } : null,
-            footerHtml: screenData.showFooterCard ? fText.innerHTML : "",
-            footerStyle: screenData.showFooterCard ? {
+            footerHtml: (screenData.showFooterCard && fText) ? fText.innerHTML : "",
+            footerStyle: (screenData.showFooterCard && fCard && fText) ? {
                 fontFamily: window.getComputedStyle(fText).fontFamily,
                 fontSize: window.getComputedStyle(fText).fontSize,
                 fontWeight: window.getComputedStyle(fText).fontWeight,
@@ -3761,7 +3792,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 top: fCard.offsetTop
             } : null,
             logoSrc: screenData.logoSrc || null,
-            logoStyle: screenData.logoSrc ? {
+            logoStyle: (screenData.logoSrc && lCard) ? {
                 width: lCard.offsetWidth,
                 height: lCard.offsetHeight,
                 left: lCard.offsetLeft,
