@@ -330,20 +330,21 @@ def generate_background_pil(theme: str, custom_color: str, width: int, height: i
     img = Image.new("RGBA", (width, height), (0, 0, 0, 255))
     draw = ImageDraw.Draw(img)
 
-    # Imagen de fondo personalizada si el tema es 'image'
-    if theme == 'image' and bg_image_src:
+    # Imagen de fondo personalizada si bg_image_src existe o el tema es 'image'
+    if bg_image_src or theme == 'image':
         try:
             bg_pil = None
-            if bg_image_src.startswith('/uploads/'):
-                local_bg = os.path.join(uploads_dir, os.path.basename(bg_image_src))
-                if os.path.exists(local_bg):
-                    bg_pil = Image.open(local_bg).convert("RGBA")
-            elif bg_image_src.startswith('data:image'):
-                header, encoded = bg_image_src.split(',', 1)
-                img_data = base64.b64decode(encoded)
-                bg_pil = Image.open(io.BytesIO(img_data)).convert("RGBA")
-            elif os.path.exists(bg_image_src):
-                bg_pil = Image.open(bg_image_src).convert("RGBA")
+            if bg_image_src:
+                if "/uploads/" in bg_image_src or "uploads/" in bg_image_src:
+                    local_bg = os.path.join(uploads_dir, os.path.basename(bg_image_src.split('?')[0]))
+                    if os.path.exists(local_bg):
+                        bg_pil = Image.open(local_bg).convert("RGBA")
+                elif bg_image_src.startswith('data:image'):
+                    header, encoded = bg_image_src.split(',', 1)
+                    img_data = base64.b64decode(encoded)
+                    bg_pil = Image.open(io.BytesIO(img_data)).convert("RGBA")
+                elif os.path.exists(bg_image_src):
+                    bg_pil = Image.open(bg_image_src).convert("RGBA")
 
             if bg_pil:
                 bw, bh = bg_pil.size
@@ -637,7 +638,7 @@ async def export_video(request: Request):
         bg_filter_chain = ""
         bg_target = "0:v"
         print(f"[Python Exportador] Procesando bgEffect='{bg_effect}', bgImageSrc={'SI' if data.get('bgImageSrc') else 'NO'}")
-        if bg_effect and bg_effect != "none" and (data.get("theme") == "image" or data.get("bgImageSrc")):
+        if bg_effect and bg_effect != "none":
             if bg_effect == "kenburns":
                 bg_filter_chain = "[0:v]scale=900:1600,crop=720:1280:x='(in_w-720)/2 + 60*sin(2*PI*t/14)':y='(in_h-1280)/2 + 90*cos(2*PI*t/14)'[bg_anim];"
                 bg_target = "bg_anim"

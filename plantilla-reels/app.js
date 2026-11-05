@@ -1529,6 +1529,8 @@ document.addEventListener("DOMContentLoaded", () => {
                     const compressedBase64 = await compressImage(event.target.result, 1080, 0.85);
                     targetScreen.theme = "image";
                     targetScreen.bgImageSrc = compressedBase64;
+                    currentTemplate.theme = "image";
+                    currentTemplate.bgImageSrc = compressedBase64;
                     themeSelect.value = "image";
                     
                     const canvas = document.getElementById(`reel-canvas-${targetIndex}`);
@@ -1552,6 +1554,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (uploadRes.ok) {
                     const resData = await uploadRes.json();
                     targetScreen.bgImageSrc = resData.url;
+                    currentTemplate.bgImageSrc = resData.url;
                     saveTemplateQuietly();
                 }
             } catch (err) {
@@ -3265,12 +3268,22 @@ document.addEventListener("DOMContentLoaded", () => {
             logToServer("[Grabador] Solicitando procesamiento FFmpeg...");
             recordVideoBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Procesando en Servidor...';
 
-            const activeScreen = currentProject.screens[currentProject.activeScreenIndex] || {};
+            const activeScreen = (currentProject && currentProject.screens) ? currentProject.screens[currentProject.activeScreenIndex] : null;
+            const effBgImg = (activeScreen && activeScreen.bgImageSrc) || currentTemplate.bgImageSrc || null;
+            const effBgEffect = (activeScreen && activeScreen.bgEffect) || currentTemplate.bgEffect || (bgEffectSelect ? bgEffectSelect.value : "none");
+            const effTheme = effBgImg ? "image" : ((activeScreen && activeScreen.theme) || currentTemplate.theme || themeSelect.value || "dark");
+            const effCustomColor = (activeScreen && activeScreen.customColor) || currentTemplate.customColor;
+            const effLayout = (activeScreen && activeScreen.layout) || currentTemplate.layout || "single";
+            const effMediaType = (activeScreen && activeScreen.mediaType) || currentTemplate.mediaType || null;
+            const effMediaSrc = (activeScreen && activeScreen.mediaSrc) || currentTemplate.mediaSrc || null;
+            const effMediaBottomType = (activeScreen && activeScreen.mediaBottomType) || currentTemplate.mediaBottomType || null;
+            const effMediaBottomSrc = (activeScreen && activeScreen.mediaBottomSrc) || currentTemplate.mediaBottomSrc || null;
+
             const exportPayload = {
-                theme: themeSelect.value,
-                customColor: currentTemplate.customColor,
-                bgImageSrc: activeScreen.bgImageSrc || currentTemplate.bgImageSrc || null,
-                bgEffect: activeScreen.bgEffect || currentTemplate.bgEffect || "none",
+                theme: effTheme,
+                customColor: effCustomColor,
+                bgImageSrc: effBgImg,
+                bgEffect: effBgEffect,
                 canvasWidth: reelCanvas ? reelCanvas.offsetWidth : 360,
                 canvasHeight: reelCanvas ? reelCanvas.offsetHeight : 640,
                 layout: currentTemplate.layout || "single",
@@ -3797,8 +3810,11 @@ document.addEventListener("DOMContentLoaded", () => {
         const mContBottom = document.getElementById(`media-container-bottom-${index}`);
         const lCard = document.getElementById(`logo-card-${index}`);
         
+        const effBgImg = screenData.bgImageSrc || null;
+        const effTheme = effBgImg ? "image" : (screenData.theme || "dark");
+
         return {
-            theme: screenData.theme,
+            theme: effTheme,
             customColor: screenData.customColor,
             bgImageSrc: screenData.bgImageSrc || null,
             bgEffect: screenData.bgEffect || "none",
