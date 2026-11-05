@@ -825,7 +825,17 @@ document.addEventListener("DOMContentLoaded", () => {
                     targetScreen.mediaSrc = resData.url;
                 }
                 console.log("[Editor] Media (" + slot + ") guardado de forma persistente:", resData.url);
-                applyScreenMedia(targetIndex);
+                
+                const videoEl = document.getElementById(slot === "bottom" ? `reel-video-bottom-${targetIndex}` : `reel-video-${targetIndex}`);
+                if (videoEl) {
+                    videoEl.dataset.serverUrl = resData.url;
+                }
+
+                // Si el video dio error al reproducirse con el blob local (ej. codec HEVC/MOV), recargar con version H.264 convertida
+                if (isVideo && videoEl && (videoEl.error || videoEl.networkState === HTMLMediaElement.NETWORK_NO_SOURCE)) {
+                    console.log("[Editor] Video local no soportado directamente por el navegador, aplicando version H.264 convertida");
+                    applyScreenMedia(targetIndex);
+                }
                 saveTemplateQuietly();
             }
         } catch (err) {
@@ -2877,30 +2887,41 @@ document.addEventListener("DOMContentLoaded", () => {
             placeholder.style.display = "none";
             placeholder.style.visibility = "hidden";
             video.preload = "auto";
-            video.src = screenData.mediaSrc;
-            video.muted = true;
 
-            const onMeta = () => {
-                if (video.currentTime === 0) video.currentTime = 0.05;
-            };
-            video.addEventListener("loadedmetadata", onMeta, { once: true });
+            const isAlreadyLoaded = (video.dataset.loadedSrc === screenData.mediaSrc) || 
+                                    (video.dataset.serverUrl === screenData.mediaSrc);
 
-            if (index === currentProject.activeScreenIndex) {
-                if (screenData.fixedFrameTime !== undefined && screenData.fixedFrameTime !== null) {
-                    video.currentTime = screenData.fixedFrameTime;
-                    video.pause();
+            if (!isAlreadyLoaded) {
+                video.dataset.loadedSrc = screenData.mediaSrc;
+                video.src = screenData.mediaSrc;
+                video.muted = true;
+
+                const onMeta = () => {
+                    if (video.currentTime === 0) video.currentTime = 0.05;
+                };
+                video.addEventListener("loadedmetadata", onMeta, { once: true });
+
+                if (index === currentProject.activeScreenIndex) {
+                    if (screenData.fixedFrameTime !== undefined && screenData.fixedFrameTime !== null) {
+                        video.currentTime = screenData.fixedFrameTime;
+                        video.pause();
+                    } else {
+                        video.play().catch(() => console.log("Video auto-play blocked."));
+                    }
+                    const editMediaBtn = document.getElementById('edit-media-btn');
+                    if (editMediaBtn) editMediaBtn.disabled = true;
+                    syncTimelineControls();
                 } else {
-                    video.play().catch(() => console.log("Video auto-play blocked."));
+                    video.pause();
+                    if (screenData.fixedFrameTime !== undefined && screenData.fixedFrameTime !== null) {
+                        video.currentTime = screenData.fixedFrameTime;
+                    } else if (video.currentTime === 0) {
+                        video.currentTime = 0.05;
+                    }
                 }
-                const editMediaBtn = document.getElementById('edit-media-btn');
-                if (editMediaBtn) editMediaBtn.disabled = true;
-                syncTimelineControls();
             } else {
-                video.pause();
-                if (screenData.fixedFrameTime !== undefined && screenData.fixedFrameTime !== null) {
-                    video.currentTime = screenData.fixedFrameTime;
-                } else if (video.currentTime === 0) {
-                    video.currentTime = 0.05;
+                if (index === currentProject.activeScreenIndex) {
+                    syncTimelineControls();
                 }
             }
         } else if (screenData.mediaType === "image" && screenData.mediaSrc) {
@@ -2937,18 +2958,25 @@ document.addEventListener("DOMContentLoaded", () => {
                 placeholderBottom.style.display = "none";
                 placeholderBottom.style.visibility = "hidden";
                 videoBottom.preload = "auto";
-                videoBottom.src = screenData.mediaBottomSrc;
-                videoBottom.muted = true;
 
-                const onMetaBottom = () => {
-                    if (videoBottom.currentTime === 0) videoBottom.currentTime = 0.05;
-                };
-                videoBottom.addEventListener("loadedmetadata", onMetaBottom, { once: true });
+                const isAlreadyLoadedBottom = (videoBottom.dataset.loadedSrc === screenData.mediaBottomSrc) || 
+                                              (videoBottom.dataset.serverUrl === screenData.mediaBottomSrc);
 
-                if (index === currentProject.activeScreenIndex) {
-                    videoBottom.play().catch(() => {});
-                } else {
-                    videoBottom.pause();
+                if (!isAlreadyLoadedBottom) {
+                    videoBottom.dataset.loadedSrc = screenData.mediaBottomSrc;
+                    videoBottom.src = screenData.mediaBottomSrc;
+                    videoBottom.muted = true;
+
+                    const onMetaBottom = () => {
+                        if (videoBottom.currentTime === 0) videoBottom.currentTime = 0.05;
+                    };
+                    videoBottom.addEventListener("loadedmetadata", onMetaBottom, { once: true });
+
+                    if (index === currentProject.activeScreenIndex) {
+                        videoBottom.play().catch(() => {});
+                    } else {
+                        videoBottom.pause();
+                    }
                 }
             } else if (screenData.mediaBottomType === "image" && screenData.mediaBottomSrc) {
                 videoBottom.style.display = "none";
