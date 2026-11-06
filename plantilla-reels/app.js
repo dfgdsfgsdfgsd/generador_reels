@@ -2190,24 +2190,31 @@ document.addEventListener("DOMContentLoaded", () => {
             return;
         }
 
-        canvasEl.style.display = "block";
-        
         if (activeWaterGl && activeWaterGl.canvas === canvasEl && currentWaterImageSrc === imageSrc) {
+            canvasEl.style.display = "block";
             return;
         }
 
         stopWaterEffect();
         currentWaterImageSrc = imageSrc;
+        canvasEl.style.display = "block";
 
-        let gl = canvasEl.getContext("webgl", { alpha: false, depth: false, antialias: false, powerPreference: "high-performance" });
+        let gl = canvasEl.getContext("webgl2", { alpha: false, depth: false, antialias: false, powerPreference: "high-performance" });
         if (!gl) {
-            gl = canvasEl.getContext("experimental-webgl");
+            gl = canvasEl.getContext("webgl", { alpha: false, depth: false, antialias: false, powerPreference: "high-performance" }) ||
+                 canvasEl.getContext("experimental-webgl");
         }
         if (!gl) {
-            console.warn("[WebGL Water] WebGL no soportado en este navegador.");
+            console.warn("[WebGL Water] WebGL no soportado, activando respaldo CSS.");
+            const parent = canvasEl.closest(".reel-canvas");
+            if (parent) parent.classList.add("bg-effect-water");
             canvasEl.style.display = "none";
             return;
         }
+
+        canvasEl.width = 360;
+        canvasEl.height = 640;
+        gl.viewport(0, 0, 360, 640);
 
         const vsSource = `
             attribute vec2 a_pos;
@@ -2252,6 +2259,9 @@ document.addEventListener("DOMContentLoaded", () => {
             const s = gl.createShader(type);
             gl.shaderSource(s, src);
             gl.compileShader(s);
+            if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) {
+                console.error("[WebGL Shader Error]", gl.getShaderInfoLog(s));
+            }
             return s;
         }
 
@@ -2271,7 +2281,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const timeLoc = gl.getUniformLocation(prog, "u_time");
         const scaleLoc = gl.getUniformLocation(prog, "u_scale");
+        const imgLoc = gl.getUniformLocation(prog, "u_image");
+        gl.uniform1i(imgLoc, 0);
+
         const tex = gl.createTexture();
+        gl.activeTexture(gl.TEXTURE0);
         gl.bindTexture(gl.TEXTURE_2D, tex);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
@@ -2279,12 +2293,17 @@ document.addEventListener("DOMContentLoaded", () => {
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
 
         const img = new Image();
-        img.crossOrigin = "anonymous";
+        if (!imageSrc.startsWith("data:")) {
+            img.crossOrigin = "anonymous";
+        }
         img.onload = () => {
+            canvasEl.style.display = "block";
+            gl.viewport(0, 0, 360, 640);
+            gl.activeTexture(gl.TEXTURE0);
             gl.bindTexture(gl.TEXTURE_2D, tex);
             gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img);
             
-            const canvasAspect = canvasEl.width / canvasEl.height;
+            const canvasAspect = 360 / 640;
             const imgAspect = (img.naturalWidth || img.width || 360) / (img.naturalHeight || img.height || 640);
             let sx = 1.0, sy = 1.0;
             if (imgAspect > canvasAspect) {
@@ -2305,6 +2324,13 @@ document.addEventListener("DOMContentLoaded", () => {
                 waterAnimationId = requestAnimationFrame(loop);
             }
             waterAnimationId = requestAnimationFrame(loop);
+        };
+        img.onerror = (err) => {
+            console.error("[WebGL Water] Error cargando imagen para textura:", err);
+            // Respaldo CSS inmediato
+            const parent = canvasEl.closest(".reel-canvas");
+            if (parent) parent.classList.add("bg-effect-water");
+            canvasEl.style.display = "none";
         };
         img.src = imageSrc;
     }
