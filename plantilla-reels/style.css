@@ -2489,7 +2489,7 @@ emoji-picker.dark {
 }
 
 /* Barra flotante de emojis rápidos */
-/* Barra flotante de emojis con desborde libre a la derecha del menú lateral (flyout) */
+/* Barra flotante / panel de emojis con soporte de arrastre libre y anclado lateral derecho */
 .quick-emoji-popup {
     background: #181b22;
     border: 1px solid rgba(255, 255, 255, 0.18);
@@ -2498,7 +2498,7 @@ emoji-picker.dark {
     display: none;
     flex-direction: column;
     gap: 8px;
-    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.08);
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.85), 0 0 0 1px rgba(255, 255, 255, 0.08);
     animation: fadeInQuickEmoji 0.15s ease-out;
     width: 370px;
     max-width: calc(100vw - 30px);
@@ -2506,20 +2506,80 @@ emoji-picker.dark {
     z-index: 10000;
     overflow-x: hidden !important;
     position: fixed;
+    transition: box-shadow 0.2s ease, border-color 0.2s ease;
 }
 
-.quick-emoji-popup::before {
-    content: '';
-    position: absolute;
-    top: 16px;
-    left: -6px;
-    width: 10px;
-    height: 10px;
-    background: #181b22;
-    border-left: 1px solid rgba(255, 255, 255, 0.18);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.18);
-    transform: rotate(45deg);
-    pointer-events: none;
+/* Encabezado arrastrable y selector de modo */
+.quick-emoji-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 7px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    margin-bottom: 2px;
+}
+
+.quick-emoji-drag-handle {
+    cursor: move;
+    user-select: none;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #cbd5e1;
+}
+
+.quick-emoji-drag-handle i {
+    color: #64748b;
+    font-size: 0.75rem;
+}
+
+.quick-emoji-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.quick-emoji-mode-btn {
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 4px;
+    color: #93c5fd;
+    font-size: 0.68rem;
+    padding: 2px 7px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    transition: all 0.15s ease;
+}
+
+.quick-emoji-mode-btn:hover {
+    background: rgba(59, 130, 246, 0.2);
+    border-color: #3b82f6;
+    color: #ffffff;
+}
+
+.quick-emoji-close-btn {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    cursor: pointer;
+    font-size: 1.15rem;
+    line-height: 1;
+    padding: 0 4px;
+    transition: color 0.15s ease;
+}
+
+.quick-emoji-close-btn:hover {
+    color: #ef4444;
+}
+
+/* Modo anclado en el lateral derecho de la pantalla */
+.quick-emoji-popup.is-docked-right {
+    box-shadow: -8px 12px 36px rgba(0, 0, 0, 0.85);
+    border-color: rgba(59, 130, 246, 0.35);
 }
 
 .quick-emoji-grid {

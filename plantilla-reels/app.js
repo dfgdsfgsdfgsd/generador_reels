@@ -4671,6 +4671,9 @@ document.addEventListener("DOMContentLoaded", () => {
     };
 
     function setupEmojiSystem() {
+        // Posición manual personalizada si el usuario arrastra la ventana
+        let userEmojiPos = null;
+
         // 1. Configurar botones directos en cabecera de título y descripción con vista rápida, categorías y biblioteca completa
         function setupQuickBar(btnId, barId, inputId) {
             const btn = document.getElementById(btnId);
@@ -4678,12 +4681,31 @@ document.addEventListener("DOMContentLoaded", () => {
             const input = document.getElementById(inputId);
             if (!btn || !bar || !input) return;
 
-            // Mover el contenedor de emojis al body para que pueda desbordar libremente fuera del sidebar sin ser recortado
+            // Mover el contenedor de emojis al body para que pueda desbordar libremente sin ser recortado
             if (bar.parentElement !== document.body) {
                 document.body.appendChild(bar);
             }
 
+            // Modo guardado ('floating' por defecto, o 'docked_right')
+            let currentMode = 'floating';
+            try {
+                const savedMode = localStorage.getItem('reels_emoji_panel_mode');
+                if (savedMode === 'docked_right' || savedMode === 'floating') currentMode = savedMode;
+            } catch(e) {}
+
             bar.innerHTML = `
+                <div class="quick-emoji-header">
+                    <div class="quick-emoji-drag-handle" title="Arrastrar ventana a cualquier lugar">
+                        <i class="fa-solid fa-grip-lines"></i>
+                        <span>Emojis</span>
+                    </div>
+                    <div class="quick-emoji-header-actions">
+                        <button type="button" class="quick-emoji-mode-btn" title="Alternar entre flotante y anclado al lateral derecho">
+                            <i class="fa-solid fa-thumbtack"></i> <span class="mode-text">Anclar a la derecha</span>
+                        </button>
+                        <button type="button" class="quick-emoji-close-btn" title="Cerrar">&times;</button>
+                    </div>
+                </div>
                 <div class="quick-emoji-top">
                     <div class="quick-emoji-grid">
                         ${POPULAR_QUICK_EMOJIS.map(emoji => `
@@ -4712,31 +4734,141 @@ document.addEventListener("DOMContentLoaded", () => {
             const pickerContainer = bar.querySelector('.quick-emoji-picker-container');
             const toggleMoreBtn = bar.querySelector('.btn-toggle-more-emojis');
             const openFullPickerBtn = bar.querySelector('.btn-open-full-picker');
+            const dragHandle = bar.querySelector('.quick-emoji-drag-handle');
+            const modeBtn = bar.querySelector('.quick-emoji-mode-btn');
+            const closeBtn = bar.querySelector('.quick-emoji-close-btn');
             let embeddedPicker = null;
 
-            function positionPopup() {
-                if (bar.style.display !== 'flex') return;
-                const rect = input.getBoundingClientRect();
-                const popupWidth = 370;
-                const sidebar = document.querySelector('.sidebar');
-                const sidebarRect = sidebar ? sidebar.getBoundingClientRect() : null;
-                const sidebarRight = sidebarRect ? sidebarRect.right : 306;
+            function applyModeUI() {
+                if (currentMode === 'docked_right') {
+                    bar.classList.add('is-docked-right');
+                    bar.style.left = 'auto';
+                    bar.style.right = '20px';
+                    bar.style.top = '74px';
+                    if (modeBtn) {
+                        modeBtn.innerHTML = '<i class="fa-solid fa-up-right-from-square"></i> <span class="mode-text">Modo flotante</span>';
+                        modeBtn.title = 'Cambiar a ventana flotante arrastrable';
+                    }
+                    if (dragHandle) dragHandle.style.cursor = 'default';
+                } else {
+                    bar.classList.remove('is-docked-right');
+                    bar.style.right = 'auto';
+                    if (modeBtn) {
+                        modeBtn.innerHTML = '<i class="fa-solid fa-thumbtack"></i> <span class="mode-text">Anclar a la derecha</span>';
+                        modeBtn.title = 'Anclar como panel en el margen derecho de la pantalla';
+                    }
+                    if (dragHandle) dragHandle.style.cursor = 'move';
+                    positionFloating();
+                }
+            }
 
-                // Posicionar flotando completamente a la derecha de la barra lateral (sin tapar los campos de texto)
-                let left = sidebarRight + 12;
-                let top = rect.top;
+            function positionFloating() {
+                if (currentMode === 'docked_right') {
+                    bar.style.left = 'auto';
+                    bar.style.right = '20px';
+                    bar.style.top = '74px';
+                    return;
+                }
 
-                // Evitar que se desborde por la parte inferior de la ventana
+                // 1. Si el usuario ya arrastró la ventana con el ratón, respetar su posición elegida
+                if (userEmojiPos) {
+                    let left = Math.max(10, Math.min(window.innerWidth - bar.offsetWidth - 10, userEmojiPos.left));
+                    let top = Math.max(10, Math.min(window.innerHeight - bar.offsetHeight - 10, userEmojiPos.top));
+                    bar.style.left = `${left}px`;
+                    bar.style.top = `${top}px`;
+                    bar.style.right = 'auto';
+                    return;
+                }
+
+                // 2. Posición automática por defecto: A LA DERECHA DE PANTALLA 1 (para ver la pantalla completa)
+                const activePhone = document.querySelector('.phone-wrapper.active') || document.querySelector('.phone-wrapper');
+                let left = 740;
+                let top = 100;
+
+                if (activePhone) {
+                    const phoneRect = activePhone.getBoundingClientRect();
+                    left = phoneRect.right + 20; // Justo a la derecha de Pantalla 1
+                    top = Math.max(74, phoneRect.top + 10);
+                } else {
+                    const sidebar = document.querySelector('.sidebar');
+                    const sidebarRect = sidebar ? sidebar.getBoundingClientRect() : null;
+                    left = (sidebarRect ? sidebarRect.right : 306) + 380;
+                }
+
+                // Si en monitores pequeños se sale de la pantalla por la derecha, ajustar
+                if (left + 380 > window.innerWidth - 10) {
+                    left = Math.max(10, window.innerWidth - 385);
+                }
+
                 const popupHeight = bar.offsetHeight || 380;
                 if (top + popupHeight > window.innerHeight - 15) {
                     top = Math.max(15, window.innerHeight - popupHeight - 15);
                 }
 
-                bar.style.position = 'fixed';
                 bar.style.left = `${left}px`;
                 bar.style.top = `${top}px`;
-                bar.style.width = `${popupWidth}px`;
+                bar.style.right = 'auto';
             }
+
+            // Alternar modos (Flotante arrastrable vs Anclado a la derecha)
+            if (modeBtn) {
+                modeBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    currentMode = (currentMode === 'docked_right') ? 'floating' : 'docked_right';
+                    try {
+                        localStorage.setItem('reels_emoji_panel_mode', currentMode);
+                    } catch(err) {}
+                    applyModeUI();
+                });
+            }
+
+            // Botón de cerrar
+            if (closeBtn) {
+                closeBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    bar.style.display = 'none';
+                    btn.classList.remove('active');
+                });
+            }
+
+            // Arrastre con el mouse en modo flotante
+            let isDragging = false;
+            let dragOffsetX = 0;
+            let dragOffsetY = 0;
+
+            if (dragHandle) {
+                dragHandle.addEventListener('mousedown', (e) => {
+                    if (currentMode === 'docked_right') return;
+                    isDragging = true;
+                    const barRect = bar.getBoundingClientRect();
+                    dragOffsetX = e.clientX - barRect.left;
+                    dragOffsetY = e.clientY - barRect.top;
+                    document.body.style.userSelect = 'none';
+                    e.preventDefault();
+                });
+            }
+
+            document.addEventListener('mousemove', (e) => {
+                if (!isDragging) return;
+                let newLeft = e.clientX - dragOffsetX;
+                let newTop = e.clientY - dragOffsetY;
+
+                newLeft = Math.max(10, Math.min(window.innerWidth - bar.offsetWidth - 10, newLeft));
+                newTop = Math.max(10, Math.min(window.innerHeight - bar.offsetHeight - 10, newTop));
+
+                bar.style.left = `${newLeft}px`;
+                bar.style.top = `${newTop}px`;
+                bar.style.right = 'auto';
+
+                userEmojiPos = { left: newLeft, top: newTop };
+            });
+
+            document.addEventListener('mouseup', () => {
+                if (isDragging) {
+                    isDragging = false;
+                    document.body.style.userSelect = '';
+                }
+            });
 
             btn.addEventListener('click', (e) => {
                 e.stopPropagation();
@@ -4748,7 +4880,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (!isOpen) {
                     bar.style.display = 'flex';
                     btn.classList.add('active');
-                    positionPopup();
+                    applyModeUI();
                 }
             });
 
@@ -4765,7 +4897,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     const isMoreOpen = (moreSection.style.display === 'block');
                     moreSection.style.display = isMoreOpen ? 'none' : 'block';
                     moreBtn.textContent = isMoreOpen ? '➕ Ver más' : '➖ Menos';
-                    requestAnimationFrame(positionPopup);
+                    if (currentMode === 'floating') requestAnimationFrame(positionFloating);
                     return;
                 }
 
@@ -4789,23 +4921,13 @@ document.addEventListener("DOMContentLoaded", () => {
                         pickerContainer.style.display = 'none';
                         fullPickerBtn.textContent = '🔍 Toda la biblioteca';
                     }
-                    requestAnimationFrame(positionPopup);
+                    if (currentMode === 'floating') requestAnimationFrame(positionFloating);
                     return;
                 }
             });
 
-            // Sincronizar posición ante scroll de la barra lateral o redimensionado
-            const sidebar = document.querySelector('.sidebar');
-            if (sidebar) {
-                sidebar.addEventListener('scroll', () => {
-                    if (bar.style.display === 'flex') positionPopup();
-                }, { passive: true });
-            }
-            window.addEventListener('scroll', () => {
-                if (bar.style.display === 'flex') positionPopup();
-            }, { passive: true });
             window.addEventListener('resize', () => {
-                if (bar.style.display === 'flex') positionPopup();
+                if (bar.style.display === 'flex' && currentMode === 'floating') positionFloating();
             }, { passive: true });
         }
 
