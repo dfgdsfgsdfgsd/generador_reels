@@ -336,6 +336,10 @@ document.addEventListener("DOMContentLoaded", () => {
             // Escala del simulador para corregir la velocidad del cursor
             const scale = 0.75;
             let hasMoved = false;
+            let rafId = null;
+            let currentTop = startTop;
+            let currentLeft = startLeft;
+            el.classList.add("is-dragging");
             
             function onMouseMove(moveEvent) {
                 const dyRaw = Math.abs(moveEvent.clientY - startY);
@@ -360,9 +364,16 @@ document.addEventListener("DOMContentLoaded", () => {
                     left = Math.max(10, Math.min(canvas.offsetWidth - el.offsetWidth - 10, left));
                 }
                 
-                el.style.top = top + "px";
-                el.style.left = left + "px";
-                el.style.bottom = "auto"; // Limpiar posicionamiento relativo de bottom
+                currentTop = top;
+                currentLeft = left;
+                
+                // Sincronizar actualización visual con el refresco de pantalla para evitar estelas o desgarros de GPU
+                if (rafId) cancelAnimationFrame(rafId);
+                rafId = requestAnimationFrame(() => {
+                    el.style.top = top + "px";
+                    el.style.left = left + "px";
+                    el.style.bottom = "auto";
+                });
                 
                 const screenData = currentProject.screens[index];
                 if (key.startsWith('sticker_')) {
@@ -381,6 +392,13 @@ document.addEventListener("DOMContentLoaded", () => {
             }
             
             function onMouseUp(upEvent) {
+                if (rafId) cancelAnimationFrame(rafId);
+                el.classList.remove("is-dragging");
+                if (hasMoved) {
+                    el.style.top = currentTop + "px";
+                    el.style.left = currentLeft + "px";
+                    el.style.bottom = "auto";
+                }
                 document.removeEventListener("mousemove", onMouseMove);
                 document.removeEventListener("mouseup", onMouseUp);
                 saveTemplateQuietly();
