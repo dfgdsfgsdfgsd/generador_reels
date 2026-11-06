@@ -4888,7 +4888,10 @@ document.addEventListener("DOMContentLoaded", () => {
                 e.stopPropagation();
                 const emojiBtn = e.target.closest('.quick-emoji-item');
                 if (emojiBtn && emojiBtn.dataset.emoji) {
-                    insertEmojiAtCursor(input, emojiBtn.dataset.emoji);
+                    const target = (document.activeElement && document.activeElement.tagName === 'TEXTAREA')
+                        ? document.activeElement
+                        : (getActiveTextarea() || input);
+                    insertEmojiAtCursor(target, emojiBtn.dataset.emoji);
                     return;
                 }
 
@@ -4913,7 +4916,12 @@ document.addEventListener("DOMContentLoaded", () => {
                             embeddedPicker.setAttribute('locale', 'es');
                             embeddedPicker.addEventListener('emoji-click', (ev) => {
                                 const unicode = ev.detail?.unicode;
-                                if (unicode) insertEmojiAtCursor(input, unicode);
+                                if (unicode) {
+                                    const target = (document.activeElement && document.activeElement.tagName === 'TEXTAREA')
+                                        ? document.activeElement
+                                        : (getActiveTextarea() || input);
+                                    insertEmojiAtCursor(target, unicode);
+                                }
                             });
                             pickerContainer.appendChild(embeddedPicker);
                         }
@@ -4934,9 +4942,17 @@ document.addEventListener("DOMContentLoaded", () => {
         setupQuickBar('btn-emoji-header', 'emoji-bar-header', 'sidebar-header-input');
         setupQuickBar('btn-emoji-footer', 'emoji-bar-footer', 'sidebar-footer-input');
 
-        // Cerrar popups de emojis rápidos al hacer clic fuera
+        // Cerrar popups de emojis rápidos al hacer clic fuera (no cerrar si se hace clic en cajas de texto o tarjetas de edición)
         document.addEventListener('click', (e) => {
-            if (!e.target.closest('.btn-insert-emoji') && !e.target.closest('.quick-emoji-popup') && !e.target.closest('emoji-picker')) {
+            const isClickInside = e.target.closest('.btn-insert-emoji') ||
+                                  e.target.closest('.quick-emoji-popup') ||
+                                  e.target.closest('emoji-picker') ||
+                                  e.target.closest('.sidebar-text-textarea') ||
+                                  e.target.closest('#sidebar-header-group') ||
+                                  e.target.closest('#sidebar-footer-group') ||
+                                  e.target.closest('.text-card');
+
+            if (!isClickInside) {
                 document.querySelectorAll('.quick-emoji-popup').forEach(b => b.style.display = 'none');
                 document.querySelectorAll('.btn-insert-emoji').forEach(b => b.classList.remove('active'));
             }
