@@ -36,6 +36,9 @@ async def add_utf8_charset(request: Request, call_next):
     ct = response.headers.get("content-type", "")
     if ("text/html" in ct or "javascript" in ct) and "charset" not in ct:
         response.headers["content-type"] = f"{ct}; charset=utf-8"
+    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    response.headers["Pragma"] = "no-cache"
+    response.headers["Expires"] = "0"
     return response
 
 

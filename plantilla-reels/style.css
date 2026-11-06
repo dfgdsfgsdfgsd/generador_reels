@@ -771,11 +771,13 @@ input[type="color"] {
     flex-direction: column;
     position: relative;
     overflow: hidden;
-    transform: scale(0.75);
+    transform: scale(0.75) translateZ(0);
     transform-origin: top center;
     flex-shrink: 0;
     transition: border-color 0.2s, box-shadow 0.2s;
     cursor: pointer;
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
 }
 
 .phone-mockup.selected-phone {
@@ -791,6 +793,9 @@ input[type="color"] {
     position: relative;
     overflow: hidden;
     border-radius: 36px;
+    transform: translateZ(0);
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
 }
 
 .phone-home-indicator {
@@ -822,6 +827,9 @@ input[type="color"] {
     transition: background 0.3s;
     isolation: isolate;
     contain: paint;
+    transform: translateZ(0);
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
 }
 
 /* THEMES */
@@ -850,11 +858,14 @@ input[type="color"] {
     box-sizing: border-box;
     border: 2px solid transparent;
     outline: none !important;
+    transform: translateZ(0);
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
     transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .is-dragging {
-    will-change: top, left;
+    will-change: top, left, transform;
     transition: none !important;
 }
 
@@ -869,6 +880,8 @@ input[type="color"] {
     object-fit: cover;
     display: block;
     pointer-events: none;
+    border-radius: 10px;
+    transform: translateZ(0);
 }
 
 .media-placeholder {
