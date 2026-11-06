@@ -559,11 +559,50 @@ document.addEventListener("DOMContentLoaded", () => {
             btn.classList.toggle("active", btn.dataset.target === key);
         });
 
-        // Limpiar resaltado previo en inputs del panel lateral
+        // Limpiar resaltado previo en inputs del panel lateral y selector de fondo
         const sidebarHeaderGrp = document.getElementById("sidebar-header-group");
         const sidebarFooterGrp = document.getElementById("sidebar-footer-group");
+        const themeTrigger = document.getElementById("theme-dropdown-trigger");
+        const customColorWrap = document.getElementById("custom-color-wrapper");
+
         if (sidebarHeaderGrp) sidebarHeaderGrp.classList.remove("sidebar-text-group-active");
         if (sidebarFooterGrp) sidebarFooterGrp.classList.remove("sidebar-text-group-active");
+        if (themeTrigger) themeTrigger.classList.remove("sidebar-bg-active-highlight");
+        if (customColorWrap) customColorWrap.classList.remove("sidebar-bg-active-highlight");
+        document.querySelectorAll(".reel-canvas").forEach(c => c.classList.remove("canvas-selected-highlight"));
+
+        if (key === "background") {
+            // 1. Resaltar visualmente el lienzo en el canvas
+            const currentCanvas = document.getElementById(`reel-canvas-${currentProject.activeScreenIndex}`) || reelCanvas;
+            if (currentCanvas) currentCanvas.classList.add("canvas-selected-highlight");
+
+            // 2. Auto-desplegar la sección de Fondo ('apariencia') si está colapsada
+            const aparienciaSection = document.querySelector('.sidebar-section[data-section="apariencia"]');
+            if (aparienciaSection && !aparienciaSection.classList.contains("open")) {
+                aparienciaSection.classList.add("open");
+                try {
+                    localStorage.setItem("sidebar_section_apariencia", "open");
+                } catch (err) {}
+            }
+
+            // 3. Resaltar visualmente el selector de temas y color en la barra lateral
+            if (themeTrigger) {
+                themeTrigger.classList.add("sidebar-bg-active-highlight");
+                try {
+                    themeTrigger.scrollIntoView({ behavior: "smooth", block: "nearest" });
+                } catch (e) {}
+            }
+            if (customColorWrap) {
+                customColorWrap.classList.add("sidebar-bg-active-highlight");
+            }
+
+            if (fontSizeSlider) fontSizeSlider.disabled = true;
+            if (fontSizeLabel) fontSizeLabel.textContent = "Fondo Seleccionado";
+            if (boxWidthSlider) boxWidthSlider.disabled = true;
+            if (boxWidthLabel) boxWidthLabel.textContent = "Ancho de Caja: N/A";
+            syncAdjustButtonsState();
+            return;
+        }
 
         if (key.startsWith("sticker_")) {
             fontSizeSlider.disabled = true;
@@ -2504,6 +2543,17 @@ document.addEventListener("DOMContentLoaded", () => {
                     selectScreen(index);
                 }
             });
+
+            const canvasEl = document.getElementById(`reel-canvas-${index}`);
+            if (canvasEl) {
+                canvasEl.addEventListener("click", (e) => {
+                    // Si el clic fue directamente en el lienzo de fondo o canvas WebGL (no en una tarjeta o video hijo)
+                    if (e.target === canvasEl || e.target.classList.contains("reel-bg-canvas")) {
+                        selectScreen(index);
+                        selectCard("background");
+                    }
+                });
+            }
             
             hCard.addEventListener("click", (e) => {
                 e.stopPropagation();

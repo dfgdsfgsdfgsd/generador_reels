@@ -1,5 +1,6 @@
-* 93e4cc9 2026-11-06 15:32:05 | docs: generar ESTRUCTURA_PROYECTO.txt y actualizar ARBOL_GIT.txt (HEAD -> feature/servidor-mcp) [Daniel]
-* 0288284 2026-11-06 00:20:09 | docs: actualizar ARBOL_GIT.txt antes del merge (origin/feature/servidor-mcp, feature/modularizar-app) [Daniel]
+* fb046b9 2026-11-06 15:41:07 | feat(ux): auto-desplegar seccion de texto y resaltar campo en la barra lateral al hacer clic en titulo o descripcion (HEAD -> feature/servidor-mcp) [Daniel]
+* 93e4cc9 2026-11-06 15:32:05 | docs: generar ESTRUCTURA_PROYECTO.txt y actualizar ARBOL_GIT.txt (origin/feature/servidor-mcp) [Daniel]
+* 0288284 2026-11-06 00:20:09 | docs: actualizar ARBOL_GIT.txt antes del merge (feature/modularizar-app) [Daniel]
 * a9eb963 2026-11-06 00:19:21 | refactor(app): modularizar utilidades, motor WebGL de agua y zoom multimedia en modulos dedicados (origin/feature/modularizar-app) [Daniel]
 * b638087 2026-11-06 00:13:10 | docs: actualizar ARBOL_GIT.txt [Daniel]
 * c73eb34 2026-11-05 23:10:57 | docs: actualizar ARBOL_GIT.txt [Daniel]

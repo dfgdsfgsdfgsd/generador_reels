@@ -2443,3 +2443,16 @@ emoji-picker.dark {
     pointer-events: none;
     z-index: 0;
 }
+
+/* Resaltado del control de Fondo activo en la barra lateral */
+.sidebar-bg-active-highlight {
+    border-color: #60a5fa !important;
+    box-shadow: 0 0 14px rgba(96, 165, 250, 0.4) !important;
+    background: rgba(96, 165, 250, 0.1) !important;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Indicador visual en el lienzo cuando el fondo está seleccionado */
+.reel-canvas.canvas-selected-highlight {
+    box-shadow: inset 0 0 0 2.5px #60a5fa, 0 0 16px rgba(96, 165, 250, 0.35) !important;
+}
