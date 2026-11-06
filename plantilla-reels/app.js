@@ -4678,6 +4678,11 @@ document.addEventListener("DOMContentLoaded", () => {
             const input = document.getElementById(inputId);
             if (!btn || !bar || !input) return;
 
+            // Mover el contenedor de emojis al body para que pueda desbordar libremente fuera del sidebar sin ser recortado
+            if (bar.parentElement !== document.body) {
+                document.body.appendChild(bar);
+            }
+
             bar.innerHTML = `
                 <div class="quick-emoji-top">
                     <div class="quick-emoji-grid">
@@ -4709,6 +4714,27 @@ document.addEventListener("DOMContentLoaded", () => {
             const openFullPickerBtn = bar.querySelector('.btn-open-full-picker');
             let embeddedPicker = null;
 
+            function positionPopup() {
+                if (bar.style.display !== 'flex') return;
+                const rect = input.getBoundingClientRect();
+                const popupWidth = 370;
+
+                // Alinear al textarea y dejar que desborde libremente hacia la derecha sobre el lienzo
+                let left = Math.max(12, rect.left);
+                let top = rect.bottom + 6;
+
+                // Evitar que se desborde por la parte inferior de la ventana
+                const popupHeight = bar.offsetHeight || 380;
+                if (top + popupHeight > window.innerHeight - 10) {
+                    top = Math.max(10, window.innerHeight - popupHeight - 10);
+                }
+
+                bar.style.position = 'fixed';
+                bar.style.left = `${left}px`;
+                bar.style.top = `${top}px`;
+                bar.style.width = `${popupWidth}px`;
+            }
+
             btn.addEventListener('click', (e) => {
                 e.stopPropagation();
                 if (input.style.display === 'none') return;
@@ -4719,6 +4745,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (!isOpen) {
                     bar.style.display = 'flex';
                     btn.classList.add('active');
+                    positionPopup();
                 }
             });
 
@@ -4735,6 +4762,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     const isMoreOpen = (moreSection.style.display === 'block');
                     moreSection.style.display = isMoreOpen ? 'none' : 'block';
                     moreBtn.textContent = isMoreOpen ? '➕ Ver más' : '➖ Menos';
+                    requestAnimationFrame(positionPopup);
                     return;
                 }
 
@@ -4758,9 +4786,24 @@ document.addEventListener("DOMContentLoaded", () => {
                         pickerContainer.style.display = 'none';
                         fullPickerBtn.textContent = '🔍 Toda la biblioteca';
                     }
+                    requestAnimationFrame(positionPopup);
                     return;
                 }
             });
+
+            // Sincronizar posición ante scroll de la barra lateral o redimensionado
+            const sidebar = document.querySelector('.sidebar');
+            if (sidebar) {
+                sidebar.addEventListener('scroll', () => {
+                    if (bar.style.display === 'flex') positionPopup();
+                }, { passive: true });
+            }
+            window.addEventListener('scroll', () => {
+                if (bar.style.display === 'flex') positionPopup();
+            }, { passive: true });
+            window.addEventListener('resize', () => {
+                if (bar.style.display === 'flex') positionPopup();
+            }, { passive: true });
         }
 
         setupQuickBar('btn-emoji-header', 'emoji-bar-header', 'sidebar-header-input');

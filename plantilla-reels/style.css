@@ -2489,26 +2489,29 @@ emoji-picker.dark {
 }
 
 /* Barra flotante de emojis rápidos */
+/* Barra flotante de emojis con desborde libre fuera del menú lateral y sin barras de scroll apretadas */
 .quick-emoji-popup {
-    background: #1a1e27;
-    border: 1px solid rgba(255, 255, 255, 0.16);
-    border-radius: 8px;
-    padding: 7px 9px;
-    display: flex;
+    background: #181b22;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 10px;
+    padding: 10px 12px;
+    display: none;
     flex-direction: column;
-    gap: 6px;
-    margin-top: 6px;
-    margin-bottom: 4px;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+    gap: 8px;
+    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.08);
     animation: fadeInQuickEmoji 0.15s ease-out;
-    max-width: 100%;
+    width: 370px;
+    max-width: calc(100vw - 30px);
     box-sizing: border-box;
+    z-index: 10000;
+    overflow-x: hidden !important;
 }
 
 .quick-emoji-grid {
     display: flex;
     flex-wrap: wrap;
-    gap: 4px;
+    gap: 5px;
+    overflow-x: hidden !important;
 }
 
 .quick-emoji-footer-bar {
@@ -2516,18 +2519,20 @@ emoji-picker.dark {
     align-items: center;
     justify-content: space-between;
     gap: 6px;
-    padding-top: 5px;
+    padding-top: 6px;
     border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .quick-emoji-more-section {
     border-top: 1px solid rgba(255, 255, 255, 0.08);
     padding-top: 6px;
+    overflow-x: hidden !important;
 }
 
 .quick-emoji-expanded-wrap {
-    max-height: 220px;
+    max-height: 280px;
     overflow-y: auto;
+    overflow-x: hidden !important;
     padding-right: 4px;
 }
 
@@ -2554,13 +2559,16 @@ emoji-picker.dark {
     border-top: 1px solid rgba(255, 255, 255, 0.1);
     padding-top: 6px;
     width: 100%;
+    overflow-x: hidden !important;
 }
 
 .quick-emoji-picker-container emoji-picker {
-    width: 100%;
-    height: 320px;
-    --background: #181a20;
+    width: 100% !important;
+    min-width: 345px !important;
+    height: 350px !important;
+    --background: #181b22;
     --border-color: rgba(255, 255, 255, 0.1);
+    overflow-x: hidden !important;
 }
 
 @keyframes fadeInQuickEmoji {
