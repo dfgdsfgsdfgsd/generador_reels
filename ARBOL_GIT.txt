@@ -1,4 +1,5 @@
-* 90a1198 2026-11-05 22:42:54 | feat(bg-effects): implementar ambos efectos de agua: 3D (con crestas y brillo) y 2D (suave cenital) sincronizados en navegador y exportacion (HEAD -> feature/servidor-mcp) [Daniel]
+* c73eb34 2026-11-05 23:10:57 | docs: actualizar ARBOL_GIT.txt (HEAD -> feature/servidor-mcp) [Daniel]
+* 90a1198 2026-11-05 22:42:54 | feat(bg-effects): implementar ambos efectos de agua: 3D (con crestas y brillo) y 2D (suave cenital) sincronizados en navegador y exportacion [Daniel]
 * bfc9b3e 2026-11-05 21:02:39 | fix(bg-effects): corregir visibilidad del canvas WebGL, viewport y proteccion CORS para ondas de agua [Daniel]
 * c480b4e 2026-11-05 19:29:49 | fix(ui): evitar ReferenceError TDZ en waterAnimationId para restaurar barra y desplegables [Daniel]
 * 18162c0 2026-11-05 19:26:38 | feat(bg-effects): implementar refraccion de agua en tiempo real con WebGL idéntica a FFmpeg manteniendo 60 FPS fluidos [Daniel]
