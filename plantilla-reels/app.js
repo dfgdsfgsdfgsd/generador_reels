@@ -1485,7 +1485,7 @@ document.addEventListener("DOMContentLoaded", () => {
     function updateBgImageUI() {
         if (!bgImageWrapper) return;
         const currentScreen = currentProject.screens[currentProject.activeScreenIndex];
-        const hasBgImage = currentScreen && currentScreen.bgImageSrc;
+        const hasBgImage = currentScreen && currentScreen.theme === "image" && Boolean(currentScreen.bgImageSrc);
         const uploadLabel = bgImageWrapper.querySelector('label[for="bg-image-input"]');
         const statusBadge = document.getElementById("bg-image-status-badge");
         
@@ -1511,19 +1511,31 @@ document.addEventListener("DOMContentLoaded", () => {
             if (bgEffectGroup) bgEffectGroup.style.display = "none";
         }
         if (bgEffectSelect && currentScreen) {
-            bgEffectSelect.value = currentScreen.bgEffect || "none";
+            bgEffectSelect.value = (hasBgImage && currentScreen.bgEffect) ? currentScreen.bgEffect : "none";
         }
     }
 
     themeSelect.addEventListener("change", (e) => {
         const theme = e.target.value;
+        const currentScreen = currentProject.screens[currentProject.activeScreenIndex];
         currentTemplate.theme = theme;
+        if (currentScreen) currentScreen.theme = theme;
         
         // Quitar temas anteriores
         reelCanvas.className = "reel-canvas";
         
         if (theme === "custom") {
-            reelCanvas.style.background = bgColorPicker ? bgColorPicker.value : (currentTemplate.customColor || "#141414");
+            const hex = bgColorPicker ? bgColorPicker.value : (currentTemplate.customColor || "#141414");
+            currentTemplate.customColor = hex;
+            currentTemplate.bgImageSrc = null;
+            currentTemplate.bgEffect = "none";
+            if (currentScreen) {
+                currentScreen.customColor = hex;
+                currentScreen.bgImageSrc = null;
+                currentScreen.bgEffect = "none";
+            }
+            stopWaterEffect();
+            reelCanvas.style.background = hex;
         } else if (theme === "image") {
             if (currentTemplate.bgImageSrc) {
                 reelCanvas.style.background = `url("${currentTemplate.bgImageSrc}") center/cover no-repeat`;
@@ -1532,6 +1544,13 @@ document.addEventListener("DOMContentLoaded", () => {
                 reelCanvas.style.background = "";
             }
         } else {
+            currentTemplate.bgImageSrc = null;
+            currentTemplate.bgEffect = "none";
+            if (currentScreen) {
+                currentScreen.bgImageSrc = null;
+                currentScreen.bgEffect = "none";
+            }
+            stopWaterEffect();
             reelCanvas.classList.add(`theme-${theme}`);
             reelCanvas.style.background = "";
         }
@@ -1611,16 +1630,20 @@ document.addEventListener("DOMContentLoaded", () => {
             const targetScreen = currentProject.screens[targetIndex];
             targetScreen.bgImageSrc = null;
             targetScreen.theme = "dark";
+            targetScreen.bgEffect = "none";
+            currentTemplate.bgImageSrc = null;
+            currentTemplate.theme = "dark";
+            currentTemplate.bgEffect = "none";
             themeSelect.value = "dark";
-            if (customColorWrapper) customColorWrapper.style.display = "none";
             
+            stopWaterEffect();
             const canvas = document.getElementById(`reel-canvas-${targetIndex}`);
             if (canvas) {
                 canvas.className = "reel-canvas theme-dark";
                 canvas.style.background = "";
             }
             updateBgImageUI();
-        syncThemeDropdownUI(currentTemplate.theme);
+            syncThemeDropdownUI("dark");
             updateActiveBgAnimation();
             saveTemplateQuietly();
         });
@@ -1638,16 +1661,27 @@ document.addEventListener("DOMContentLoaded", () => {
     if (bgColorPicker) {
         bgColorPicker.addEventListener("input", (e) => {
             const val = e.target.value;
+            const currentScreen = currentProject.screens[currentProject.activeScreenIndex];
             currentTemplate.theme = "custom";
             currentTemplate.customColor = val;
+            currentTemplate.bgImageSrc = null;
+            currentTemplate.bgEffect = "none";
+            if (currentScreen) {
+                currentScreen.theme = "custom";
+                currentScreen.customColor = val;
+                currentScreen.bgImageSrc = null;
+                currentScreen.bgEffect = "none";
+            }
             if (bgColorHex) bgColorHex.textContent = val;
             
-            // Aplicar color liso y limpiar clases de tema preestablecido
+            stopWaterEffect();
             reelCanvas.className = "reel-canvas";
             reelCanvas.style.background = val;
             
             if (themeSelect) themeSelect.value = "custom";
+            updateBgImageUI();
             syncThemeDropdownUI("custom");
+            updateActiveBgAnimation();
             saveTemplateQuietly();
         });
     }
@@ -1699,15 +1733,27 @@ document.addEventListener("DOMContentLoaded", () => {
 
             // Clic para aplicar el color
             swatch.addEventListener("click", () => {
+                const currentScreen = currentProject.screens[currentProject.activeScreenIndex];
                 currentTemplate.theme = "custom";
                 currentTemplate.customColor = hex;
+                currentTemplate.bgImageSrc = null;
+                currentTemplate.bgEffect = "none";
+                if (currentScreen) {
+                    currentScreen.theme = "custom";
+                    currentScreen.customColor = hex;
+                    currentScreen.bgImageSrc = null;
+                    currentScreen.bgEffect = "none";
+                }
                 if (bgColorPicker) bgColorPicker.value = hex;
                 if (bgColorHex) bgColorHex.textContent = hex;
                 
+                stopWaterEffect();
                 reelCanvas.className = "reel-canvas";
                 reelCanvas.style.background = hex;
                 if (themeSelect) themeSelect.value = "custom";
+                updateBgImageUI();
                 syncThemeDropdownUI("custom");
+                updateActiveBgAnimation();
                 saveTemplateQuietly();
             });
 
@@ -2131,6 +2177,11 @@ document.addEventListener("DOMContentLoaded", () => {
             currentProject.screens.forEach(s => {
                 if (s.headerText) s.headerText = cleanAllMojibakeAndComments(s.headerText);
                 if (s.footerText) s.footerText = cleanAllMojibakeAndComments(s.footerText);
+                // Si el tema activo no es foto de fondo, limpiar residuos de foto previa
+                if (s.theme !== "image") {
+                    s.bgImageSrc = null;
+                    s.bgEffect = "none";
+                }
                 if (!s.positions) s.positions = {};
                 
                 // Alineación horizontal y vertical armónica estándar (sin superposiciones)
@@ -2239,7 +2290,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const canvas = document.getElementById(`reel-canvas-${idx}`) || document.getElementById("reel-canvas");
         const bgCanvas = document.getElementById(`reel-bg-canvas-${idx}`) || document.getElementById("reel-bg-canvas");
         const effect = screen.bgEffect || "none";
-        const bgImg = screen.bgImageSrc;
+        const isImageTheme = (screen.theme === "image" && Boolean(screen.bgImageSrc));
 
         if (canvas) {
             canvas.classList.remove("bg-effect-kenburns", "bg-effect-pulse", "bg-effect-water");
@@ -2249,14 +2300,15 @@ document.addEventListener("DOMContentLoaded", () => {
         const hasActiveVideo = reelVideo && currentTemplate && currentTemplate.mediaType === "video" && currentTemplate.mediaSrc;
         const shouldBePaused = hasActiveVideo && reelVideo.paused;
 
-        if (isWater && bgImg) {
-            setupWaterEffect(bgCanvas, bgImg, effect === "water_3d");
+        if (isWater && isImageTheme) {
+            setupWaterEffect(bgCanvas, screen.bgImageSrc, effect === "water_3d");
             if (shouldBePaused && window.ReelsWaterShader) {
                 window.ReelsWaterShader.pause();
             }
         } else {
             stopWaterEffect();
-            if (effect && effect !== "none" && canvas) {
+            if (bgCanvas) bgCanvas.style.display = "none";
+            if (effect && effect !== "none" && isImageTheme && canvas) {
                 canvas.classList.add(`bg-effect-${effect}`);
                 if (shouldBePaused) {
                     canvas.classList.add("bg-paused");
@@ -2289,9 +2341,9 @@ document.addEventListener("DOMContentLoaded", () => {
                 </div>
                 <div class="phone-mockup ${index === currentProject.activeScreenIndex ? 'selected-phone' : ''}" data-index="${index}">
                     <div class="phone-screen">
-                        <div class="reel-canvas theme-${screenData.theme} ${screenData.bgEffect && screenData.bgEffect !== 'none' ? 'bg-effect-' + screenData.bgEffect : ''}" id="reel-canvas-${index}" style="${
+                        <div class="reel-canvas ${screenData.theme !== 'custom' && screenData.theme !== 'image' ? 'theme-' + screenData.theme : ''} ${screenData.theme === 'image' && screenData.bgEffect && screenData.bgEffect !== 'none' ? 'bg-effect-' + screenData.bgEffect : ''}" id="reel-canvas-${index}" style="${
     screenData.theme === 'custom' 
-        ? 'background: ' + screenData.customColor 
+        ? 'background: ' + (screenData.customColor || '#141414') + ';' 
         : (screenData.theme === 'image' && screenData.bgImageSrc ? 'background: url(' + screenData.bgImageSrc + ') center/cover no-repeat;' : '')
 }">
                             <canvas class="reel-bg-canvas" id="reel-bg-canvas-${index}" width="360" height="640" style="display: none;"></canvas>
@@ -2806,14 +2858,27 @@ document.addEventListener("DOMContentLoaded", () => {
         instagramOverlay = document.getElementById(`instagram-overlay-${index}`);
         
         // Sincronizar selectores del panel izquierdo
-        themeSelect.value = currentTemplate.theme || "dark";
+        const scrTheme = currentTemplate.theme || "dark";
+        themeSelect.value = scrTheme;
         if (bgColorPicker) {
             const hexColor = currentTemplate.customColor || "#141414";
             bgColorPicker.value = hexColor;
             if (bgColorHex) bgColorHex.textContent = hexColor;
         }
         updateBgImageUI();
-        syncThemeDropdownUI(currentTemplate.theme);
+        syncThemeDropdownUI(scrTheme);
+        
+        // Sincronizar el fondo del canvas del teléfono seleccionado
+        if (reelCanvas) {
+            reelCanvas.className = `reel-canvas ${scrTheme !== 'custom' && scrTheme !== 'image' ? 'theme-' + scrTheme : ''}`;
+            if (scrTheme === 'custom') {
+                reelCanvas.style.background = currentTemplate.customColor || '#141414';
+            } else if (scrTheme === 'image' && currentTemplate.bgImageSrc) {
+                reelCanvas.style.background = `url("${currentTemplate.bgImageSrc}") center/cover no-repeat`;
+            } else {
+                reelCanvas.style.background = '';
+            }
+        }
         
         if (fontTitleSelect) fontTitleSelect.value = currentTemplate.fontTitle;
         if (toggleHeaderCard) toggleHeaderCard.checked = currentTemplate.showHeaderCard;
@@ -3372,10 +3437,10 @@ document.addEventListener("DOMContentLoaded", () => {
             recordVideoBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Procesando en Servidor...';
 
             const activeScreen = (currentProject && currentProject.screens) ? currentProject.screens[currentProject.activeScreenIndex] : null;
-            const effBgImg = (activeScreen && activeScreen.bgImageSrc) || currentTemplate.bgImageSrc || null;
-            const effBgEffect = (activeScreen && activeScreen.bgEffect) || currentTemplate.bgEffect || (bgEffectSelect ? bgEffectSelect.value : "none");
-            const effTheme = effBgImg ? "image" : ((activeScreen && activeScreen.theme) || currentTemplate.theme || themeSelect.value || "dark");
-            const effCustomColor = (activeScreen && activeScreen.customColor) || currentTemplate.customColor;
+            const effTheme = (activeScreen && activeScreen.theme) || currentTemplate.theme || themeSelect.value || "dark";
+            const effBgImg = (effTheme === "image") ? ((activeScreen && activeScreen.bgImageSrc) || currentTemplate.bgImageSrc || null) : null;
+            const effCustomColor = (effTheme === "custom") ? ((activeScreen && activeScreen.customColor) || currentTemplate.customColor || "#141414") : null;
+            const effBgEffect = (effTheme === "image") ? ((activeScreen && activeScreen.bgEffect) || currentTemplate.bgEffect || (bgEffectSelect ? bgEffectSelect.value : "none")) : "none";
             const effLayout = (activeScreen && activeScreen.layout) || currentTemplate.layout || "single";
             const effMediaType = (activeScreen && activeScreen.mediaType) || currentTemplate.mediaType || null;
             const effMediaSrc = (activeScreen && activeScreen.mediaSrc) || currentTemplate.mediaSrc || null;
@@ -3913,14 +3978,16 @@ document.addEventListener("DOMContentLoaded", () => {
         const mContBottom = document.getElementById(`media-container-bottom-${index}`);
         const lCard = document.getElementById(`logo-card-${index}`);
         
-        const effBgImg = screenData.bgImageSrc || null;
-        const effTheme = effBgImg ? "image" : (screenData.theme || "dark");
+        const effTheme = screenData.theme || "dark";
+        const effBgImg = (effTheme === "image") ? (screenData.bgImageSrc || null) : null;
+        const effCustomColor = (effTheme === "custom") ? (screenData.customColor || "#141414") : null;
+        const effBgEffect = (effTheme === "image") ? (screenData.bgEffect || "none") : "none";
 
         return {
             theme: effTheme,
-            customColor: screenData.customColor,
-            bgImageSrc: screenData.bgImageSrc || null,
-            bgEffect: screenData.bgEffect || "none",
+            customColor: effCustomColor,
+            bgImageSrc: effBgImg,
+            bgEffect: effBgEffect,
             canvasWidth: scrCanvas ? scrCanvas.offsetWidth : 360,
             canvasHeight: scrCanvas ? scrCanvas.offsetHeight : 640,
             layout: screenData.layout || "single",
