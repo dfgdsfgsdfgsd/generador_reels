@@ -1,0 +1,73 @@
+================================================================================
+ESTRUCTURA DEL PROYECTO: generador-reels
+Generado: 2026-11-06 15:31:48
+================================================================================
+.
+├── .gitignore
+├── ARBOL_GIT.txt
+├── iniciar_servidor.bat
+├── mcp_server.py
+├── plantilla-reels
+│   ├── app.js
+│   ├── index.html
+│   ├── js
+│   │   ├── media-zoom.js
+│   │   ├── utils.js
+│   │   └── webgl-water.js
+│   └── style.css
+├── reel_mcp_687.mp4
+├── reel_mcp_703.mp4
+├── reel_mcp_781.mp4
+├── reel_mcp_796.mp4
+├── requirements.txt
+├── scripts
+│   └── update_arbol.js
+├── server.py
+├── temp_input.mp4
+├── temp_output.mp4
+└── uploads
+    ├── 0a7cf458-207b-4883-91be-b7813913c86b.png
+    ├── 0f69393b-660b-4172-83df-fcf8ecc91272.png
+    ├── 157a6cfe-8276-487a-9ce6-fb5184c6d574.mp4
+    ├── 1fd17e41-48df-4bbf-bbdd-6071587fd433.png
+    ├── 2cf3b7b5-074e-4453-862a-a67a285cd00a.mp4
+    ├── 34e048b9-e1fd-4548-8289-8ed79c15094a.mp4
+    ├── 42e68c02-e588-41b4-ab93-d26bb543f45e.mp4
+    ├── 549fb219-f0c3-4135-8539-a79123eb01a6.png
+    ├── 5741471e-25bb-40a3-8771-2d8808624b26.mp4
+    ├── 5b9e22fd-1de5-4b90-b7d3-708f028368a9.png
+    ├── 6caea420-9094-4162-bc58-1d0f457c0fc8.mp4
+    ├── 78d0264e-8be9-4d17-b66f-da753e746c29.mp4
+    ├── 79ff349a-a5f3-49d3-9b4e-9b6355017be0.mp4
+    ├── 7b580d7d-7387-4058-94e3-d98333990033.mp4
+    ├── 7f48b740-0816-4a7b-b1d4-0a536639f1e7.mp4
+    ├── 7f84b0a1-36be-4427-901b-c78c753457d1.mp4
+    ├── 8455f01f-c780-474a-81bf-b089a90dfb63.mp4
+    ├── 845725e1-5e64-43ab-bbcb-7a648c0e2d46.png
+    ├── 85fd8c82-0ce7-4548-bfc3-208babd89f78.png
+    ├── 860d4b96-0c26-48c9-9fd8-365b41f8d275.png
+    ├── 93816ef0-55a3-4ab9-a19f-fe3ac3fc11a4.mp4
+    ├── 93ef83c6-bc88-43df-919f-53bc09ee5572.mp4
+    ├── 96cbf852-6b81-4895-a2fa-f1e31287246b.mp4
+    ├── 96eb3da6-0e74-467b-b3a7-5a1fd6f7f6f3.png
+    ├── 9fb6bb64-76d1-41e9-a434-76c700784b13.mp4
+    ├── @young_goge.mp4
+    ├── [DLBunny.com][xhs]2025-4-27-13-43-57.mp4
+    ├── [DLBunny.com][xhs]2025-4-27-15-52-21.mp4
+    ├── [DLBunny.com][xhs]2025-4-28-16-58-38.mp4
+    ├── abcbb9b4-14b5-4255-bcd3-034bf0f6222f.mp4
+    ├── abf6b9a8-4d81-4118-9d31-ef919f79e6bd.mp4
+    ├── b46006ec-b6ee-476a-9747-b73a6867051c.mp4
+    ├── b481eb39-2c04-426b-9486-8cd1c3d131fa.png
+    ├── c0f31b41-0aac-4cdd-abbc-c19d3ad79ecf.mp4
+    ├── c87a695b-002e-4395-a56c-3624c29088f4.mp4
+    ├── dee3dd3a-61d1-4e98-96cd-fdbf4382a812.mp4
+    ├── e3d558b6-dd2f-4f95-9b61-7ad771f0ba6f.mp4
+    ├── e6203086-7359-46fd-989e-0dd8a1edcbb5.mp4
+    ├── eb6173bb-3f01-46cc-91e2-4b5a11e71726.mp4
+    ├── eda11199-f2fe-4a4b-bb95-6c92a021ebe1.mp4
+    ├── ef019e65-7d3b-4aa5-a7e2-cd6d00402f23.png
+    ├── f47e9df3-46e3-4dcc-9eb9-4680a1ef1c32.png
+    ├── f95d1a8d-45f9-4ad7-8cde-7fcc53a42dbf.png
+    ├── faa1f21d-1584-4d02-b464-32031dd3f2f1.mp4
+    └── fd603ed4-80c2-4b27-88b4-bd9555ed71d3.mp4

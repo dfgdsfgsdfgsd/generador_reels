@@ -1,5 +1,10 @@
-* a9eb963 2026-11-06 00:19:21 | refactor(app): modularizar utilidades, motor WebGL de agua y zoom multimedia en modulos dedicados (HEAD -> feature/modularizar-app) [Daniel]
-* b638087 2026-11-06 00:13:10 | docs: actualizar ARBOL_GIT.txt (origin/feature/servidor-mcp, feature/servidor-mcp) [Daniel]
+*   ed65b66 2026-11-06 00:20:26 | WIP on feature/modularizar-app: 0288284 docs: actualizar ARBOL_GIT.txt antes del merge (refs/stash) [Daniel]
+|\  
+| * 8388e67 2026-11-06 00:20:26 | index on feature/modularizar-app: 0288284 docs: actualizar ARBOL_GIT.txt antes del merge [Daniel]
+|/  
+* 0288284 2026-11-06 00:20:09 | docs: actualizar ARBOL_GIT.txt antes del merge (HEAD -> feature/servidor-mcp, feature/modularizar-app) [Daniel]
+* a9eb963 2026-11-06 00:19:21 | refactor(app): modularizar utilidades, motor WebGL de agua y zoom multimedia en modulos dedicados (origin/feature/modularizar-app) [Daniel]
+* b638087 2026-11-06 00:13:10 | docs: actualizar ARBOL_GIT.txt (origin/feature/servidor-mcp) [Daniel]
 * c73eb34 2026-11-05 23:10:57 | docs: actualizar ARBOL_GIT.txt [Daniel]
 * 90a1198 2026-11-05 22:42:54 | feat(bg-effects): implementar ambos efectos de agua: 3D (con crestas y brillo) y 2D (suave cenital) sincronizados en navegador y exportacion [Daniel]
 * bfc9b3e 2026-11-05 21:02:39 | fix(bg-effects): corregir visibilidad del canvas WebGL, viewport y proteccion CORS para ondas de agua [Daniel]
