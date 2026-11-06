@@ -559,6 +559,12 @@ document.addEventListener("DOMContentLoaded", () => {
             btn.classList.toggle("active", btn.dataset.target === key);
         });
 
+        // Limpiar resaltado previo en inputs del panel lateral
+        const sidebarHeaderGrp = document.getElementById("sidebar-header-group");
+        const sidebarFooterGrp = document.getElementById("sidebar-footer-group");
+        if (sidebarHeaderGrp) sidebarHeaderGrp.classList.remove("sidebar-text-group-active");
+        if (sidebarFooterGrp) sidebarFooterGrp.classList.remove("sidebar-text-group-active");
+
         if (key.startsWith("sticker_")) {
             fontSizeSlider.disabled = true;
             fontSizeLabel.textContent = "Tamaño: Pegatina";
@@ -619,6 +625,24 @@ document.addEventListener("DOMContentLoaded", () => {
         const activeEl = key === "header" ? headerCard : footerCard;
         if (activeEl) {
             activeEl.classList.add("card-selected-highlight");
+        }
+
+        // 1. Auto-desplegar la sección 'Texto y Tipografía' si está minimizada
+        const textoSection = document.querySelector('.sidebar-section[data-section="texto"]');
+        if (textoSection && !textoSection.classList.contains("open")) {
+            textoSection.classList.add("open");
+            try {
+                localStorage.setItem("sidebar_section_texto", "open");
+            } catch (err) {}
+        }
+
+        // 2. Resaltar visualmente el grupo de entrada correspondiente en la barra lateral
+        const activeGroup = (key === "header") ? sidebarHeaderGrp : sidebarFooterGrp;
+        if (activeGroup) {
+            activeGroup.classList.add("sidebar-text-group-active");
+            try {
+                activeGroup.scrollIntoView({ behavior: "smooth", block: "nearest" });
+            } catch (e) {}
         }
         
         // Habilitar controles del slider de fuentes

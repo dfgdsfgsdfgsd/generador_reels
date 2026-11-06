@@ -2245,6 +2245,38 @@ emoji-picker.dark {
 }
 
 /* Textareas de edición directa en barra lateral con auto-expansión sin scroll */
+#sidebar-header-group,
+#sidebar-footer-group {
+    padding: 8px 10px;
+    border-radius: 8px;
+    border: 1.5px solid transparent;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+#sidebar-header-group.sidebar-text-group-active {
+    border-color: #3b82f6 !important;
+    background: rgba(59, 130, 246, 0.12) !important;
+    box-shadow: 0 0 12px rgba(59, 130, 246, 0.25), inset 0 0 8px rgba(59, 130, 246, 0.08);
+}
+
+#sidebar-footer-group.sidebar-text-group-active {
+    border-color: #818cf8 !important;
+    background: rgba(129, 140, 248, 0.12) !important;
+    box-shadow: 0 0 12px rgba(129, 140, 248, 0.25), inset 0 0 8px rgba(129, 140, 248, 0.08);
+}
+
+#sidebar-header-group.sidebar-text-group-active .sidebar-text-textarea {
+    border-color: #3b82f6 !important;
+    background-color: #1a202c !important;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.35) !important;
+}
+
+#sidebar-footer-group.sidebar-text-group-active .sidebar-text-textarea {
+    border-color: #818cf8 !important;
+    background-color: #1a202c !important;
+    box-shadow: 0 0 0 2px rgba(129, 140, 248, 0.35) !important;
+}
+
 .sidebar-text-textarea {
     resize: none !important;
     overflow-y: hidden !important;
