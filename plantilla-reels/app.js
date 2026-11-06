@@ -4662,19 +4662,52 @@ document.addEventListener("DOMContentLoaded", () => {
         `).join('');
     }
 
+    const EMOJI_CATEGORIES = {
+        "🔥 Populares": ['🔥', '💡', '👇', '🚀', '😱', '🤯', '🎯', '⚡', '✨', '🎬', '❤️', '👏', '💯', '📌', '⚠️', '✅', '💬', '💥', '👀', '🎉'],
+        "😂 Expresiones": ['😂', '🤣', '😍', '🥰', '😎', '🤩', '🤔', '🤫', '🥳', '🥺', '😡', '🥵', '🥶', '😴', '😇', '🤠', '🤖', '🤤'],
+        "💪 Gestos & Éxito": ['🙌', '🙏', '🤝', '👍', '👎', '👊', '✌️', '👌', '🤞', '🤙', '🤳', '💪', '🧠', '👑', '🏆', '🥇', '💎'],
+        "📈 Negocios & Redes": ['💰', '💵', '📈', '📉', '🔔', '📣', '🚨', '🛑', '🔑', '🏷️', '📱', '💻', '📸', '🎙️', '🎥', '⏳', '📅', '📍'],
+        "🌟 Extras": ['🍿', '☕', '🍔', '🥑', '🍕', '🍻', '🚗', '✈️', '☀️', '🌙', '🌈', '🎁', '🎈', '🎵', '🎶', '❌', '❓', '❗']
+    };
+
     function setupEmojiSystem() {
-        // 1. Configurar botones directos en cabecera de título y descripción
+        // 1. Configurar botones directos en cabecera de título y descripción con vista rápida, categorías y biblioteca completa
         function setupQuickBar(btnId, barId, inputId) {
             const btn = document.getElementById(btnId);
             const bar = document.getElementById(barId);
             const input = document.getElementById(inputId);
             if (!btn || !bar || !input) return;
 
-            bar.innerHTML = POPULAR_QUICK_EMOJIS.map(emoji => `
-                <button type="button" class="quick-emoji-item" data-emoji="${emoji}" title="${emoji}">${emoji}</button>
-            `).join('') + `
-                <button type="button" class="action-btn text-btn btn-open-more-emojis" style="font-size:0.68rem; padding: 2px 7px; margin-left: auto; border-radius:4px; border-color: rgba(255,255,255,0.2); color: #93c5fd;" title="Ver colección completa de emojis">➕ Más...</button>
+            bar.innerHTML = `
+                <div class="quick-emoji-top">
+                    <div class="quick-emoji-grid">
+                        ${POPULAR_QUICK_EMOJIS.map(emoji => `
+                            <button type="button" class="quick-emoji-item" data-emoji="${emoji}" title="${emoji}">${emoji}</button>
+                        `).join('')}
+                    </div>
+                    <div class="quick-emoji-footer-bar">
+                        <button type="button" class="action-btn text-btn btn-toggle-more-emojis" style="font-size:0.72rem; padding: 3px 8px; border-radius:4px; border-color: rgba(255,255,255,0.2); color: #93c5fd;" title="Ver más categorías de emojis">➕ Ver más</button>
+                        <button type="button" class="action-btn text-btn btn-open-full-picker" style="font-size:0.72rem; padding: 3px 8px; border-radius:4px; border-color: rgba(255,255,255,0.2); color: #34d399; margin-left: auto;" title="Buscador completo con 3000+ emojis">🔍 Toda la biblioteca</button>
+                    </div>
+                </div>
+                <div class="quick-emoji-more-section" style="display: none;">
+                    <div class="quick-emoji-expanded-wrap">
+                        ${Object.entries(EMOJI_CATEGORIES).map(([catName, emojis]) => `
+                            <div class="quick-emoji-category-title">${catName}</div>
+                            <div class="quick-emoji-grid">
+                                ${emojis.map(e => `<button type="button" class="quick-emoji-item" data-emoji="${e}" title="${e}">${e}</button>`).join('')}
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+                <div class="quick-emoji-picker-container" style="display: none;"></div>
             `;
+
+            const moreSection = bar.querySelector('.quick-emoji-more-section');
+            const pickerContainer = bar.querySelector('.quick-emoji-picker-container');
+            const toggleMoreBtn = bar.querySelector('.btn-toggle-more-emojis');
+            const openFullPickerBtn = bar.querySelector('.btn-open-full-picker');
+            let embeddedPicker = null;
 
             btn.addEventListener('click', (e) => {
                 e.stopPropagation();
@@ -4697,17 +4730,35 @@ document.addEventListener("DOMContentLoaded", () => {
                     return;
                 }
 
-                const moreBtn = e.target.closest('.btn-open-more-emojis');
-                if (moreBtn) {
-                    bar.style.display = 'none';
-                    btn.classList.remove('active');
-                    const emojiSection = document.querySelector('.sidebar-section[data-section="emojis"]');
-                    if (emojiSection) {
-                        emojiSection.classList.add('open');
-                        try {
-                            emojiSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-                        } catch(err) {}
+                const moreBtn = e.target.closest('.btn-toggle-more-emojis');
+                if (moreBtn && moreSection) {
+                    const isMoreOpen = (moreSection.style.display === 'block');
+                    moreSection.style.display = isMoreOpen ? 'none' : 'block';
+                    moreBtn.textContent = isMoreOpen ? '➕ Ver más' : '➖ Menos';
+                    return;
+                }
+
+                const fullPickerBtn = e.target.closest('.btn-open-full-picker');
+                if (fullPickerBtn && pickerContainer) {
+                    const isPickerOpen = (pickerContainer.style.display === 'block');
+                    if (!isPickerOpen) {
+                        pickerContainer.style.display = 'block';
+                        fullPickerBtn.textContent = '✖ Ocultar biblioteca';
+                        if (!embeddedPicker) {
+                            embeddedPicker = document.createElement('emoji-picker');
+                            embeddedPicker.className = 'dark';
+                            embeddedPicker.setAttribute('locale', 'es');
+                            embeddedPicker.addEventListener('emoji-click', (ev) => {
+                                const unicode = ev.detail?.unicode;
+                                if (unicode) insertEmojiAtCursor(input, unicode);
+                            });
+                            pickerContainer.appendChild(embeddedPicker);
+                        }
+                    } else {
+                        pickerContainer.style.display = 'none';
+                        fullPickerBtn.textContent = '🔍 Toda la biblioteca';
                     }
+                    return;
                 }
             });
         }
@@ -4717,7 +4768,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         // Cerrar popups de emojis rápidos al hacer clic fuera
         document.addEventListener('click', (e) => {
-            if (!e.target.closest('.btn-insert-emoji') && !e.target.closest('.quick-emoji-popup')) {
+            if (!e.target.closest('.btn-insert-emoji') && !e.target.closest('.quick-emoji-popup') && !e.target.closest('emoji-picker')) {
                 document.querySelectorAll('.quick-emoji-popup').forEach(b => b.style.display = 'none');
                 document.querySelectorAll('.btn-insert-emoji').forEach(b => b.classList.remove('active'));
             }

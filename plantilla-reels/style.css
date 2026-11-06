@@ -2495,12 +2495,72 @@ emoji-picker.dark {
     border-radius: 8px;
     padding: 7px 9px;
     display: flex;
-    flex-wrap: wrap;
-    gap: 4px;
+    flex-direction: column;
+    gap: 6px;
     margin-top: 6px;
     margin-bottom: 4px;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
     animation: fadeInQuickEmoji 0.15s ease-out;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+.quick-emoji-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+.quick-emoji-footer-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    padding-top: 5px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.quick-emoji-more-section {
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    padding-top: 6px;
+}
+
+.quick-emoji-expanded-wrap {
+    max-height: 220px;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+
+.quick-emoji-expanded-wrap::-webkit-scrollbar {
+    width: 5px;
+}
+
+.quick-emoji-expanded-wrap::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+}
+
+.quick-emoji-category-title {
+    font-size: 0.68rem;
+    font-weight: 600;
+    color: #94a3b8;
+    margin: 6px 0 3px 2px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.quick-emoji-picker-container {
+    margin-top: 6px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    padding-top: 6px;
+    width: 100%;
+}
+
+.quick-emoji-picker-container emoji-picker {
+    width: 100%;
+    height: 320px;
+    --background: #181a20;
+    --border-color: rgba(255, 255, 255, 0.1);
 }
 
 @keyframes fadeInQuickEmoji {
