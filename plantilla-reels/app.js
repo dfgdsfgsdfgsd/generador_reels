@@ -2182,7 +2182,7 @@ document.addEventListener("DOMContentLoaded", () => {
     var waterAnimationId = null;
     var currentWaterImageSrc = null;
 
-    function setupWaterEffect(canvasEl, imageSrc) {
+    function setupWaterEffect(canvasEl, imageSrc, is3D = true) {
         if (!canvasEl) return;
         if (!imageSrc) {
             stopWaterEffect();
@@ -2190,7 +2190,7 @@ document.addEventListener("DOMContentLoaded", () => {
             return;
         }
 
-        if (activeWaterGl && activeWaterGl.canvas === canvasEl && currentWaterImageSrc === imageSrc) {
+        if (activeWaterGl && activeWaterGl.canvas === canvasEl && currentWaterImageSrc === imageSrc && activeWaterGl._is3D === is3D) {
             canvasEl.style.display = "block";
             return;
         }
@@ -2231,26 +2231,28 @@ document.addEventListener("DOMContentLoaded", () => {
             uniform sampler2D u_image;
             uniform float u_time;
             uniform vec2 u_scale;
+            uniform float u_mode; // 1.0 = 3D (crestas + brillo), 0.0 = 2D (suave cenital)
             varying vec2 v_uv;
 
             void main() {
                 vec2 p = (v_uv - 0.5) * u_scale + 0.5;
                 
-                // Refracción fluida de agua idéntica al filtro displace de FFmpeg
                 float wave1 = sin(p.y * 18.0 + u_time * 2.2 + p.x * 6.0);
                 float wave2 = cos(p.x * 22.0 - u_time * 1.8 + p.y * 8.0);
                 float wave3 = sin((p.x + p.y) * 14.0 + u_time * 2.8);
                 
+                // Modo 3D: mayor oleaje. Modo 2D: ondulación suave y tranquila
+                float amp = mix(0.55, 1.0, u_mode);
                 vec2 displacement = vec2(
-                    wave1 * 0.010 + wave3 * 0.006,
-                    wave2 * 0.012 + wave3 * 0.006
+                    (wave1 * 0.010 + wave3 * 0.006) * amp,
+                    (wave2 * 0.012 + wave3 * 0.006) * amp
                 );
                 
                 vec2 distorted_uv = clamp(p + displacement, 0.0, 1.0);
                 vec4 color = texture2D(u_image, distorted_uv);
                 
-                // Reflejo especular en las crestas de ola
-                float highlight = (wave1 + wave2 + wave3) * 0.035;
+                // Crestas de ola con brillo 3D (0.0 en modo 2D)
+                float highlight = (wave1 + wave2 + wave3) * 0.035 * u_mode;
                 gl_FragColor = vec4(color.rgb + highlight, 1.0);
             }
         `;
@@ -2281,8 +2283,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const timeLoc = gl.getUniformLocation(prog, "u_time");
         const scaleLoc = gl.getUniformLocation(prog, "u_scale");
+        const modeLoc = gl.getUniformLocation(prog, "u_mode");
         const imgLoc = gl.getUniformLocation(prog, "u_image");
         gl.uniform1i(imgLoc, 0);
+        gl.uniform1f(modeLoc, is3D ? 1.0 : 0.0);
 
         const tex = gl.createTexture();
         gl.activeTexture(gl.TEXTURE0);
@@ -2314,6 +2318,8 @@ document.addEventListener("DOMContentLoaded", () => {
             gl.uniform2f(scaleLoc, sx, sy);
 
             activeWaterGl = gl;
+            activeWaterGl._is3D = is3D;
+            gl.uniform1f(modeLoc, is3D ? 1.0 : 0.0);
             const start = performance.now();
             
             function loop(t) {
@@ -2362,8 +2368,9 @@ document.addEventListener("DOMContentLoaded", () => {
             canvas.classList.remove("bg-effect-kenburns", "bg-effect-pulse", "bg-effect-water");
         }
 
-        if (effect === "water" && bgImg) {
-            setupWaterEffect(bgCanvas, bgImg);
+        const isWater = (effect === "water" || effect === "water_3d");
+        if (isWater && bgImg) {
+            setupWaterEffect(bgCanvas, bgImg, effect === "water_3d");
         } else {
             stopWaterEffect();
             if (effect && effect !== "none" && canvas) {

@@ -645,6 +645,16 @@ async def export_video(request: Request):
             elif bg_effect == "pulse":
                 bg_filter_chain = "[0:v]scale=880:1564,crop=720:1280:x='(in_w-720)/2 + 20*sin(2*PI*t/4.5)':y='(in_h-1280)/2 + 30*sin(2*PI*t/4.5)',eq=brightness='0.03*sin(2*PI*t/4.5)':saturation='1.0+0.15*sin(2*PI*t/4.5)':eval=frame[bg_anim];"
                 bg_target = "bg_anim"
+            elif bg_effect == "water_3d":
+                bg_filter_chain = (
+                    "perlin=size=360x640:rate=25:octaves=1:xscale=12:yscale=18:tscale=1.10,format=gray,scale=720:1280:flags=bicubic,lut=c0='clip(128+(val-128)*0.16,0,255)',split=2[xmap1][xmap2];"
+                    "perlin=size=360x640:rate=25:octaves=1:xscale=14:yscale=20:tscale=1.25:random_seed=77,format=gray,scale=720:1280:flags=bicubic,lut=c0='clip(128+(val-128)*0.16,0,255)'[ymap];"
+                    "[0:v]scale=720:1280,format=yuv420p[bg_scaled];"
+                    "[bg_scaled][xmap1][ymap]displace=edge=smear[bg_disp];"
+                    "[xmap2]format=yuv420p[xlight];"
+                    "[bg_disp][xlight]blend=all_mode=softlight:all_opacity=0.45[bg_anim];"
+                )
+                bg_target = "bg_anim"
             elif bg_effect == "water":
                 bg_filter_chain = (
                     "perlin=size=360x640:rate=25:octaves=1:xscale=12:yscale=18:tscale=1.10,format=gray,scale=720:1280:flags=bicubic,lut=c0='clip(128+(val-128)*0.13,0,255)'[xmap];"

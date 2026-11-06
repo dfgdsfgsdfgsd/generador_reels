@@ -1,4 +1,5 @@
-* c480b4e 2026-11-05 19:29:49 | fix(ui): evitar ReferenceError TDZ en waterAnimationId para restaurar barra y desplegables (HEAD -> feature/servidor-mcp) [Daniel]
+* bfc9b3e 2026-11-05 21:02:39 | fix(bg-effects): corregir visibilidad del canvas WebGL, viewport y proteccion CORS para ondas de agua (HEAD -> feature/servidor-mcp) [Daniel]
+* c480b4e 2026-11-05 19:29:49 | fix(ui): evitar ReferenceError TDZ en waterAnimationId para restaurar barra y desplegables [Daniel]
 * 18162c0 2026-11-05 19:26:38 | feat(bg-effects): implementar refraccion de agua en tiempo real con WebGL idéntica a FFmpeg manteniendo 60 FPS fluidos [Daniel]
 * 81dc607 2026-11-05 19:18:56 | style(bg-effects): aumentar dinamismo y visibilidad de ondas de agua en la vista previa del navegador [Daniel]
 * 88c39b3 2026-11-05 19:09:25 | fix(export): sincronizar bgImageSrc y bgEffect de la pantalla activa al exportar video y forzar generacion de fondo con imagen [Daniel]
