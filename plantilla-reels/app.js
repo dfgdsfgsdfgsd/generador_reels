@@ -4577,9 +4577,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // --- ZOOM LOGIC FOR MEDIA (Delegado a js/media-zoom.js) ---
 
-    // --- GESTIÓN COMPLETA DE EMOJIS (DESPLEGABLE + ÚLTIMOS USADOS) ---
+    // --- GESTIÓN COMPLETA DE EMOJIS (BOTÓN DIRECTO, DESPLEGABLE Y ÚLTIMOS USADOS) ---
     const RECENT_EMOJIS_KEY = 'reels_recent_emojis_list';
-    const DEFAULT_RECENTS = ['🔥', '💡', '👇', '🚀', '😱', '🤯', '🎯', '⚡', '✨', '🎬'];
+    const DEFAULT_RECENTS = ['🔥', '💡', '👇', '🚀', '😱', '🤯', '🎯', '⚡', '✨', '🎬', '❤️', '👏'];
+    const POPULAR_QUICK_EMOJIS = ['🔥', '💡', '👇', '🚀', '😱', '🤯', '🎯', '⚡', '✨', '🎬', '❤️', '👏', '💯', '📌', '⚠️', '✅', '💬', '💥', '👀', '🎉'];
 
     function getRecentEmojis() {
         try {
@@ -4602,5 +4603,145 @@ document.addEventListener("DOMContentLoaded", () => {
         } catch(e) {}
         renderRecentEmojis();
     }
+
+    function insertEmojiAtCursor(textarea, emoji) {
+        if (!textarea) return;
+        const start = textarea.selectionStart !== undefined ? textarea.selectionStart : textarea.value.length;
+        const end = textarea.selectionEnd !== undefined ? textarea.selectionEnd : textarea.value.length;
+        const originalText = textarea.value;
+        const before = originalText.substring(0, start);
+        const after = originalText.substring(end);
+
+        textarea.value = before + emoji + after;
+        const newPos = start + emoji.length;
+        textarea.selectionStart = newPos;
+        textarea.selectionEnd = newPos;
+        textarea.focus();
+
+        // Disparar input event para que sincronice de inmediato con el lienzo
+        textarea.dispatchEvent(new Event('input', { bubbles: true }));
+        addRecentEmoji(emoji);
+    }
+
+    function getActiveTextarea() {
+        if (activeCardKey === "footer") return sidebarFooterInput || document.getElementById('sidebar-footer-input');
+        return sidebarHeaderInput || document.getElementById('sidebar-header-input');
+    }
+
+    function renderRecentEmojis() {
+        const bar = document.getElementById('recent-emojis-bar');
+        if (!bar) return;
+        const recents = getRecentEmojis();
+        bar.innerHTML = recents.map(emoji => `
+            <button type="button" class="quick-emoji-item" data-emoji="${emoji}" title="${emoji}">${emoji}</button>
+        `).join('');
+    }
+
+    function setupEmojiSystem() {
+        // 1. Configurar botones directos en cabecera de título y descripción
+        function setupQuickBar(btnId, barId, inputId) {
+            const btn = document.getElementById(btnId);
+            const bar = document.getElementById(barId);
+            const input = document.getElementById(inputId);
+            if (!btn || !bar || !input) return;
+
+            bar.innerHTML = POPULAR_QUICK_EMOJIS.map(emoji => `
+                <button type="button" class="quick-emoji-item" data-emoji="${emoji}" title="${emoji}">${emoji}</button>
+            `).join('') + `
+                <button type="button" class="action-btn text-btn btn-open-more-emojis" style="font-size:0.68rem; padding: 2px 7px; margin-left: auto; border-radius:4px; border-color: rgba(255,255,255,0.2); color: #93c5fd;" title="Ver colección completa de emojis">➕ Más...</button>
+            `;
+
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const isOpen = (bar.style.display === 'flex');
+                document.querySelectorAll('.quick-emoji-popup').forEach(b => b.style.display = 'none');
+                document.querySelectorAll('.btn-insert-emoji').forEach(b => b.classList.remove('active'));
+
+                if (!isOpen) {
+                    bar.style.display = 'flex';
+                    btn.classList.add('active');
+                }
+            });
+
+            bar.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const emojiBtn = e.target.closest('.quick-emoji-item');
+                if (emojiBtn && emojiBtn.dataset.emoji) {
+                    insertEmojiAtCursor(input, emojiBtn.dataset.emoji);
+                    return;
+                }
+
+                const moreBtn = e.target.closest('.btn-open-more-emojis');
+                if (moreBtn) {
+                    bar.style.display = 'none';
+                    btn.classList.remove('active');
+                    const emojiSection = document.querySelector('.sidebar-section[data-section="emojis"]');
+                    if (emojiSection) {
+                        emojiSection.classList.add('open');
+                        try {
+                            emojiSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                        } catch(err) {}
+                    }
+                }
+            });
+        }
+
+        setupQuickBar('btn-emoji-header', 'emoji-bar-header', 'sidebar-header-input');
+        setupQuickBar('btn-emoji-footer', 'emoji-bar-footer', 'sidebar-footer-input');
+
+        // Cerrar popups de emojis rápidos al hacer clic fuera
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.btn-insert-emoji') && !e.target.closest('.quick-emoji-popup')) {
+                document.querySelectorAll('.quick-emoji-popup').forEach(b => b.style.display = 'none');
+                document.querySelectorAll('.btn-insert-emoji').forEach(b => b.classList.remove('active'));
+            }
+        });
+
+        // 2. Configurar barra de últimos usados en Sección 4
+        const recentBar = document.getElementById('recent-emojis-bar');
+        if (recentBar) {
+            recentBar.addEventListener('click', (e) => {
+                const btn = e.target.closest('.quick-emoji-item');
+                if (btn && btn.dataset.emoji) {
+                    const targetInput = getActiveTextarea();
+                    if (targetInput) insertEmojiAtCursor(targetInput, btn.dataset.emoji);
+                }
+            });
+            renderRecentEmojis();
+        }
+
+        // 3. Configurar desplegable y selector web component <emoji-picker>
+        const togglePickerBtn = document.getElementById('toggle-emoji-picker-btn');
+        const pickerDropdown = document.getElementById('emoji-picker-dropdown');
+        const closePickerBtn = document.getElementById('close-emoji-picker-btn');
+        const emojiPickerEl = document.querySelector('emoji-picker');
+
+        if (togglePickerBtn && pickerDropdown) {
+            togglePickerBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const isOpen = (pickerDropdown.style.display === 'block');
+                pickerDropdown.style.display = isOpen ? 'none' : 'block';
+            });
+        }
+
+        if (closePickerBtn && pickerDropdown) {
+            closePickerBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                pickerDropdown.style.display = 'none';
+            });
+        }
+
+        if (emojiPickerEl) {
+            emojiPickerEl.addEventListener('emoji-click', (e) => {
+                const unicode = e.detail?.unicode;
+                if (unicode) {
+                    const targetInput = getActiveTextarea();
+                    if (targetInput) insertEmojiAtCursor(targetInput, unicode);
+                }
+            });
+        }
+    }
+
+    setupEmojiSystem();
 
 });

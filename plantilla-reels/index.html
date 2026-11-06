@@ -266,11 +266,15 @@
                                 <label for="sidebar-header-input" class="sub-label" style="display: flex; align-items: center; gap: 5px; margin-bottom: 0; font-weight: 600;">
                                     <i class="fa-solid fa-heading" style="color: var(--color-primary, #3b82f6);"></i> Texto del Título
                                 </label>
-                                <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 0.75rem; color: #94a3b8; user-select: none;">
-                                    <input type="checkbox" id="toggle-header-card" checked style="width: 14px; height: 14px; margin: 0; cursor: pointer;">
-                                    <span>Mostrar</span>
-                                </label>
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <button type="button" class="btn-insert-emoji" id="btn-emoji-header" title="Insertar emoji en el título">😊</button>
+                                    <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 0.75rem; color: #94a3b8; user-select: none;">
+                                        <input type="checkbox" id="toggle-header-card" checked style="width: 14px; height: 14px; margin: 0; cursor: pointer;">
+                                        <span>Mostrar</span>
+                                    </label>
+                                </div>
                             </div>
+                            <div class="quick-emoji-popup" id="emoji-bar-header" style="display: none;"></div>
                             <textarea id="sidebar-header-input" class="form-control sidebar-text-textarea" rows="2" placeholder="Escribe el título del reel..."></textarea>
                         </div>
                         <div id="sidebar-footer-group">
@@ -278,11 +282,15 @@
                                 <label for="sidebar-footer-input" class="sub-label" style="display: flex; align-items: center; gap: 5px; margin-bottom: 0; font-weight: 600;">
                                     <i class="fa-solid fa-paragraph" style="color: var(--color-accent, #818cf8);"></i> Texto de la Descripción
                                 </label>
-                                <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 0.75rem; color: #94a3b8; user-select: none;">
-                                    <input type="checkbox" id="toggle-footer-card" checked style="width: 14px; height: 14px; margin: 0; cursor: pointer;">
-                                    <span>Mostrar</span>
-                                </label>
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <button type="button" class="btn-insert-emoji" id="btn-emoji-footer" title="Insertar emoji en la descripción">😊</button>
+                                    <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 0.75rem; color: #94a3b8; user-select: none;">
+                                        <input type="checkbox" id="toggle-footer-card" checked style="width: 14px; height: 14px; margin: 0; cursor: pointer;">
+                                        <span>Mostrar</span>
+                                    </label>
+                                </div>
                             </div>
+                            <div class="quick-emoji-popup" id="emoji-bar-footer" style="display: none;"></div>
                             <textarea id="sidebar-footer-input" class="form-control sidebar-text-textarea" rows="3" placeholder="Escribe la descripción o gancho..."></textarea>
                         </div>
                     </div>

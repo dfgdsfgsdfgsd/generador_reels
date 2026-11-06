@@ -1,5 +1,6 @@
-* 1e14cbc 2026-11-06 15:52:06 | fix(ux): permitir deseleccion limpia al hacer clic fuera del telefono sin forzar seleccion de header (HEAD -> feature/servidor-mcp) [Daniel]
-* f775efe 2026-11-06 15:47:08 | feat(ux): auto-desplegar seccion Fondo y resaltar selector de temas al hacer clic en el lienzo (origin/feature/servidor-mcp) [Daniel]
+* ff45d53 2026-11-06 15:58:56 | feat(player): sincronizar pausa y reproduccion del fondo animado (WebGL y CSS) con el video (HEAD -> feature/servidor-mcp) [Daniel]
+* 1e14cbc 2026-11-06 15:52:06 | fix(ux): permitir deseleccion limpia al hacer clic fuera del telefono sin forzar seleccion de header (origin/feature/servidor-mcp) [Daniel]
+* f775efe 2026-11-06 15:47:08 | feat(ux): auto-desplegar seccion Fondo y resaltar selector de temas al hacer clic en el lienzo [Daniel]
 * fb046b9 2026-11-06 15:41:07 | feat(ux): auto-desplegar seccion de texto y resaltar campo en la barra lateral al hacer clic en titulo o descripcion [Daniel]
 * 93e4cc9 2026-11-06 15:32:05 | docs: generar ESTRUCTURA_PROYECTO.txt y actualizar ARBOL_GIT.txt [Daniel]
 * 0288284 2026-11-06 00:20:09 | docs: actualizar ARBOL_GIT.txt antes del merge (feature/modularizar-app) [Daniel]
