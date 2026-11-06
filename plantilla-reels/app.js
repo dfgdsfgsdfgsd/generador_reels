@@ -153,8 +153,25 @@ document.addEventListener("DOMContentLoaded", () => {
         const targetHeaderBtn = document.querySelector('.card-target-btn[data-target="header"]');
         const targetFooterBtn = document.querySelector('.card-target-btn[data-target="footer"]');
 
+        const emojiBarHeader = document.getElementById("emoji-bar-header");
+        const emojiBarFooter = document.getElementById("emoji-bar-footer");
+        const emojiBtnHeader = document.getElementById("btn-emoji-header");
+        const emojiBtnFooter = document.getElementById("btn-emoji-footer");
+
         if (headerInput) headerInput.style.display = showHeader ? "" : "none";
         if (footerInput) footerInput.style.display = showFooter ? "" : "none";
+
+        if (emojiBarHeader && !showHeader) emojiBarHeader.style.display = "none";
+        if (emojiBarFooter && !showFooter) emojiBarFooter.style.display = "none";
+
+        if (emojiBtnHeader) {
+            emojiBtnHeader.style.display = showHeader ? "" : "none";
+            if (!showHeader) emojiBtnHeader.classList.remove("active");
+        }
+        if (emojiBtnFooter) {
+            emojiBtnFooter.style.display = showFooter ? "" : "none";
+            if (!showFooter) emojiBtnFooter.classList.remove("active");
+        }
 
         if (toggleHeaderCard) toggleHeaderCard.checked = showHeader;
         if (toggleFooterCard) toggleFooterCard.checked = showFooter;
@@ -4624,8 +4641,16 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function getActiveTextarea() {
-        if (activeCardKey === "footer") return sidebarFooterInput || document.getElementById('sidebar-footer-input');
-        return sidebarHeaderInput || document.getElementById('sidebar-header-input');
+        const headerInput = sidebarHeaderInput || document.getElementById('sidebar-header-input');
+        const footerInput = sidebarFooterInput || document.getElementById('sidebar-footer-input');
+        const showHeader = !currentTemplate || currentTemplate.showHeaderCard !== false;
+        const showFooter = !currentTemplate || currentTemplate.showFooterCard !== false;
+
+        if (activeCardKey === "footer" && showFooter) return footerInput;
+        if (activeCardKey === "header" && showHeader) return headerInput;
+        if (showHeader) return headerInput;
+        if (showFooter) return footerInput;
+        return null;
     }
 
     function renderRecentEmojis() {
@@ -4653,6 +4678,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
             btn.addEventListener('click', (e) => {
                 e.stopPropagation();
+                if (input.style.display === 'none') return;
                 const isOpen = (bar.style.display === 'flex');
                 document.querySelectorAll('.quick-emoji-popup').forEach(b => b.style.display = 'none');
                 document.querySelectorAll('.btn-insert-emoji').forEach(b => b.classList.remove('active'));
