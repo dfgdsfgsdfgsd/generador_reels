@@ -88,6 +88,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const bgImageWrapper = document.getElementById("bg-image-wrapper");
     const bgImageInput = document.getElementById("bg-image-input");
     const bgImageBtnText = document.getElementById("bg-image-btn-text");
+    const useBgImageBtn = document.getElementById("use-bg-image-btn");
     const bgImageActions = document.getElementById("bg-image-actions");
     const bgImageThumb = document.getElementById("bg-image-thumb");
     const changeBgImageBtn = document.getElementById("change-bg-image-btn");
@@ -1485,21 +1486,37 @@ document.addEventListener("DOMContentLoaded", () => {
     function updateBgImageUI() {
         if (!bgImageWrapper) return;
         const currentScreen = currentProject.screens[currentProject.activeScreenIndex];
-        const hasBgImage = currentScreen && currentScreen.theme === "image" && Boolean(currentScreen.bgImageSrc);
+        const hasStoredPhoto = Boolean(currentScreen && currentScreen.bgImageSrc);
+        const isPhotoActive = Boolean(hasStoredPhoto && currentScreen.theme === "image");
         const uploadLabel = bgImageWrapper.querySelector('label[for="bg-image-input"]');
         const statusBadge = document.getElementById("bg-image-status-badge");
         
-        if (hasBgImage) {
+        if (hasStoredPhoto) {
             if (uploadLabel) uploadLabel.style.display = "none";
             if (bgImageActions) bgImageActions.style.display = "flex";
             if (bgImageThumb) {
                 bgImageThumb.style.backgroundImage = `url("${currentScreen.bgImageSrc}")`;
+                bgImageThumb.style.borderColor = isPhotoActive ? "#10b981" : "var(--color-border)";
+                bgImageThumb.style.opacity = isPhotoActive ? "1" : "0.7";
             }
             if (statusBadge) {
-                statusBadge.textContent = "Activa";
-                statusBadge.style.color = "#10b981";
+                if (isPhotoActive) {
+                    statusBadge.textContent = "Activa";
+                    statusBadge.style.color = "#10b981";
+                } else {
+                    statusBadge.textContent = "Guardada (en pausa)";
+                    statusBadge.style.color = "#94a3b8";
+                }
             }
-            if (bgEffectGroup) bgEffectGroup.style.display = "block";
+            if (useBgImageBtn) {
+                useBgImageBtn.style.display = isPhotoActive ? "none" : "inline-flex";
+            }
+            if (changeBgImageBtn) {
+                changeBgImageBtn.style.display = isPhotoActive ? "inline-flex" : "none";
+            }
+            if (bgEffectGroup) {
+                bgEffectGroup.style.display = isPhotoActive ? "block" : "none";
+            }
         } else {
             if (uploadLabel) uploadLabel.style.display = "flex";
             if (bgImageBtnText) bgImageBtnText.textContent = "Subir Foto de Fondo";
@@ -1508,10 +1525,11 @@ document.addEventListener("DOMContentLoaded", () => {
                 statusBadge.textContent = "(opcional)";
                 statusBadge.style.color = "#64748b";
             }
+            if (useBgImageBtn) useBgImageBtn.style.display = "none";
             if (bgEffectGroup) bgEffectGroup.style.display = "none";
         }
         if (bgEffectSelect && currentScreen) {
-            bgEffectSelect.value = (hasBgImage && currentScreen.bgEffect) ? currentScreen.bgEffect : "none";
+            bgEffectSelect.value = (isPhotoActive && currentScreen.bgEffect) ? currentScreen.bgEffect : "none";
         }
     }
 
@@ -1527,13 +1545,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (theme === "custom") {
             const hex = bgColorPicker ? bgColorPicker.value : (currentTemplate.customColor || "#141414");
             currentTemplate.customColor = hex;
-            currentTemplate.bgImageSrc = null;
-            currentTemplate.bgEffect = "none";
-            if (currentScreen) {
-                currentScreen.customColor = hex;
-                currentScreen.bgImageSrc = null;
-                currentScreen.bgEffect = "none";
-            }
+            if (currentScreen) currentScreen.customColor = hex;
             stopWaterEffect();
             reelCanvas.style.background = hex;
         } else if (theme === "image") {
@@ -1544,12 +1556,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 reelCanvas.style.background = "";
             }
         } else {
-            currentTemplate.bgImageSrc = null;
-            currentTemplate.bgEffect = "none";
-            if (currentScreen) {
-                currentScreen.bgImageSrc = null;
-                currentScreen.bgEffect = "none";
-            }
             stopWaterEffect();
             reelCanvas.classList.add(`theme-${theme}`);
             reelCanvas.style.background = "";
@@ -1649,6 +1655,39 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
+    function activateStoredPhoto() {
+        const targetIndex = currentProject.activeScreenIndex;
+        const targetScreen = currentProject.screens[targetIndex];
+        if (!targetScreen || !targetScreen.bgImageSrc) return;
+        
+        targetScreen.theme = "image";
+        currentTemplate.theme = "image";
+        themeSelect.value = "image";
+        
+        reelCanvas.className = "reel-canvas";
+        reelCanvas.style.background = `url("${targetScreen.bgImageSrc}") center/cover no-repeat`;
+        
+        updateBgImageUI();
+        syncThemeDropdownUI("image");
+        updateActiveBgAnimation();
+        saveTemplateQuietly();
+    }
+
+    if (useBgImageBtn) {
+        useBgImageBtn.addEventListener("click", () => {
+            activateStoredPhoto();
+        });
+    }
+
+    if (bgImageThumb) {
+        bgImageThumb.addEventListener("click", () => {
+            const currentScreen = currentProject.screens[currentProject.activeScreenIndex];
+            if (currentScreen && currentScreen.theme !== "image" && currentScreen.bgImageSrc) {
+                activateStoredPhoto();
+            }
+        });
+    }
+
     if (changeBgImageBtn) {
         changeBgImageBtn.addEventListener("click", () => {
             if (bgImageInput) {
@@ -1664,13 +1703,9 @@ document.addEventListener("DOMContentLoaded", () => {
             const currentScreen = currentProject.screens[currentProject.activeScreenIndex];
             currentTemplate.theme = "custom";
             currentTemplate.customColor = val;
-            currentTemplate.bgImageSrc = null;
-            currentTemplate.bgEffect = "none";
             if (currentScreen) {
                 currentScreen.theme = "custom";
                 currentScreen.customColor = val;
-                currentScreen.bgImageSrc = null;
-                currentScreen.bgEffect = "none";
             }
             if (bgColorHex) bgColorHex.textContent = val;
             
@@ -1736,13 +1771,9 @@ document.addEventListener("DOMContentLoaded", () => {
                 const currentScreen = currentProject.screens[currentProject.activeScreenIndex];
                 currentTemplate.theme = "custom";
                 currentTemplate.customColor = hex;
-                currentTemplate.bgImageSrc = null;
-                currentTemplate.bgEffect = "none";
                 if (currentScreen) {
                     currentScreen.theme = "custom";
                     currentScreen.customColor = hex;
-                    currentScreen.bgImageSrc = null;
-                    currentScreen.bgEffect = "none";
                 }
                 if (bgColorPicker) bgColorPicker.value = hex;
                 if (bgColorHex) bgColorHex.textContent = hex;
@@ -2177,11 +2208,6 @@ document.addEventListener("DOMContentLoaded", () => {
             currentProject.screens.forEach(s => {
                 if (s.headerText) s.headerText = cleanAllMojibakeAndComments(s.headerText);
                 if (s.footerText) s.footerText = cleanAllMojibakeAndComments(s.footerText);
-                // Si el tema activo no es foto de fondo, limpiar residuos de foto previa
-                if (s.theme !== "image") {
-                    s.bgImageSrc = null;
-                    s.bgEffect = "none";
-                }
                 if (!s.positions) s.positions = {};
                 
                 // Alineación horizontal y vertical armónica estándar (sin superposiciones)

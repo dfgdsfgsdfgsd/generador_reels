@@ -10,7 +10,7 @@
     <link rel="icon" href="data:,">
     <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link rel="stylesheet" href="style.css?v=20261106_v6">
+    <link rel="stylesheet" href="style.css?v=20261106_v7">
     <script>
     // Auto-reparar datos de localStorage si tienen mojibake antiguo o texto residual
     (function() {
@@ -205,17 +205,26 @@
 
                     <!-- Foto o Imagen de Fondo -->
                     <div class="control-group" style="margin-top: 12px;">
+                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+                            <label class="sub-label" style="margin-bottom: 0; font-weight: 600; display: flex; align-items: center; gap: 5px;">
+                                <i class="fa-regular fa-image" style="color: #60a5fa;"></i> Foto de Fondo
+                            </label>
+                            <span id="bg-image-status-badge" style="font-size: 0.7rem; font-weight: 600; color: #64748b;">(opcional)</span>
+                        </div>
                         <div id="bg-image-wrapper" class="file-upload-wrapper">
                             <label for="bg-image-input" class="upload-btn" style="border-color: var(--color-primary); color: #60a5fa; cursor: pointer; padding: 10px 14px; font-size: 0.82rem; display: flex; align-items: center; justify-content: center; gap: 8px;">
                                 <i class="fa-solid fa-cloud-arrow-up"></i> <span id="bg-image-btn-text">Subir Foto de Fondo</span>
                             </label>
                             <input type="file" id="bg-image-input" accept="image/*" style="display: none;">
                             <div id="bg-image-actions" class="row-flex" style="display: none; margin-top: 8px; gap: 8px; align-items: center;">
-                                <span id="bg-image-thumb" style="width: 36px; height: 48px; border-radius: 4px; background-size: cover; background-position: center; border: 1px solid var(--color-border); display: inline-block; flex-shrink: 0;"></span>
+                                <span id="bg-image-thumb" style="width: 36px; height: 48px; border-radius: 4px; background-size: cover; background-position: center; border: 1.5px solid var(--color-border); display: inline-block; flex-shrink: 0; cursor: pointer;" title="Clic para activar esta foto"></span>
+                                <button type="button" id="use-bg-image-btn" class="action-btn text-btn" style="flex: 1; font-size: 0.75rem; padding: 7px; background: rgba(59, 130, 246, 0.15); border-color: #3b82f6; color: #60a5fa; font-weight: 600; display: none;">
+                                    <i class="fa-solid fa-image"></i> Usar esta Foto
+                                </button>
                                 <button type="button" id="change-bg-image-btn" class="action-btn text-btn" style="flex: 1; font-size: 0.75rem; padding: 7px;">
                                     <i class="fa-solid fa-arrows-rotate"></i> Cambiar Foto
                                 </button>
-                                <button type="button" id="remove-bg-image-btn" class="action-btn text-btn" style="color: var(--color-danger); border-color: rgba(239, 68, 68, 0.4); font-size: 0.75rem; padding: 7px;" title="Quitar foto de fondo">
+                                <button type="button" id="remove-bg-image-btn" class="action-btn text-btn" style="color: var(--color-danger); border-color: rgba(239, 68, 68, 0.4); font-size: 0.75rem; padding: 7px;" title="Eliminar foto definitivamente">
                                     <i class="fa-solid fa-trash"></i>
                                 </button>
                             </div>
@@ -700,9 +709,9 @@
     <!-- Cursor visual de la goma -->
     <div id="eraser-cursor-preview"></div>
 
-    <script src="js/utils.js?v=20261106_v6"></script>
-    <script src="js/webgl-water.js?v=20261106_v6"></script>
-    <script src="js/media-zoom.js?v=20261106_v6"></script>
-    <script src="app.js?v=20261106_v6"></script>
+    <script src="js/utils.js?v=20261106_v7"></script>
+    <script src="js/webgl-water.js?v=20261106_v7"></script>
+    <script src="js/media-zoom.js?v=20261106_v7"></script>
+    <script src="app.js?v=20261106_v7"></script>
 </body>
 </html>
