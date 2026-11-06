@@ -10,69 +10,10 @@ document.addEventListener("DOMContentLoaded", () => {
     // Utilidad para comprimir imágenes y evitar llenar el localStorage
     
     
-    function cleanAllMojibakeAndComments(str) {
-        if (!str || typeof str !== 'string') return str;
-        let s = str;
-        s = s.replace(/\/\/\s*Pegatinas[^\n<]*/gi, '');
-        s = s.replace(/ðŸ”¥/g, '🔥')
-             .replace(/ðŸ’¡/g, '💡')
-             .replace(/ðŸ‘‡/g, '👇')
-             .replace(/ðŸš€/g, '🚀')
-             .replace(/ðŸ“±/g, '📱')
-             .replace(/ðŸŽµ/g, '🎵')
-             .replace(/ðŸ‘¤/g, '👤')
-             .replace(/DISE[ÃÂ‘'O\s]*O DE REEL/gi, 'DISEÑO DE REEL')
-             .replace(/DISE[ÃÂ‘'O\s]*O/g, 'DISEÑO')
-             .replace(/T[ÃÂ\w\W]*?TULO DE GANCHO/gi, 'TÍTULO DE GANCHO')
-             .replace(/S[^\w\s\d]*guenos/gi, 'Síguenos')
-             .replace(/m[ÃÂ\s]*s consejos/gi, 'más consejos')
-             .replace(/volar[ÃÂ\s]*\s*la cabeza/gi, 'volará la cabeza')
-             .replace(/DISEÃ‘O/g, 'DISEÑO')
-             .replace(/DISEÃ'O/g, 'DISEÑO')
-             .replace(/SÃguenos/g, 'Síguenos')
-             .replace(/mÃ¡s/g, 'más')
-             .replace(/Â¡/g, '¡')
-             .trim();
-        return s;
-    }
-
-    function sanitizeMojibake(str) {
-        if (!str || typeof str !== 'string') return str;
-        return str
-            .replace(/ðŸ”¥|Y"|\?\?/g, '🔥')
-            .replace(/ðŸ‘‡|Y'|\?T/g, '👇')
-            .replace(/ðŸš€|\?~\?/g, '🚀')
-            .replace(/T[Ãǟ\s]*TULO DE GANCHO/g, 'TÍTULO DE GANCHO')
-            .replace(/[Â']*Este tip te volar[Ãǟ\s]* la cabeza!/g, '¡Este tip te volará la cabeza!')
-            .replace(/S[Ãǟ\s]*guenos para m[Ãǟ\s]*s consejos diarios/g, 'Síguenos para más consejos diarios')
-            .replace(/DISE[Ãǟ\s\?\~]*O/g, 'DISEÑO');
-    }
-
-    function compressImage(src, maxWidth = 1000, quality = 0.8) {
-        return new Promise((resolve) => {
-            const img = new Image();
-            img.crossOrigin = "anonymous";
-            img.onload = () => {
-                let width = img.width;
-                let height = img.height;
-                
-                if (width > maxWidth) {
-                    height = Math.round((height * maxWidth) / width);
-                    width = maxWidth;
-                }
-                
-                const canvas = document.createElement("canvas");
-                canvas.width = width;
-                canvas.height = height;
-                const ctx = canvas.getContext("2d");
-                ctx.drawImage(img, 0, 0, width, height);
-                
-                resolve(canvas.toDataURL("image/webp", quality));
-            };
-            img.onerror = () => resolve(src);
-            img.src = src;
-        });
-    }
+    // Utilidades delegadas al módulo js/utils.js
+    const cleanAllMojibakeAndComments = window.ReelsUtils.cleanAllMojibakeAndComments;
+    const sanitizeMojibake = window.ReelsUtils.sanitizeMojibake;
+    const compressImage = window.ReelsUtils.compressImage;
     
     let currentProject = {
         name: "default",
@@ -186,30 +127,9 @@ document.addEventListener("DOMContentLoaded", () => {
     const sidebarHeaderInput = document.getElementById("sidebar-header-input");
     const sidebarFooterInput = document.getElementById("sidebar-footer-input");
 
-    function htmlToPlainText(html) {
-        if (!html) return "";
-        let str = html.replace(/<br\s*[\/]?>/gi, "\n");
-        str = str.replace(/<\/div>/gi, "\n");
-        str = str.replace(/<\/p>/gi, "\n");
-        const doc = new DOMParser().parseFromString(str, "text/html");
-        return cleanAllMojibakeAndComments((doc.body.textContent || "").trim());
-    }
-
-    function plainTextToHtml(text) {
-        if (!text) return "";
-        const div = document.createElement("div");
-        div.textContent = text;
-        return div.innerHTML.replace(/\n/g, "<br>");
-    }
-
-    function autoResizeTextarea(el) {
-        if (!el) return;
-        el.style.height = "auto";
-        if (el.scrollHeight > 0) {
-            const border = el.offsetHeight - el.clientHeight;
-            el.style.height = Math.max(42, el.scrollHeight + border) + "px";
-        }
-    }
+    const htmlToPlainText = window.ReelsUtils.htmlToPlainText;
+    const plainTextToHtml = window.ReelsUtils.plainTextToHtml;
+    const autoResizeTextarea = window.ReelsUtils.autoResizeTextarea;
 
     function updateSidebarTextInputs() {
         if (!currentTemplate) return;
@@ -2176,181 +2096,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
     // =========================================================
-    // RENDERIZADOR WEBGL DE EFECTOS LÍQUIDOS EN TIEMPO REAL
+    // RENDERIZADOR WEBGL DE EFECTOS LÍQUIDOS (Delegado a js/webgl-water.js)
     // =========================================================
-    var activeWaterGl = null;
-    var waterAnimationId = null;
-    var currentWaterImageSrc = null;
-
     function setupWaterEffect(canvasEl, imageSrc, is3D = true) {
-        if (!canvasEl) return;
-        if (!imageSrc) {
-            stopWaterEffect();
-            canvasEl.style.display = "none";
-            return;
-        }
-
-        if (activeWaterGl && activeWaterGl.canvas === canvasEl && currentWaterImageSrc === imageSrc && activeWaterGl._is3D === is3D) {
-            canvasEl.style.display = "block";
-            return;
-        }
-
-        stopWaterEffect();
-        currentWaterImageSrc = imageSrc;
-        canvasEl.style.display = "block";
-
-        let gl = canvasEl.getContext("webgl2", { alpha: false, depth: false, antialias: false, powerPreference: "high-performance" });
-        if (!gl) {
-            gl = canvasEl.getContext("webgl", { alpha: false, depth: false, antialias: false, powerPreference: "high-performance" }) ||
-                 canvasEl.getContext("experimental-webgl");
-        }
-        if (!gl) {
-            console.warn("[WebGL Water] WebGL no soportado, activando respaldo CSS.");
-            const parent = canvasEl.closest(".reel-canvas");
-            if (parent) parent.classList.add("bg-effect-water");
-            canvasEl.style.display = "none";
-            return;
-        }
-
-        canvasEl.width = 360;
-        canvasEl.height = 640;
-        gl.viewport(0, 0, 360, 640);
-
-        const vsSource = `
-            attribute vec2 a_pos;
-            varying vec2 v_uv;
-            void main() {
-                v_uv = (a_pos + 1.0) * 0.5;
-                v_uv.y = 1.0 - v_uv.y;
-                gl_Position = vec4(a_pos, 0.0, 1.0);
-            }
-        `;
-
-        const fsSource = `
-            precision mediump float;
-            uniform sampler2D u_image;
-            uniform float u_time;
-            uniform vec2 u_scale;
-            uniform float u_mode; // 1.0 = 3D (crestas + brillo), 0.0 = 2D (suave cenital)
-            varying vec2 v_uv;
-
-            void main() {
-                vec2 p = (v_uv - 0.5) * u_scale + 0.5;
-                
-                float wave1 = sin(p.y * 18.0 + u_time * 2.2 + p.x * 6.0);
-                float wave2 = cos(p.x * 22.0 - u_time * 1.8 + p.y * 8.0);
-                float wave3 = sin((p.x + p.y) * 14.0 + u_time * 2.8);
-                
-                // Modo 3D: mayor oleaje. Modo 2D: ondulación suave y tranquila
-                float amp = mix(0.55, 1.0, u_mode);
-                vec2 displacement = vec2(
-                    (wave1 * 0.010 + wave3 * 0.006) * amp,
-                    (wave2 * 0.012 + wave3 * 0.006) * amp
-                );
-                
-                vec2 distorted_uv = clamp(p + displacement, 0.0, 1.0);
-                vec4 color = texture2D(u_image, distorted_uv);
-                
-                // Crestas de ola con brillo 3D (0.0 en modo 2D)
-                float highlight = (wave1 + wave2 + wave3) * 0.035 * u_mode;
-                gl_FragColor = vec4(color.rgb + highlight, 1.0);
-            }
-        `;
-
-        function compile(type, src) {
-            const s = gl.createShader(type);
-            gl.shaderSource(s, src);
-            gl.compileShader(s);
-            if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) {
-                console.error("[WebGL Shader Error]", gl.getShaderInfoLog(s));
-            }
-            return s;
-        }
-
-        const prog = gl.createProgram();
-        gl.attachShader(prog, compile(gl.VERTEX_SHADER, vsSource));
-        gl.attachShader(prog, compile(gl.FRAGMENT_SHADER, fsSource));
-        gl.linkProgram(prog);
-        gl.useProgram(prog);
-
-        const buf = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, buf);
-        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, -1, 1, 1, -1, 1, 1]), gl.STATIC_DRAW);
-
-        const pos = gl.getAttribLocation(prog, "a_pos");
-        gl.enableVertexAttribArray(pos);
-        gl.vertexAttribPointer(pos, 2, gl.FLOAT, false, 0, 0);
-
-        const timeLoc = gl.getUniformLocation(prog, "u_time");
-        const scaleLoc = gl.getUniformLocation(prog, "u_scale");
-        const modeLoc = gl.getUniformLocation(prog, "u_mode");
-        const imgLoc = gl.getUniformLocation(prog, "u_image");
-        gl.uniform1i(imgLoc, 0);
-        gl.uniform1f(modeLoc, is3D ? 1.0 : 0.0);
-
-        const tex = gl.createTexture();
-        gl.activeTexture(gl.TEXTURE0);
-        gl.bindTexture(gl.TEXTURE_2D, tex);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-
-        const img = new Image();
-        if (!imageSrc.startsWith("data:")) {
-            img.crossOrigin = "anonymous";
-        }
-        img.onload = () => {
-            canvasEl.style.display = "block";
-            gl.viewport(0, 0, 360, 640);
-            gl.activeTexture(gl.TEXTURE0);
-            gl.bindTexture(gl.TEXTURE_2D, tex);
-            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img);
-            
-            const canvasAspect = 360 / 640;
-            const imgAspect = (img.naturalWidth || img.width || 360) / (img.naturalHeight || img.height || 640);
-            let sx = 1.0, sy = 1.0;
-            if (imgAspect > canvasAspect) {
-                sx = canvasAspect / imgAspect;
-            } else {
-                sy = imgAspect / canvasAspect;
-            }
-            gl.uniform2f(scaleLoc, sx, sy);
-
-            activeWaterGl = gl;
-            activeWaterGl._is3D = is3D;
-            gl.uniform1f(modeLoc, is3D ? 1.0 : 0.0);
-            const start = performance.now();
-            
-            function loop(t) {
-                if (!activeWaterGl || activeWaterGl !== gl) return;
-                const elapsed = (t - start) / 1000.0;
-                gl.uniform1f(timeLoc, elapsed);
-                gl.drawArrays(gl.TRIANGLES, 0, 6);
-                waterAnimationId = requestAnimationFrame(loop);
-            }
-            waterAnimationId = requestAnimationFrame(loop);
-        };
-        img.onerror = (err) => {
-            console.error("[WebGL Water] Error cargando imagen para textura:", err);
-            // Respaldo CSS inmediato
-            const parent = canvasEl.closest(".reel-canvas");
-            if (parent) parent.classList.add("bg-effect-water");
-            canvasEl.style.display = "none";
-        };
-        img.src = imageSrc;
+        return window.ReelsWaterShader.setup(canvasEl, imageSrc, is3D);
     }
-
     function stopWaterEffect() {
-        if (waterAnimationId) {
-            cancelAnimationFrame(waterAnimationId);
-            waterAnimationId = null;
-        }
-        activeWaterGl = null;
-        currentWaterImageSrc = null;
-        document.querySelectorAll(".reel-bg-canvas").forEach(c => {
-            c.style.display = "none";
-        });
+        return window.ReelsWaterShader.stop();
     }
 
     function updateActiveBgAnimation() {
@@ -4713,58 +4465,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     })();
 
-    // --- ZOOM LOGIC FOR MEDIA (Image/Video) ---
-    (function setupMediaZoom() {
-        const ZOOM_SPEED = 0.05;
-        const MIN_ZOOM = 1.0; // Bloqueado a 1.0 para que el video nunca deje marcos negros vacíos
-        const MAX_ZOOM = 3.0;
-        
-        // Guardar zooms temporalmente por indice
-        const zoomMap = {};
+    // --- ZOOM LOGIC FOR MEDIA (Delegado a js/media-zoom.js) ---
 
-        document.addEventListener('wheel', (e) => {
-            const mediaContainer = e.target.closest('.media-container');
-            if (!mediaContainer) return;
-
-            const match = mediaContainer.id.match(/media-container-(\d+)/);
-            if (!match) return;
-            const index = match[1];
-
-            e.preventDefault();
-            
-            if (!zoomMap[index]) zoomMap[index] = 1;
-
-            if (e.deltaY < 0) {
-                zoomMap[index] += ZOOM_SPEED;
-            } else {
-                zoomMap[index] -= ZOOM_SPEED;
-            }
-
-            zoomMap[index] = Math.min(Math.max(zoomMap[index], MIN_ZOOM), MAX_ZOOM);
-
-            const reelImg = document.getElementById(`reel-img-${index}`);
-            const reelVideo = document.getElementById(`reel-video-${index}`);
-            
-            // Aplicar escala a los divs correspondientes
-            if (reelImg && reelImg.style.display !== 'none') {
-                reelImg.style.transform = `scale(${zoomMap[index]})`;
-            }
-            if (reelVideo && reelVideo.style.display !== 'none') {
-                reelVideo.style.transform = `scale(${zoomMap[index]})`;
-            }
-        }, { passive: false });
-        
-        window.resetMediaZoom = function(index) {
-            zoomMap[index] = 1;
-            const reelImg = document.getElementById(`reel-img-${index}`);
-            const reelVideo = document.getElementById(`reel-video-${index}`);
-            if (reelImg) reelImg.style.transform = `scale(1)`;
-            if (reelVideo) reelVideo.style.transform = `scale(1)`;
-        };
-    })();
-
-
-    
     // --- GESTIÓN COMPLETA DE EMOJIS (DESPLEGABLE + ÚLTIMOS USADOS) ---
     const RECENT_EMOJIS_KEY = 'reels_recent_emojis_list';
     const DEFAULT_RECENTS = ['🔥', '💡', '👇', '🚀', '😱', '🤯', '🎯', '⚡', '✨', '🎬'];

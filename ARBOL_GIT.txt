@@ -1,4 +1,5 @@
-* c73eb34 2026-11-05 23:10:57 | docs: actualizar ARBOL_GIT.txt (HEAD -> feature/servidor-mcp) [Daniel]
+* b638087 2026-11-06 00:13:10 | docs: actualizar ARBOL_GIT.txt (HEAD -> feature/modularizar-app, origin/feature/servidor-mcp, feature/servidor-mcp) [Daniel]
+* c73eb34 2026-11-05 23:10:57 | docs: actualizar ARBOL_GIT.txt [Daniel]
 * 90a1198 2026-11-05 22:42:54 | feat(bg-effects): implementar ambos efectos de agua: 3D (con crestas y brillo) y 2D (suave cenital) sincronizados en navegador y exportacion [Daniel]
 * bfc9b3e 2026-11-05 21:02:39 | fix(bg-effects): corregir visibilidad del canvas WebGL, viewport y proteccion CORS para ondas de agua [Daniel]
 * c480b4e 2026-11-05 19:29:49 | fix(ui): evitar ReferenceError TDZ en waterAnimationId para restaurar barra y desplegables [Daniel]
@@ -64,9 +65,9 @@
 * d9b4751 2026-11-03 20:20:13 | feat(editor): control de pausa en video, barra espaciadora, timeline y fijar fotograma [Daniel]
 | * c57c17a 2026-11-03 20:33:49 | feat(export): pausa y congelado de fotograma en exportación a MP4 con FFmpeg (feature/pausa-exportacion) [Daniel]
 |/  
-* d15b029 2026-11-03 20:08:12 | fix: corregir mojibake utf-8, eliminar residuales, selector emojis y soporte drag and drop video (main) [Daniel]
+* d15b029 2026-11-03 20:08:12 | fix: corregir mojibake utf-8, eliminar residuales, selector emojis y soporte drag and drop video (origin/main, main) [Daniel]
 * 5ee13f0 2026-06-19 22:09:13 | update [unknown]
-* 7fcafd7 2026-06-19 13:09:09 | Implement sticker editor (magic wand, eraser) and scroll zoom features (origin/main) [unknown]
+* 7fcafd7 2026-06-19 13:09:09 | Implement sticker editor (magic wand, eraser) and scroll zoom features [unknown]
 * 2042ad8 2026-06-15 22:31:37 | Corregir scope de la variable de cancelacion de window a local para asegurar que se detenga el bucle inmediatamente [unknown]
 * 478d918 2026-06-15 22:17:36 | Corregir redaccion del cartel de cancelacion a 'Se detendra en el video actual' [unknown]
 * ac54021 2026-06-15 22:09:07 | Bloquear boton de iniciar lote, mantener habilitado y funcional boton de cancelar y dar estado gris/deshabilitado visual [unknown]
