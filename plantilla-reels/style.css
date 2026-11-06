@@ -2489,7 +2489,7 @@ emoji-picker.dark {
 }
 
 /* Barra flotante de emojis rápidos */
-/* Barra flotante de emojis con desborde libre fuera del menú lateral y sin barras de scroll apretadas */
+/* Barra flotante de emojis con desborde libre a la derecha del menú lateral (flyout) */
 .quick-emoji-popup {
     background: #181b22;
     border: 1px solid rgba(255, 255, 255, 0.18);
@@ -2505,6 +2505,21 @@ emoji-picker.dark {
     box-sizing: border-box;
     z-index: 10000;
     overflow-x: hidden !important;
+    position: fixed;
+}
+
+.quick-emoji-popup::before {
+    content: '';
+    position: absolute;
+    top: 16px;
+    left: -6px;
+    width: 10px;
+    height: 10px;
+    background: #181b22;
+    border-left: 1px solid rgba(255, 255, 255, 0.18);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.18);
+    transform: rotate(45deg);
+    pointer-events: none;
 }
 
 .quick-emoji-grid {
@@ -2574,11 +2589,11 @@ emoji-picker.dark {
 @keyframes fadeInQuickEmoji {
     from {
         opacity: 0;
-        transform: translateY(-4px);
+        transform: translateX(-8px);
     }
     to {
         opacity: 1;
-        transform: translateY(0);
+        transform: translateX(0);
     }
 }
 

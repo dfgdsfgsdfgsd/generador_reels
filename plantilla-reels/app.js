@@ -4718,15 +4718,18 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (bar.style.display !== 'flex') return;
                 const rect = input.getBoundingClientRect();
                 const popupWidth = 370;
+                const sidebar = document.querySelector('.sidebar');
+                const sidebarRect = sidebar ? sidebar.getBoundingClientRect() : null;
+                const sidebarRight = sidebarRect ? sidebarRect.right : 306;
 
-                // Alinear al textarea y dejar que desborde libremente hacia la derecha sobre el lienzo
-                let left = Math.max(12, rect.left);
-                let top = rect.bottom + 6;
+                // Posicionar flotando completamente a la derecha de la barra lateral (sin tapar los campos de texto)
+                let left = sidebarRight + 12;
+                let top = rect.top;
 
                 // Evitar que se desborde por la parte inferior de la ventana
                 const popupHeight = bar.offsetHeight || 380;
-                if (top + popupHeight > window.innerHeight - 10) {
-                    top = Math.max(10, window.innerHeight - popupHeight - 10);
+                if (top + popupHeight > window.innerHeight - 15) {
+                    top = Math.max(15, window.innerHeight - popupHeight - 15);
                 }
 
                 bar.style.position = 'fixed';
