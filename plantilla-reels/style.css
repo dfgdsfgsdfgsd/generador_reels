@@ -2375,6 +2375,11 @@ emoji-picker.dark {
    EFECTOS DE MOVIMIENTO DEL FONDO
    (Animación pura de fondo sobre .reel-canvas sin alterar el árbol DOM ni el reproductor de video)
 =================================================== */
+/* Cuando el reproductor de video se pausa, congelar todas las animaciones de fondo */
+.reel-canvas.bg-paused {
+    animation-play-state: paused !important;
+}
+
 .bg-effect-kenburns {
     animation: kenBurnsBg 14s ease-in-out infinite alternate !important;
 }

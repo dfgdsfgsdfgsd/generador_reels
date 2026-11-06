@@ -977,6 +977,24 @@ document.addEventListener("DOMContentLoaded", () => {
                 : '<i class="fa-solid fa-volume-high"></i>';
         }
         updateVideoIndicator(currentProject.activeScreenIndex);
+        syncBgAnimationWithPlayback(isPaused);
+    }
+
+    function syncBgAnimationWithPlayback(isPaused) {
+        document.querySelectorAll(".reel-canvas").forEach(c => {
+            if (isPaused) {
+                c.classList.add("bg-paused");
+            } else {
+                c.classList.remove("bg-paused");
+            }
+        });
+        if (window.ReelsWaterShader) {
+            if (isPaused) {
+                window.ReelsWaterShader.pause();
+            } else {
+                window.ReelsWaterShader.play();
+            }
+        }
     }
 
     function togglePlayPause() {
@@ -2193,12 +2211,21 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         const isWater = (effect === "water" || effect === "water_3d");
+        const hasActiveVideo = reelVideo && currentTemplate && currentTemplate.mediaType === "video" && currentTemplate.mediaSrc;
+        const shouldBePaused = hasActiveVideo && reelVideo.paused;
+
         if (isWater && bgImg) {
             setupWaterEffect(bgCanvas, bgImg, effect === "water_3d");
+            if (shouldBePaused && window.ReelsWaterShader) {
+                window.ReelsWaterShader.pause();
+            }
         } else {
             stopWaterEffect();
             if (effect && effect !== "none" && canvas) {
                 canvas.classList.add(`bg-effect-${effect}`);
+                if (shouldBePaused) {
+                    canvas.classList.add("bg-paused");
+                }
             }
         }
     }

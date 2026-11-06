@@ -8,6 +8,11 @@
     var activeWaterGl = null;
     var waterAnimationId = null;
     var currentWaterImageSrc = null;
+    var accumulatedTime = 0;
+    var lastTimestamp = null;
+    var isWaterPaused = false;
+    var renderLoopFn = null;
+    var currentGlDrawFn = null;
 
     function setupWaterEffect(canvasEl, imageSrc, is3D = true) {
         if (!canvasEl) return;
@@ -147,16 +152,39 @@
             activeWaterGl = gl;
             activeWaterGl._is3D = is3D;
             gl.uniform1f(modeLoc, is3D ? 1.0 : 0.0);
-            const start = performance.now();
-            
-            function loop(t) {
-                if (!activeWaterGl || activeWaterGl !== gl) return;
-                const elapsed = (t - start) / 1000.0;
-                gl.uniform1f(timeLoc, elapsed);
+
+            accumulatedTime = 0;
+            lastTimestamp = null;
+
+            currentGlDrawFn = function drawFrame() {
+                gl.uniform1f(timeLoc, accumulatedTime);
                 gl.drawArrays(gl.TRIANGLES, 0, 6);
+            };
+
+            renderLoopFn = function loop(t) {
+                if (!activeWaterGl || activeWaterGl !== gl) return;
+                if (isWaterPaused) {
+                    lastTimestamp = null;
+                    return;
+                }
+                if (lastTimestamp === null) {
+                    lastTimestamp = t;
+                }
+                const dt = (t - lastTimestamp) / 1000.0;
+                lastTimestamp = t;
+                accumulatedTime += dt;
+
+                currentGlDrawFn();
                 waterAnimationId = requestAnimationFrame(loop);
+            };
+
+            // Dibujar el fotograma estático inicial
+            currentGlDrawFn();
+
+            // Solo arrancar el bucle continuo si no está en pausa
+            if (!isWaterPaused) {
+                waterAnimationId = requestAnimationFrame(renderLoopFn);
             }
-            waterAnimationId = requestAnimationFrame(loop);
         };
         img.onerror = (err) => {
             console.error("[WebGL Water] Error cargando imagen para textura:", err);
@@ -168,6 +196,24 @@
         img.src = imageSrc;
     }
 
+    function pauseWaterEffect() {
+        isWaterPaused = true;
+        if (waterAnimationId) {
+            cancelAnimationFrame(waterAnimationId);
+            waterAnimationId = null;
+        }
+        lastTimestamp = null;
+    }
+
+    function playWaterEffect() {
+        if (!isWaterPaused) return;
+        isWaterPaused = false;
+        lastTimestamp = null;
+        if (activeWaterGl && renderLoopFn && !waterAnimationId) {
+            waterAnimationId = requestAnimationFrame(renderLoopFn);
+        }
+    }
+
     function stopWaterEffect() {
         if (waterAnimationId) {
             cancelAnimationFrame(waterAnimationId);
@@ -175,6 +221,11 @@
         }
         activeWaterGl = null;
         currentWaterImageSrc = null;
+        renderLoopFn = null;
+        currentGlDrawFn = null;
+        isWaterPaused = false;
+        accumulatedTime = 0;
+        lastTimestamp = null;
         document.querySelectorAll(".reel-bg-canvas").forEach(c => {
             c.style.display = "none";
         });
@@ -183,11 +234,16 @@
     // Exponer API global unificada
     window.ReelsWaterShader = {
         setup: setupWaterEffect,
-        stop: stopWaterEffect
+        stop: stopWaterEffect,
+        pause: pauseWaterEffect,
+        play: playWaterEffect,
+        isPaused: () => isWaterPaused
     };
 
     // Aliases globales para compatibilidad 100% directa
     window.setupWaterEffect = setupWaterEffect;
     window.stopWaterEffect = stopWaterEffect;
+    window.pauseWaterEffect = pauseWaterEffect;
+    window.playWaterEffect = playWaterEffect;
 
 })(typeof window !== "undefined" ? window : globalThis);
