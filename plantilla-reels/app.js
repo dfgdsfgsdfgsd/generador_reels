@@ -545,18 +545,18 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     function selectCard(key) {
-        if (!key) key = "header"; // Default seguro a header para que nunca quede inerte
         activeCardKey = key;
         
-        // Limpiar estilos de selección
+        // Limpiar estilos de selección en canvas
         document.querySelectorAll(".text-card").forEach(c => c.classList.remove("card-selected-highlight"));
         document.querySelectorAll(".media-container").forEach(c => c.classList.remove("card-selected-highlight"));
         document.querySelectorAll(".logo-card").forEach(c => c.classList.remove("card-selected-highlight"));
         document.querySelectorAll(".sticker-card").forEach(c => c.classList.remove("card-selected-highlight"));
+        document.querySelectorAll(".reel-canvas").forEach(c => c.classList.remove("canvas-selected-highlight"));
         
         // Sincronizar botones de bloque en el panel lateral
         document.querySelectorAll(".card-target-btn").forEach(btn => {
-            btn.classList.toggle("active", btn.dataset.target === key);
+            btn.classList.toggle("active", key ? btn.dataset.target === key : false);
         });
 
         // Limpiar resaltado previo en inputs del panel lateral y selector de fondo
@@ -569,7 +569,16 @@ document.addEventListener("DOMContentLoaded", () => {
         if (sidebarFooterGrp) sidebarFooterGrp.classList.remove("sidebar-text-group-active");
         if (themeTrigger) themeTrigger.classList.remove("sidebar-bg-active-highlight");
         if (customColorWrap) customColorWrap.classList.remove("sidebar-bg-active-highlight");
-        document.querySelectorAll(".reel-canvas").forEach(c => c.classList.remove("canvas-selected-highlight"));
+
+        // Si key es null o vacio (ej. clic fuera del telefono), deseleccionar todo y salir
+        if (!key) {
+            if (fontSizeSlider) fontSizeSlider.disabled = true;
+            if (fontSizeLabel) fontSizeLabel.textContent = "Tamaño: Selecciona un bloque";
+            if (boxWidthSlider) boxWidthSlider.disabled = true;
+            if (boxWidthLabel) boxWidthLabel.textContent = "Ancho de Caja: Selecciona un bloque";
+            syncAdjustButtonsState();
+            return;
+        }
 
         if (key === "background") {
             // 1. Resaltar visualmente el lienzo en el canvas
