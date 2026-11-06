@@ -2490,15 +2490,28 @@ emoji-picker.dark {
 
 /* Barra flotante de emojis rápidos */
 .quick-emoji-popup {
-    background: #181b22;
-    border: 1px solid rgba(255, 255, 255, 0.15);
+    background: #1a1e27;
+    border: 1px solid rgba(255, 255, 255, 0.16);
     border-radius: 8px;
-    padding: 6px 8px;
+    padding: 7px 9px;
     display: flex;
     flex-wrap: wrap;
     gap: 4px;
-    margin-bottom: 8px;
+    margin-top: 6px;
+    margin-bottom: 4px;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+    animation: fadeInQuickEmoji 0.15s ease-out;
+}
+
+@keyframes fadeInQuickEmoji {
+    from {
+        opacity: 0;
+        transform: translateY(-4px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .quick-emoji-item {
