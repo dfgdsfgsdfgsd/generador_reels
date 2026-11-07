@@ -5003,6 +5003,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         ? document.activeElement
                         : (getActiveTextarea() || input);
                     insertEmojiAtCursor(target, emojiBtn.dataset.emoji);
+                    addRecentEmoji(emojiBtn.dataset.emoji);
                     return;
                 }
 
@@ -5069,49 +5070,7 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         });
 
-        // 2. Configurar barra de últimos usados en Sección 4
-        const recentBar = document.getElementById('recent-emojis-bar');
-        if (recentBar) {
-            recentBar.addEventListener('click', (e) => {
-                const btn = e.target.closest('.quick-emoji-item');
-                if (btn && btn.dataset.emoji) {
-                    const targetInput = getActiveTextarea();
-                    if (targetInput) insertEmojiAtCursor(targetInput, btn.dataset.emoji);
-                }
-            });
-            renderRecentEmojis();
-        }
-
-        // 3. Configurar desplegable y selector web component <emoji-picker>
-        const togglePickerBtn = document.getElementById('toggle-emoji-picker-btn');
-        const pickerDropdown = document.getElementById('emoji-picker-dropdown');
-        const closePickerBtn = document.getElementById('close-emoji-picker-btn');
-        const emojiPickerEl = document.querySelector('emoji-picker');
-
-        if (togglePickerBtn && pickerDropdown) {
-            togglePickerBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                const isOpen = (pickerDropdown.style.display === 'block');
-                pickerDropdown.style.display = isOpen ? 'none' : 'block';
-            });
-        }
-
-        if (closePickerBtn && pickerDropdown) {
-            closePickerBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                pickerDropdown.style.display = 'none';
-            });
-        }
-
-        if (emojiPickerEl) {
-            emojiPickerEl.addEventListener('emoji-click', (e) => {
-                const unicode = e.detail?.unicode;
-                if (unicode) {
-                    const targetInput = getActiveTextarea();
-                    if (targetInput) insertEmojiAtCursor(targetInput, unicode);
-                }
-            });
-        }
+        // (Sección 4 de emojis en barra lateral eliminada por redundancia: ahora se gestionan directamente con el botón 😊 de cada texto)
     }
 
     setupEmojiSystem();

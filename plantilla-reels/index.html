@@ -10,7 +10,7 @@
     <link rel="icon" href="data:,">
     <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link rel="stylesheet" href="style.css?v=20261106_v7">
+    <link rel="stylesheet" href="style.css?v=20261106_v8">
     <script>
     // Auto-reparar datos de localStorage si tienen mojibake antiguo o texto residual
     (function() {
@@ -362,42 +362,6 @@
                 </div>
             </div>
 
-            <!-- ========== SECCIÓN 4: EMOJIS ========== -->
-            <div class="sidebar-section" data-section="emojis">
-                <div class="sidebar-section-header">
-                    <span><i class="fa-regular fa-face-smile"></i> Emojis</span>
-                    <i class="fa-solid fa-chevron-right chevron"></i>
-                </div>
-                <div class="sidebar-section-body">
-
-                    <div class="control-group" id="emoji-control-group" style="position: relative;">
-                        <!-- Fila de Últimos Usados -->
-                        <div class="recent-emojis-wrap" style="margin-bottom: 8px;">
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-                                <span class="sub-label" style="font-size: 0.72rem; color: #8c93a0;">Últimos Usados:</span>
-                            </div>
-                            <div class="recent-emojis-bar" id="recent-emojis-bar">
-                                <!-- Generados dinámicamente -->
-                            </div>
-                        </div>
-
-                        <!-- Botón Desplegable para abrir la colección completa -->
-                        <button type="button" id="toggle-emoji-picker-btn" class="action-btn text-btn" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 9px 12px; background: #232730; border-color: #3b4252; color: #e2e8f0; font-size: 0.85rem; font-weight: 600;">
-                            <i class="fa-solid fa-icons" style="color: var(--color-accent, #10b981);"></i> Colección Completa de Emojis <i class="fa-solid fa-chevron-down" id="emoji-chevron" style="font-size: 0.75rem; margin-left: auto;"></i>
-                        </button>
-
-                        <!-- Panel desplegable flotante con emoji-picker -->
-                        <div id="emoji-picker-dropdown" class="emoji-dropdown-panel" style="display: none;">
-                            <div class="emoji-dropdown-header">
-                                <span><i class="fa-regular fa-face-smile"></i> Todos los Emojis</span>
-                                <button type="button" id="close-emoji-picker-btn" class="icon-btn-close">&times;</button>
-                            </div>
-                            <emoji-picker class="dark" locale="es"></emoji-picker>
-                        </div>
-                    </div>
-
-                </div>
-            </div>
 
             </aside>
 
@@ -709,9 +673,9 @@
     <!-- Cursor visual de la goma -->
     <div id="eraser-cursor-preview"></div>
 
-    <script src="js/utils.js?v=20261106_v7"></script>
-    <script src="js/webgl-water.js?v=20261106_v7"></script>
-    <script src="js/media-zoom.js?v=20261106_v7"></script>
-    <script src="app.js?v=20261106_v7"></script>
+    <script src="js/utils.js?v=20261106_v8"></script>
+    <script src="js/webgl-water.js?v=20261106_v8"></script>
+    <script src="js/media-zoom.js?v=20261106_v8"></script>
+    <script src="app.js?v=20261106_v8"></script>
 </body>
 </html>
