@@ -23,6 +23,38 @@ UPLOADS_DIR = os.path.join(CURRENT_DIR, "uploads")
 SERVER_API_URL = "http://127.0.0.1:3002/api/export-video"
 
 @server_mcp.tool()
+def listar_archivos_disponibles() -> str:
+    """
+    Lista todos los videos e imágenes de fondo disponibles en la carpeta uploads/ del proyecto.
+    Úsalo para ver qué videos y qué fondos puedes elegir al crear un reel.
+    """
+    if not os.path.exists(UPLOADS_DIR):
+        return "La carpeta de subidas (uploads) no existe todavía."
+
+    video_exts = (".mp4", ".mov", ".webm", ".mkv")
+    img_exts = (".png", ".jpg", ".jpeg", ".webp")
+    
+    videos = [f for f in os.listdir(UPLOADS_DIR) if any(f.lower().endswith(ext) for ext in video_exts)]
+    imagenes = [f for f in os.listdir(UPLOADS_DIR) if any(f.lower().endswith(ext) for ext in img_exts)]
+    
+    resultado = [f"=== Archivos en carpeta uploads ({len(videos)} videos, {len(imagenes)} imágenes) ==="]
+    if videos:
+        resultado.append("\n🎬 VIDEOS:")
+        for idx, nombre in enumerate(videos, start=1):
+            path_completo = os.path.join(UPLOADS_DIR, nombre)
+            size_mb = os.path.getsize(path_completo) / (1024 * 1024)
+            resultado.append(f"  {idx}. {nombre} ({size_mb:.2f} MB)")
+            
+    if imagenes:
+        resultado.append("\n🖼️ FONDOS / IMÁGENES:")
+        for idx, nombre in enumerate(imagenes, start=1):
+            path_completo = os.path.join(UPLOADS_DIR, nombre)
+            size_mb = os.path.getsize(path_completo) / (1024 * 1024)
+            resultado.append(f"  {idx}. {nombre} ({size_mb:.2f} MB)")
+
+    return "\n".join(resultado)
+
+@server_mcp.tool()
 def listar_videos_disponibles() -> str:
     """
     Lista todos los videos disponibles en la carpeta de subidas (uploads) del proyecto,
@@ -54,6 +86,8 @@ def crear_reel(
     video_inferior: Optional[str] = None,
     layout: str = "split_dual",
     color_fondo: str = "#141414",
+    imagen_fondo: Optional[str] = None,
+    efecto_fondo: str = "none",
     tamano_fuente: int = 24
 ) -> str:
     """
@@ -80,6 +114,7 @@ def crear_reel(
 
     v_sup = normalizar_ruta(video_superior)
     v_inf = normalizar_ruta(video_inferior)
+    v_bg = normalizar_ruta(imagen_fondo)
 
     # Coordenadas y dimensiones según diseño
     if layout == "split_dual":
@@ -97,10 +132,12 @@ def crear_reel(
         h_top, h_left = 40, 20
         h_h = 80
 
+    theme_val = "image" if v_bg else ("custom" if color_fondo != "#141414" else "dark")
     payload = {
-        "theme": "custom" if color_fondo != "#141414" else "dark",
+        "theme": theme_val,
         "customColor": color_fondo,
-        "bgImageSrc": None,
+        "bgImageSrc": v_bg,
+        "bgEffect": efecto_fondo if (v_bg and efecto_fondo) else "none",
         "canvasWidth": 360,
         "canvasHeight": 640,
         "layout": layout,
