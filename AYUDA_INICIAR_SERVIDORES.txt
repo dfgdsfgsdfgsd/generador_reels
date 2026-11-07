@@ -1,0 +1,41 @@
+======================================================================
+              GUIA DE INICIO RAPIDO - GENERADOR DE REELS
+======================================================================
+
+En esta carpeta tienes 2 opciones para iniciar el servidor segun lo
+que vayas a realizar. NO necesitas abrir los dos al mismo tiempo.
+
+----------------------------------------------------------------------
+OPCION 1: [1_INICIAR_PYTHON_IA.bat]  ->  Puerto 3002
+----------------------------------------------------------------------
+* ¿Para que sirve?
+  Es el motor principal en Python (FastAPI + Pillow).
+
+* ¿Cuando usarlo?
+  - Cuando quieras generar Reels automaticamente usando IA.
+  - Cuando uses herramientas MCP (crear_reel, listar_videos_disponibles).
+
+* Direccion en el navegador:
+  http://localhost:3002
+
+
+----------------------------------------------------------------------
+OPCION 2: [2_INICIAR_NODE_RAPIDO.bat]  ->  Puerto 3001
+----------------------------------------------------------------------
+* ¿Para que sirve?
+  Es el motor acelerado en Node.js (Sharp en C++ + FFmpeg).
+  Ubicado en la subcarpeta: \motor-node
+
+* ¿Cuando usarlo?
+  - Cuando entres al navegador a diseñar tus videos manualmente.
+  - Cuando busques la maxima velocidad de exportacion de video (.mp4).
+
+* Direccion en el navegador:
+  http://localhost:3001
+
+
+======================================================================
+RECOMENDACION RAPIDA:
+- ¿Solo quieres editar y exportar rapido desde el navegador? -> Usa la Opcion 2.
+- ¿Vas a trabajar con agentes de Inteligencia Artificial / MCP? -> Usa la Opcion 1.
+======================================================================

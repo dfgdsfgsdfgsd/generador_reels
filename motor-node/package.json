@@ -1,0 +1,12 @@
+{
+  "name": "exportador-rapido",
+  "version": "1.0.0",
+  "description": "Exportador rapido de Reels usando sharp y FFmpeg",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "sharp": "^0.33.2"
+  }
+}
