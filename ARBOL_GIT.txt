@@ -1,5 +1,6 @@
-* 422ae4a 2026-11-06 23:33:01 | feat(mcp): soporte para fotos de fondo y efectos animados en crear_reel (HEAD -> feature/servidor-mcp) [Daniel]
-* 1c341d3 2026-11-06 22:55:53 | docs: actualizar ARBOL_GIT (origin/feature/servidor-mcp) [Daniel]
+* 4f4e765 2026-11-07 00:36:27 | feat(motor-node): integrar motor de exportacion rapido en node y accesos directos de inicio con guia (HEAD -> feature/servidor-mcp) [Daniel]
+* 422ae4a 2026-11-06 23:33:01 | feat(mcp): soporte para fotos de fondo y efectos animados en crear_reel (origin/feature/servidor-mcp) [Daniel]
+* 1c341d3 2026-11-06 22:55:53 | docs: actualizar ARBOL_GIT [Daniel]
 * c74de05 2026-11-06 22:55:46 | refactor(sidebar): eliminar seccion redundante de emojis en barra lateral [Daniel]
 * 00d7a44 2026-11-06 19:52:13 | docs: actualizar ARBOL_GIT.txt [Daniel]
 * bee976a 2026-11-06 19:52:12 | feat(fondos): alternancia inteligente entre foto y color sin perder la imagen subida [Daniel]
